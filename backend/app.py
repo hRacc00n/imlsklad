@@ -1,5 +1,6 @@
 from flask import Flask, jsonify
 from flask_cors import CORS
+import json
 
 app = Flask(__name__)
 app.config['JSON_AS_ASCII'] = False
@@ -7,10 +8,14 @@ CORS(app)
 
 @app.route('/api/health')
 def health():
-    return jsonify({
-        'status': 'ok',
-        'message': 'Логистический центр работает'
-    })
+    return app.response_class(
+        response=json.dumps({
+            'status': 'ok',
+            'message': 'Логистический центр работает'
+        }, ensure_ascii=False),
+        status=200,
+        mimetype='application/json; charset=utf-8'
+    )
 
 @app.route('/api/orders')
 def get_orders():
