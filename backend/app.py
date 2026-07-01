@@ -1,40 +1,16 @@
-from flask import Flask, jsonify
+from flask import Flask
 from flask_cors import CORS
-import json
+
+from routes.health import register_health_routes
+from routes.auth import register_auth_routes
 
 app = Flask(__name__)
 app.config['JSON_AS_ASCII'] = False
 CORS(app)
 
-@app.route('/api/health')
-def health():
-    return app.response_class(
-        response=json.dumps({
-            'status': 'ok',
-            'message': 'Логистический центр работает'
-        }, ensure_ascii=False),
-        status=200,
-        mimetype='application/json; charset=utf-8'
-    )
-
-@app.route('/api/orders')
-def get_orders():
-    return jsonify([
-        {
-            'id': 1,
-            'tracking': 'LOG-001',
-            'client': 'ООО "Транспортник"',
-            'status': 'В пути',
-            'date': '2026-06-30'
-        },
-        {
-            'id': 2,
-            'tracking': 'LOG-002',
-            'client': 'ИП "Грузовичок"',
-            'status': 'Доставлен',
-            'date': '2026-06-29'
-        }
-    ])
+# Регистрация маршрутов
+register_health_routes(app)
+register_auth_routes(app)
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)

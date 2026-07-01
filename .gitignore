@@ -41,3 +41,6 @@ dist-ssr/
 # Logs
 logs/
 *.log
+
+# Data
+backend/data/
