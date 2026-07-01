@@ -1,3 +1,4 @@
+import { Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth } from './contexts/AuthContext';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
@@ -10,7 +11,12 @@ function App() {
     return <Login onLogin={login} />;
   }
 
-  return <Dashboard user={user} onLogout={logout} />;
+  return (
+    <Routes>
+      <Route path="/" element={<Dashboard user={user} onLogout={logout} />} />
+      <Route path="*" element={<Navigate to="/" replace />} />
+    </Routes>
+  );
 }
 
 export default App;

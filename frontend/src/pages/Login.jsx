@@ -33,8 +33,8 @@ function Login({ onLogin }) {
       <div className="login-box">
         <div className="logo">
           <span className="logo-icon">📦</span>
-          <h1>IMLSKLAD</h1>
-          <p className="subtitle">Логистический центр</p>
+          <span className="logo-title">IMLSKLAD</span>
+          <span className="logo-subtitle">Логистический центр</span>
         </div>
         
         <form onSubmit={handleSubmit}>

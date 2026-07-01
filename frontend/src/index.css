@@ -1,7 +1,8 @@
-* {
+/* Базовый сброс только для корневых элементов */
+html, body, #root {
   margin: 0;
   padding: 0;
-  box-sizing: border-box;
+  height: 100%;
 }
 
 body {
@@ -9,4 +10,10 @@ body {
   background: #f1f5f9;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+/* Убираем возможные конфликты с h1-h6 */
+h1, h2, h3, h4, h5, h6 {
+  margin: 0;
+  font-weight: inherit;
 }
