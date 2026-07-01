@@ -1,0 +1,16 @@
+.settings-page {
+  padding: 8px 0;
+}
+
+.settings-page h1 {
+  font-size: 24px;
+  font-weight: 700;
+  color: #0f172a;
+  margin-bottom: 12px;
+}
+
+.settings-placeholder {
+  color: #94a3b8;
+  font-size: 16px;
+  padding: 40px 0;
+}

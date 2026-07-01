@@ -19,7 +19,7 @@ function BurgerMenu({ user, onLogout, isOpen, onClose }) {
         <div className="burger-nav">
           {user?.role === 'admin' && (
             <>
-              <Link to="/admin/users" className="burger-link" onClick={onClose}>
+              <Link to="/admin" className="burger-link" onClick={onClose}>
                 ⚙️ Админ панель
               </Link>
               <div className="burger-divider"></div>

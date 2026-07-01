@@ -93,46 +93,43 @@ function UsersPage({ user, onLogout }) {
   };
 
   return (
-    <div className="users-page">
-
-      <div className="users-content">
-        <div className="users-header">
-          <h1>👥 Управление пользователями</h1>
-          <button className="btn-add" onClick={openCreateModal}>➕ Добавить</button>
-        </div>
-
-        {loading ? (
-          <p>Загрузка...</p>
-        ) : (
-          <div className="users-table-wrap">
-            <table className="users-table">
-              <thead>
-                <tr>
-                  <th>ID</th>
-                  <th>Имя</th>
-                  <th>Логин</th>
-                  <th>Роль</th>
-                  <th>Действия</th>
-                </tr>
-              </thead>
-              <tbody>
-                {users.map(u => (
-                  <tr key={u.id}>
-                    <td>{u.id}</td>
-                    <td>{u.name}</td>
-                    <td>{u.login}</td>
-                    <td><span className={`role-tag ${u.role}`}>{getRoleLabel(u.role)}</span></td>
-                    <td className="actions">
-                      <button className="btn-edit" onClick={() => openEditModal(u)}>✏️</button>
-                      <button className="btn-delete" onClick={() => handleDelete(u.id, u.name)}>🗑️</button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
+    <div className="users-content">
+      <div className="users-header">
+        <h1>👥 Управление пользователями</h1>
+        <button className="btn-add" onClick={openCreateModal}>➕ Добавить</button>
       </div>
+
+      {loading ? (
+        <p>Загрузка...</p>
+      ) : (
+        <div className="users-table-wrap">
+          <table className="users-table">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Имя</th>
+                <th>Логин</th>
+                <th>Роль</th>
+                <th>Действия</th>
+              </tr>
+            </thead>
+            <tbody>
+              {users.map(u => (
+                <tr key={u.id}>
+                  <td>{u.id}</td>
+                  <td>{u.name}</td>
+                  <td>{u.login}</td>
+                  <td><span className={`role-tag ${u.role}`}>{getRoleLabel(u.role)}</span></td>
+                  <td className="actions">
+                    <button className="btn-edit" onClick={() => openEditModal(u)}>✏️</button>
+                    <button className="btn-delete" onClick={() => handleDelete(u.id, u.name)}>🗑️</button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
 
       {/* Модальное окно */}
       {showModal && (

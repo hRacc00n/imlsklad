@@ -5,6 +5,7 @@ from routes.health import register_health_routes
 from routes.auth import register_auth_routes
 from routes.orders import register_orders_routes
 from routes.users import register_users_routes
+from routes.roles import register_roles_routes
 
 app = Flask(__name__)
 app.config['JSON_AS_ASCII'] = False
@@ -15,6 +16,7 @@ register_health_routes(app)
 register_auth_routes(app)
 register_orders_routes(app)
 register_users_routes(app)
+register_roles_routes(app)
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)

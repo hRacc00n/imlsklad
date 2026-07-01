@@ -3,7 +3,10 @@ import { useAuth } from './contexts/AuthContext';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import UsersPage from './pages/UsersPage';
+import RolesPage from './pages/RolesPage';
+import SettingsPage from './pages/SettingsPage';
 import Layout from './components/Layout';
+import AdminLayout from './components/AdminLayout';
 import './App.css';
 
 function App() {
@@ -13,7 +16,6 @@ function App() {
     return <Login onLogin={login} />;
   }
 
-  // Если пользователь не админ — только главная
   if (user.role !== 'admin') {
     return (
       <Routes>
@@ -25,12 +27,18 @@ function App() {
     );
   }
 
-  // Админ — все маршруты
   return (
     <Routes>
       <Route element={<Layout user={user} onLogout={logout} />}>
         <Route path="/" element={<Dashboard user={user} onLogout={logout} />} />
-        <Route path="/admin/users" element={<UsersPage user={user} onLogout={logout} />} />
+        
+        <Route path="/admin" element={<AdminLayout />}>
+          <Route path="users" element={<UsersPage user={user} onLogout={logout} />} />
+          <Route path="roles" element={<RolesPage />} />
+          <Route path="settings" element={<SettingsPage />} />
+          <Route index element={<Navigate to="/admin/users" replace />} />
+        </Route>
+        
         <Route path="*" element={<Navigate to="/" replace />} />
       </Route>
     </Routes>

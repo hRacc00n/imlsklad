@@ -1,0 +1,146 @@
+.admin-layout-wrapper {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 0 20px;
+  width: 100%;
+}
+
+.admin-layout {
+  display: flex;
+  gap: 24px;
+  min-height: calc(100vh - 64px);
+  background: #f1f5f9;
+  padding: 20px 0;
+}
+
+/* Боковое меню */
+.admin-sidebar {
+  width: 220px;
+  background: #ffffff;
+  border-radius: 16px;
+  border: 1px solid #e2e8f0;
+  padding: 20px 12px;
+  flex-shrink: 0;
+  height: fit-content;
+  position: sticky;
+  top: 84px;
+}
+
+.admin-sidebar-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #e2e8f0;
+  margin-bottom: 16px;
+}
+
+.admin-sidebar-icon {
+  font-size: 20px;
+}
+
+.admin-sidebar-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: #0f172a;
+}
+
+.admin-sidebar-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.admin-nav-link {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  color: #64748b;
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 500;
+  border-radius: 10px;
+  transition: all 0.2s;
+}
+
+.admin-nav-link:hover {
+  background: #f1f5f9;
+  color: #0f172a;
+}
+
+.admin-nav-link.active {
+  background: #eef2ff;
+  color: #4f46e5;
+}
+
+.nav-icon {
+  font-size: 18px;
+}
+
+/* Контент */
+.admin-content {
+  flex: 1;
+  min-width: 0;
+}
+
+/* Мобильная версия */
+@media (max-width: 768px) {
+  .admin-layout-wrapper {
+    padding: 0 16px;
+  }
+
+  .admin-layout {
+    flex-direction: column;
+    gap: 16px;
+    padding: 16px 0;
+  }
+
+  .admin-sidebar {
+    width: 100%;
+    position: static;
+    padding: 16px 12px;
+  }
+
+  .admin-sidebar-header {
+    display: none;
+  }
+
+  .admin-sidebar-nav {
+    flex-direction: row;
+    gap: 6px;
+    overflow-x: auto;
+    flex-wrap: nowrap;
+  }
+
+  .admin-nav-link {
+    padding: 8px 14px;
+    font-size: 13px;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
+  .admin-content {
+    padding: 0;
+  }
+}
+
+@media (max-width: 480px) {
+  .admin-layout-wrapper {
+    padding: 0 12px;
+  }
+
+  .admin-layout {
+    padding: 12px 0;
+  }
+
+  .admin-nav-link {
+    padding: 6px 10px;
+    font-size: 12px;
+    gap: 6px;
+  }
+
+  .nav-icon {
+    font-size: 15px;
+  }
+}
