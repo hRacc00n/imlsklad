@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
-import Header from '../components/Header';
 import './Dashboard.css';
 
 function Dashboard({ user, onLogout }) {
@@ -21,8 +20,6 @@ function Dashboard({ user, onLogout }) {
 
   return (
     <div className="dashboard">
-      <Header user={user} onLogout={onLogout} />
-
       <main className="main">
         <div className="stats-grid">
           <div className="stat-card">

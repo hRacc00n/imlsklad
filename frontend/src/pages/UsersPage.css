@@ -1,0 +1,288 @@
+.users-content {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 24px 32px;
+}
+
+.users-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.users-header h1 {
+  font-size: 24px;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.btn-add {
+  padding: 10px 24px;
+  background: #2563eb;
+  color: white;
+  border: none;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.btn-add:hover {
+  background: #1d4ed8;
+}
+
+.users-table-wrap {
+  background: white;
+  border-radius: 16px;
+  border: 1px solid #e2e8f0;
+  overflow-x: auto;
+  padding: 4px 0;
+}
+
+.users-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+  min-width: 500px;
+}
+
+.users-table th {
+  text-align: left;
+  padding: 14px 20px;
+  color: #64748b;
+  font-weight: 600;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border-bottom: 2px solid #f1f5f9;
+}
+
+.users-table td {
+  padding: 14px 20px;
+  border-bottom: 1px solid #f1f5f9;
+  color: #1e293b;
+}
+
+.users-table tr:last-child td {
+  border-bottom: none;
+}
+
+.role-tag {
+  display: inline-block;
+  padding: 3px 14px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.role-tag.admin {
+  background: #fee2e2;
+  color: #dc2626;
+}
+
+.role-tag.manager {
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+
+.role-tag.logist {
+  background: #fef3c7;
+  color: #d97706;
+}
+
+.actions {
+  display: flex;
+  gap: 8px;
+}
+
+.actions button {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-size: 18px;
+  padding: 4px 6px;
+  border-radius: 6px;
+  transition: background 0.2s;
+}
+
+.actions .btn-edit:hover {
+  background: #f1f5f9;
+}
+
+.actions .btn-delete:hover {
+  background: #fee2e2;
+}
+
+/* Модальное окно */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  padding: 20px;
+}
+
+.modal-content {
+  background: white;
+  padding: 40px;
+  border-radius: 20px;
+  max-width: 480px;
+  width: 100%;
+  box-shadow: 0 25px 80px rgba(0, 0, 0, 0.3);
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.modal-content h2 {
+  font-size: 22px;
+  font-weight: 700;
+  color: #0f172a;
+  margin-bottom: 24px;
+}
+
+.modal-content .form-group {
+  margin-bottom: 18px;
+}
+
+.modal-content .form-group label {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  color: #1e293b;
+  margin-bottom: 4px;
+}
+
+.modal-content .form-group input,
+.modal-content .form-group select {
+  width: 100%;
+  padding: 12px 14px;
+  border: 2px solid #e2e8f0;
+  border-radius: 10px;
+  font-size: 14px;
+  box-sizing: border-box;
+  transition: border-color 0.2s;
+  background: white;
+  color: #0f172a;
+}
+
+.modal-content .form-group input:focus,
+.modal-content .form-group select:focus {
+  outline: none;
+  border-color: #3b82f6;
+}
+
+.modal-content .error-msg {
+  background: #fee2e2;
+  color: #dc2626;
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-size: 14px;
+  margin-bottom: 16px;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.modal-actions .btn-cancel {
+  padding: 10px 24px;
+  background: transparent;
+  color: #64748b;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.modal-actions .btn-cancel:hover {
+  background: #f1f5f9;
+}
+
+.modal-actions .btn-save {
+  padding: 10px 28px;
+  background: #2563eb;
+  color: white;
+  border: none;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.modal-actions .btn-save:hover {
+  background: #1d4ed8;
+}
+
+/* Мобильная версия */
+@media (max-width: 768px) {
+  .users-content {
+    padding: 16px;
+  }
+
+  .users-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+  }
+
+  .users-header h1 {
+    font-size: 20px;
+  }
+
+  .btn-add {
+    width: 100%;
+    text-align: center;
+  }
+
+  .users-table th,
+  .users-table td {
+    padding: 10px 14px;
+    font-size: 13px;
+  }
+
+  .modal-content {
+    padding: 28px 20px;
+  }
+}
+
+@media (max-width: 480px) {
+  .users-table {
+    font-size: 12px;
+    min-width: 300px;
+  }
+
+  .users-table th,
+  .users-table td {
+    padding: 8px 10px;
+  }
+
+  .actions button {
+    font-size: 15px;
+  }
+
+  .modal-content h2 {
+    font-size: 19px;
+  }
+
+  .modal-content .form-group input,
+  .modal-content .form-group select {
+    padding: 10px 12px;
+    font-size: 16px;
+  }
+}

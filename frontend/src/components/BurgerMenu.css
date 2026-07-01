@@ -1,0 +1,130 @@
+.burger-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.3);
+  z-index: 200;
+  display: flex;
+  justify-content: flex-end;
+  animation: fadeIn 0.2s ease;
+}
+
+.burger-menu {
+  background: #ffffff;
+  width: 280px;
+  max-width: 80vw;
+  height: 100%;
+  padding: 24px 20px;
+  display: flex;
+  flex-direction: column;
+  animation: slideIn 0.25s ease;
+  box-shadow: -8px 0 40px rgba(0, 0, 0, 0.1);
+  overflow-y: auto;
+}
+
+.burger-menu-header {
+  padding-bottom: 20px;
+  border-bottom: 1px solid #e2e8f0;
+  margin-bottom: 16px;
+  flex-shrink: 0;
+}
+
+.burger-user-name {
+  display: block;
+  font-size: 18px;
+  font-weight: 600;
+  color: #0f172a;
+  margin-bottom: 4px;
+}
+
+.burger-role-badge {
+  display: inline-block;
+  padding: 3px 14px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.burger-role-badge.admin {
+  background: #fee2e2;
+  color: #dc2626;
+}
+
+.burger-role-badge.manager {
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+
+.burger-role-badge.logist {
+  background: #fef3c7;
+  color: #d97706;
+}
+
+.burger-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.burger-link {
+  padding: 12px 14px;
+  color: #1e293b;
+  text-decoration: none;
+  font-size: 15px;
+  font-weight: 500;
+  border-radius: 10px;
+  transition: background 0.2s;
+}
+
+.burger-link:hover {
+  background: #f1f5f9;
+}
+
+.burger-divider {
+  height: 1px;
+  background: #e2e8f0;
+  margin: 4px 0 8px 0;
+}
+
+.burger-logout-btn {
+  margin-top: 12px;
+  padding: 12px 14px;
+  background: transparent;
+  color: #ef4444;
+  border: 1px solid #fee2e2;
+  border-radius: 10px;
+  font-size: 15px;
+  font-weight: 500;
+  cursor: pointer;
+  text-align: center;
+  transition: background 0.2s;
+  width: 100%;
+}
+
+.burger-logout-btn:hover {
+  background: #fee2e2;
+}
+
+/* Анимации */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideIn {
+  from { transform: translateX(20px); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+
+/* Мобильная версия */
+@media (max-width: 480px) {
+  .burger-menu {
+    width: 100%;
+    max-width: 100%;
+    padding: 20px 16px;
+  }
+}
