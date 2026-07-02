@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import axios from 'axios';
+import { getApiBaseUrl } from '../utils/api';
 import './SystemPage.css';
 
 function SystemPage() {
@@ -9,8 +9,10 @@ function SystemPage() {
 
   const loadStats = async () => {
     try {
-      const response = await axios.get('/api/events/stats');
-      setConnections(response.data.connections || []);
+      const baseUrl = getApiBaseUrl();
+      const response = await fetch(`${baseUrl}/api/events/stats`);
+      const data = await response.json();
+      setConnections(data.connections || []);
       setLoading(false);
     } catch (err) {
       console.error('Ошибка загрузки статистики:', err);
@@ -29,8 +31,17 @@ function SystemPage() {
     
     setClosing(clientId);
     try {
-      await axios.post(`/api/events/close/${clientId}`);
-      loadStats();
+      const baseUrl = getApiBaseUrl();
+      const response = await fetch(`${baseUrl}/api/events/close/${clientId}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+      });
+      const data = await response.json();
+      if (data.success) {
+        loadStats();
+      } else {
+        alert('Ошибка при закрытии соединения');
+      }
     } catch (err) {
       alert('Ошибка при закрытии соединения');
     } finally {
