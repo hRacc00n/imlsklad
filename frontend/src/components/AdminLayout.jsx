@@ -27,6 +27,13 @@ function AdminLayout() {
               Роли
             </NavLink>
             <NavLink 
+              to="/admin/system" 
+              className={({ isActive }) => isActive ? 'admin-nav-link active' : 'admin-nav-link'}
+            >
+              <span className="nav-icon">🖥️</span>
+              Система
+            </NavLink>
+            <NavLink 
               to="/admin/settings" 
               className={({ isActive }) => isActive ? 'admin-nav-link active' : 'admin-nav-link'}
             >
