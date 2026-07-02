@@ -79,7 +79,6 @@ function SystemPage() {
                 <tr>
                   <th>Client ID</th>
                   <th>Пользователь</th>
-                  <th>IP адрес</th>
                   <th>Подключен с</th>
                   <th>Действия</th>
                 </tr>
@@ -89,7 +88,6 @@ function SystemPage() {
                   <tr key={conn.client_id}>
                     <td className="client-id">{conn.client_id}</td>
                     <td><strong>{conn.user}</strong></td>
-                    <td>{conn.ip}</td>
                     <td>{formatTime(conn.connected_at)}</td>
                     <td>
                       <button 
