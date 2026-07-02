@@ -1,7 +1,7 @@
 // Универсальный базовый URL для API
 export const getApiBaseUrl = () => {
   // Если мы на сервере — используем относительный путь
-  if (window.location.hostname === 'imlsklad.ru') {
+  if (window.location.hostname === 'imlsklad.ru' || window.location.hostname === 'www.imlsklad.ru') {
     return '';
   }
   // Если локально — используем localhost:5000
