@@ -6,8 +6,19 @@ export function useSSE(userName) {
 
   useEffect(() => {
     const clientId = `client_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`;
-    // Передаём имя пользователя в URL
-    const url = `http://localhost:5000/api/events/stream?client_id=${clientId}&user=${encodeURIComponent(userName)}`;
+    
+    // Универсальный URL: работает и локально, и на сервере
+    const getBaseUrl = () => {
+      // Если мы на сервере — используем относительный путь
+      if (window.location.hostname === 'imlsklad.ru') {
+        return '';
+      }
+      // Если локально — используем localhost:5000
+      return 'http://localhost:5000';
+    };
+    
+    const baseUrl = getBaseUrl();
+    const url = `${baseUrl}/api/events/stream?client_id=${clientId}&user=${encodeURIComponent(userName)}`;
     
     console.log('[SSE] Connecting to:', url);
     const es = new EventSource(url);
