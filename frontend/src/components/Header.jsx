@@ -1,17 +1,32 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAppContext } from '../contexts/AppContext';
+import { getRoleLabel } from '../utils/roleUtils';
 import BurgerMenu from './BurgerMenu';
 import './Header.css';
+import axios from 'axios';
 
 function Header({ user, onLogout }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const { sse } = useAppContext();
+  const [roles, setRoles] = useState([]);
+
+  // Загружаем роли при монтировании
+  useEffect(() => {
+    const loadRoles = async () => {
+      try {
+        const response = await axios.get('/api/roles');
+        setRoles(response.data);
+      } catch (err) {
+        console.error('Ошибка загрузки ролей:', err);
+      }
+    };
+    loadRoles();
+  }, []);
 
   const toggleMenu = () => setMenuOpen(!menuOpen);
   const closeMenu = () => setMenuOpen(false);
 
-  // Определяем статус SSE
   const getStatusInfo = () => {
     switch (sse.status) {
       case 'connected':
@@ -26,6 +41,7 @@ function Header({ user, onLogout }) {
   };
 
   const statusInfo = getStatusInfo();
+  const roleLabel = getRoleLabel(user?.role, roles);
 
   return (
     <header className="header">
@@ -36,7 +52,6 @@ function Header({ user, onLogout }) {
         </Link>
 
         <div className="header-right">
-          {/* Индикатор SSE */}
           <div className="sse-indicator" title={`SSE: ${statusInfo.label}`}>
             <span className={`sse-dot ${statusInfo.class}`}></span>
             <span className="sse-label">{statusInfo.label}</span>
@@ -45,15 +60,19 @@ function Header({ user, onLogout }) {
           <div className="user-profile" onClick={toggleMenu}>
             <span className="user-name-header">👋 {user?.name}</span>
             <span className={`role-badge ${user?.role}`}>
-              {user?.role === 'admin' ? 'Админ' : 
-               user?.role === 'manager' ? 'Менеджер' : 
-               user?.role === 'logist' ? 'Логист' : user?.role}
+              {roleLabel}
             </span>
           </div>
         </div>
       </div>
 
-      <BurgerMenu user={user} onLogout={onLogout} isOpen={menuOpen} onClose={closeMenu} />
+      <BurgerMenu 
+        user={user} 
+        onLogout={onLogout} 
+        isOpen={menuOpen} 
+        onClose={closeMenu} 
+        roles={roles} 
+      />
     </header>
   );
 }

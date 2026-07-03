@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
+import { getRoleLabel } from '../utils/roleUtils';
 import './UsersPage.css';
+
 
 function UsersPage({ user, onLogout }) {
   const [users, setUsers] = useState([]);
@@ -9,6 +11,7 @@ function UsersPage({ user, onLogout }) {
   const [editingUser, setEditingUser] = useState(null);
   const [formData, setFormData] = useState({ name: '', login: '', password: '', role: 'logist' });
   const [error, setError] = useState('');
+  const [roles, setRoles] = useState([]);
 
   const loadUsers = async () => {
     try {
@@ -23,7 +26,17 @@ function UsersPage({ user, onLogout }) {
 
   useEffect(() => {
     loadUsers();
+    loadRoles();
   }, []);
+
+  const loadRoles = async () => {
+    try {
+      const response = await axios.get('/api/roles');
+      setRoles(response.data);
+    } catch (err) {
+      console.error('Ошибка загрузки ролей:', err);
+    }
+  };
 
   const handleDelete = async (userId, userName) => {
     if (!confirm(`Удалить пользователя "${userName}"?`)) return;
@@ -39,8 +52,12 @@ function UsersPage({ user, onLogout }) {
     e.preventDefault();
     setError('');
 
-    if (!formData.name || !formData.login || !formData.password) {
-      setError('Заполните все поля');
+    if (!formData.name || !formData.login) {
+      setError('Заполните имя и логин');
+      return;
+    }
+    if (!editingUser && !formData.password) {
+      setError('Пароль обязателен для нового пользователя');
       return;
     }
 
@@ -87,11 +104,6 @@ function UsersPage({ user, onLogout }) {
     setError('');
   };
 
-  const getRoleLabel = (role) => {
-    const map = { admin: 'Админ', manager: 'Менеджер', logist: 'Логист' };
-    return map[role] || role;
-  };
-
   return (
     <div className="users-content">
       <div className="users-header">
@@ -119,7 +131,7 @@ function UsersPage({ user, onLogout }) {
                   <td>{u.id}</td>
                   <td>{u.name}</td>
                   <td>{u.login}</td>
-                  <td><span className={`role-tag ${u.role}`}>{getRoleLabel(u.role)}</span></td>
+                  <td><span className={`role-tag ${u.role}`}>{getRoleLabel(u.role, roles)}</span></td>
                   <td className="actions">
                     <button className="btn-edit" onClick={() => openEditModal(u)}>✏️</button>
                     <button className="btn-delete" onClick={() => handleDelete(u.id, u.name)}>🗑️</button>
@@ -171,9 +183,11 @@ function UsersPage({ user, onLogout }) {
                   value={formData.role}
                   onChange={e => setFormData({ ...formData, role: e.target.value })}
                 >
-                  <option value="logist">Логист</option>
-                  <option value="manager">Менеджер</option>
-                  <option value="admin">Админ</option>
+                  {roles.map(role => (
+                    <option key={role.id} value={role.role_key || role.name}>
+                      {role.name}
+                    </option>
+                  ))}
                 </select>
               </div>
 

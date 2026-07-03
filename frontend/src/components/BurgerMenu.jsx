@@ -1,8 +1,11 @@
 import { Link } from 'react-router-dom';
+import { getRoleLabel } from '../utils/roleUtils';
 import './BurgerMenu.css';
 
-function BurgerMenu({ user, onLogout, isOpen, onClose }) {
+function BurgerMenu({ user, onLogout, isOpen, onClose, roles = [] }) {
   if (!isOpen) return null;
+
+  const roleLabel = getRoleLabel(user?.role, roles);
 
   return (
     <div className="burger-overlay" onClick={onClose}>
@@ -10,9 +13,7 @@ function BurgerMenu({ user, onLogout, isOpen, onClose }) {
         <div className="burger-menu-header">
           <span className="burger-user-name">{user?.name}</span>
           <span className={`burger-role-badge ${user?.role}`}>
-            {user?.role === 'admin' ? 'Админ' : 
-             user?.role === 'manager' ? 'Менеджер' : 
-             user?.role === 'logist' ? 'Логист' : user?.role}
+            {roleLabel}
           </span>
         </div>
 
