@@ -1,0 +1,97 @@
+.tasks-table-wrap {
+  background: #ffffff;
+  border-radius: 16px;
+  border: 1px solid #e2e8f0;
+  overflow-x: auto;
+  padding: 4px 0;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+.tasks-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+  min-width: 500px;
+}
+
+.tasks-table th {
+  text-align: left;
+  padding: 14px 20px;
+  color: #64748b;
+  font-weight: 600;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border-bottom: 2px solid #f1f5f9;
+}
+
+.tasks-table td {
+  padding: 14px 20px;
+  border-bottom: 1px solid #f1f5f9;
+  color: #1e293b;
+  vertical-align: middle;
+}
+
+.tasks-table tr:last-child td {
+  border-bottom: none;
+}
+
+/* Остальные стили (загрузка, пустая строка, бейджи) остаются без изменений */
+.tasks-loading {
+  color: #94a3b8;
+  padding: 20px 0;
+}
+.empty-row {
+  text-align: center;
+  color: #94a3b8;
+  padding: 32px 20px;
+}
+.task-tracking {
+  font-weight: 500;
+  color: #0f172a;
+}
+.task-comments-badge {
+  display: inline-block;
+  margin-left: 8px;
+  font-size: 12px;
+  color: #2563eb;
+  background: #eff6ff;
+  padding: 1px 8px;
+  border-radius: 12px;
+}
+.task-description {
+  color: #64748b;
+  max-width: 200px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+@media (max-width: 768px) {
+  .tasks-table th,
+  .tasks-table td {
+    padding: 10px 14px;
+    font-size: 13px;
+  }
+  .task-description {
+    max-width: 120px;
+  }
+}
+
+@media (max-width: 480px) {
+  .tasks-table {
+    font-size: 12px;
+    min-width: 320px;
+  }
+  .tasks-table th,
+  .tasks-table td {
+    padding: 8px 10px;
+  }
+  .task-description {
+    max-width: 80px;
+  }
+  .task-comments-badge {
+    font-size: 10px;
+    padding: 0 6px;
+  }
+}

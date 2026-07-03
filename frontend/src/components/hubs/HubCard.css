@@ -1,0 +1,131 @@
+.hub-card {
+  background: #ffffff;
+  border-radius: 16px;
+  border: 1px solid #e2e8f0;
+  padding: 16px 10px 12px;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  /* Убираем height: 100% — теперь высоту контролирует грид */
+  min-height: 120px;
+}
+
+.hub-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+  border-color: #94a3b8;
+}
+
+.hub-card-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  width: 100%;
+  margin-top: auto;
+  margin-bottom: auto;
+}
+
+.hub-icon {
+  font-size: 32px;
+  line-height: 1.2;
+  margin-bottom: 4px;
+}
+
+.hub-name {
+  font-size: 14px;
+  font-weight: 500;
+  color: #0f172a;
+  line-height: 1.4;
+  /* Убираем white-space: nowrap, чтобы текст переносился, если имя длинное */
+}
+
+.hub-badge {
+  background: #eef2ff;
+  color: #4f46e5;
+  font-size: 16px;
+  font-weight: 700;
+  padding: 2px 16px;
+  border-radius: 24px;
+  min-width: 28px;
+  text-align: center;
+  transition: all 0.2s;
+  margin-top: 6px;
+}
+
+.hub-card:hover .hub-badge {
+  background: #4f46e5;
+  color: #ffffff;
+}
+
+/* Планшеты */
+@media (max-width: 1024px) {
+  .hub-icon {
+    font-size: 28px;
+  }
+  .hub-name {
+    font-size: 13px;
+  }
+  .hub-badge {
+    font-size: 14px;
+    padding: 0 12px;
+  }
+}
+
+/* Телефоны */
+@media (max-width: 768px) {
+  .hub-card {
+    padding: 12px 6px 10px;
+  }
+  .hub-icon {
+    font-size: 24px;
+  }
+  .hub-name {
+    font-size: 12px;
+  }
+  .hub-badge {
+    font-size: 13px;
+    padding: 0 10px;
+  }
+}
+
+@media (max-width: 480px) {
+  .hub-card {
+    padding: 10px 4px 8px;
+    border-radius: 12px;
+  }
+  .hub-icon {
+    font-size: 20px;
+  }
+  .hub-name {
+    font-size: 11px;
+  }
+  .hub-badge {
+    font-size: 11px;
+    padding: 0 8px;
+    min-width: 20px;
+  }
+}
+
+@media (max-width: 380px) {
+  .hub-card {
+    padding: 8px 4px 6px;
+    border-radius: 10px;
+  }
+  .hub-icon {
+    font-size: 18px;
+  }
+  .hub-name {
+    font-size: 10px;
+  }
+  .hub-badge {
+    font-size: 10px;
+    padding: 0 6px;
+    min-width: 16px;
+  }
+}
