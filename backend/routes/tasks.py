@@ -5,6 +5,7 @@ from flask import request, jsonify
 from db.database import get_db
 from db.models import Order, OrderHistory
 import json
+import glob
 from datetime import datetime, timedelta, timezone
 
 def register_tasks_routes(app):
@@ -238,3 +239,154 @@ def register_tasks_routes(app):
         except Exception as e:
             print(f"Ошибка в upload_photos: {e}")
             return jsonify({'success': False, 'message': str(e)}), 500
+
+    # ===== PUT: Обновить задачу =====
+    @app.route('/api/tasks/<int:task_id>', methods=['PUT'])
+    def update_task(task_id):
+        try:
+            data = request.get_json()
+            supplier = data.get('supplier')
+            comment = data.get('comment')
+            photos = data.get('photos', [])
+            
+            if not supplier:
+                return jsonify({'success': False, 'message': 'Заполните поле "Кто привез"'}), 400
+            
+            with get_db() as db:
+                task = db.query(Order).filter(Order.id == task_id).first()
+                if not task:
+                    return jsonify({'success': False, 'message': 'Задача не найдена'}), 404
+                
+                # Обновляем основные поля
+                task.client = supplier
+                task.description = comment
+                task.updated_at = datetime.utcnow()
+                
+                # Обновляем email_data
+                email_data = {}
+                if task.email_data:
+                    try:
+                        email_data = json.loads(task.email_data)
+                    except:
+                        pass
+                
+                email_data['supplier'] = supplier
+                email_data['comment'] = comment
+                
+                # Если переданы новые фото - обновляем
+                if photos:
+                    email_data['photos'] = photos
+                
+                task.email_data = json.dumps(email_data, ensure_ascii=False)
+                
+                # Добавляем запись в историю
+                history = OrderHistory(
+                    order_id=task.id,
+                    user_id=0,
+                    action='updated',
+                    new_status=task.status,
+                    comment='Задача обновлена'
+                )
+                db.add(history)
+                db.commit()
+                db.refresh(task)
+                
+                return jsonify({
+                    'success': True,
+                    'task': {
+                        'id': task.id,
+                        'author': email_data.get('author', 'Неизвестно'),
+                        'created_at': task.created_at.strftime('%Y-%m-%d %H:%M') if task.created_at else '',
+                        'supplier': supplier,
+                        'comment': comment,
+                        'photos': email_data.get('photos', []),
+                        'assigned_to': task.assigned_to,
+                        'status': task.status,
+                        'comments_count': 0
+                    }
+                }), 200
+                
+        except Exception as e:
+            print(f"Ошибка обновления задачи: {e}")
+            return jsonify({'success': False, 'message': str(e)}), 500
+    
+    # ===== DELETE: Удалить задачу =====
+    @app.route('/api/tasks/<int:task_id>', methods=['DELETE'])
+    def delete_task(task_id):
+        try:
+            with get_db() as db:
+                task = db.query(Order).filter(Order.id == task_id).first()
+                if not task:
+                    return jsonify({'success': False, 'message': 'Задача не найдена'}), 404
+                
+                # Получаем список фотографий из email_data
+                email_data = {}
+                if task.email_data:
+                    try:
+                        email_data = json.loads(task.email_data)
+                    except:
+                        pass
+                
+                photos = email_data.get('photos', [])
+                
+                # Удаляем файлы фотографий
+                if photos:
+                    upload_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'data', 'uploads', 'photos')
+                    deleted_count = 0
+                    for photo_path in photos:
+                        try:
+                            # Извлекаем имя файла из пути
+                            filename = os.path.basename(photo_path)
+                            filepath = os.path.join(upload_dir, filename)
+                            if os.path.exists(filepath):
+                                os.remove(filepath)
+                                deleted_count += 1
+                                print(f"Удален файл: {filepath}")
+                        except Exception as e:
+                            print(f"Ошибка удаления файла {photo_path}: {e}")
+                    
+                    print(f"Удалено файлов: {deleted_count} из {len(photos)}")
+                
+                # Удаляем связанные записи в истории
+                db.query(OrderHistory).filter(OrderHistory.order_id == task_id).delete()
+                
+                # Удаляем саму задачу
+                db.delete(task)
+                db.commit()
+                
+                return jsonify({
+                    'success': True, 
+                    'message': 'Задача удалена',
+                    'deleted_photos': len(photos)
+                }), 200
+                
+        except Exception as e:
+            print(f"Ошибка удаления задачи: {e}")
+            return jsonify({'success': False, 'message': str(e)}), 500
+
+    # ===== PUT: Переназначить задачу на себя =====
+    @app.route('/api/tasks/<int:task_id>/reassign', methods=['PUT'])
+    def reassign_task(task_id):
+        data = request.get_json()
+        user_name = data.get('user_name', 'Неизвестно')
+        
+        with get_db() as db:
+            task = db.query(Order).filter(Order.id == task_id).first()
+            if not task:
+                return jsonify({'success': False, 'message': 'Задача не найдена'}), 404
+            
+            if task.status != 'in_progress':
+                return jsonify({'success': False, 'message': 'Задача не в работе'}), 400
+            
+            if task.assigned_to == user_name:
+                return jsonify({'success': False, 'message': 'Задача уже назначена на вас'}), 400
+            
+            task.assigned_to = user_name
+            task.updated_at = datetime.utcnow()
+            db.commit()
+            
+            return jsonify({'success': True, 'task': {
+                'id': task.id,
+                'status': task.status,
+                'assigned_to': task.assigned_to
+            }}), 200

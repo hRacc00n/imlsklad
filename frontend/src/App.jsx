@@ -19,17 +19,7 @@ function App() {
     return <Login onLogin={login} />;
   }
 
-  if (user.role !== 'admin') {
-    return (
-      <Routes>
-        <Route element={<Layout user={user} onLogout={logout} />}>
-          <Route path="/" element={<Dashboard user={user} onLogout={logout} />} />
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Route>
-      </Routes>
-    );
-  }
-
+  // Убрали проверку на роль - теперь все пользователи имеют доступ ко всем маршрутам
   return (
     <>
       <Routes>
@@ -37,6 +27,7 @@ function App() {
           <Route path="/" element={<Dashboard user={user} onLogout={logout} />} />
           <Route path="/hub/arrivals" element={<ArrivalsHub />} />
           
+          {/* Админские маршруты теперь доступны всем */}
           <Route path="/admin" element={<AdminLayout />}>
             <Route path="users" element={<UsersPage user={user} onLogout={logout} />} />
             <Route path="roles" element={<RolesPage />} />
@@ -49,7 +40,7 @@ function App() {
         </Route>
       </Routes>
       <TaskModal />
-      </>
+    </>
   );
 }
 

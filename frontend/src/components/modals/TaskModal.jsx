@@ -1,15 +1,19 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useModal } from '../../contexts/ModalContext';
+import { useAuth } from '../../contexts/AuthContext';
 import ActionButton from '../common/ActionButton';
 import ModalCloseButton from '../common/ModalCloseButton';
 import ImageGallery from '../common/ImageGallery';
+import { getAvailableActions } from '../../utils/taskActions';
 import './TaskModal.css';
 
 function TaskModal() {
   const { isOpen, task, taskType, closeModal } = useModal();
+  const { user } = useAuth();
   const modalRef = useRef(null);
   const [galleryOpen, setGalleryOpen] = useState(false);
   const [galleryIndex, setGalleryIndex] = useState(0);
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     const handleEsc = (e) => {
@@ -35,10 +39,8 @@ function TaskModal() {
     setGalleryOpen(true);
   };
 
-  if (!isOpen || !task) return null;
-
   const getStatusInfo = () => {
-    switch (task.status) {
+    switch (task?.status) {
       case 'new':
         return { label: 'Новая', class: 'status-new' };
       case 'in_progress':
@@ -51,19 +53,111 @@ function TaskModal() {
   };
 
   const statusInfo = getStatusInfo();
+  const actions = getAvailableActions(user, task);
 
   const getTitle = () => {
     switch (taskType) {
       case 'arrival':
-        return `📦 Поступление от ${task.supplier || 'Неизвестно'}`;
+        return `📦 Поступление от ${task?.supplier || 'Неизвестно'}`;
       case 'region':
-        return `🌍 Регион: ${task.region || 'Неизвестно'}`;
+        return `🌍 Регион: ${task?.region || 'Неизвестно'}`;
       case 'spb':
-        return `🏙️ СПб: ${task.terminal || 'Неизвестно'}`;
+        return `🏙️ СПб: ${task?.terminal || 'Неизвестно'}`;
       default:
-        return `📋 Задача #${task.id}`;
+        return `📋 Задача #${task?.id}`;
     }
   };
+
+  // Обработчики действий
+  const handleTake = async () => {
+    if (!task) return;
+    setIsLoading(true);
+    try {
+      const response = await fetch(`/api/tasks/${task.id}/take`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ user_name: user?.name || 'Неизвестно' }),
+      });
+      if (response.ok) {
+        closeModal();
+        window.location.reload(); // или обновить список задач
+      } else {
+        const data = await response.json();
+        alert(data.message || 'Ошибка при взятии задачи');
+      }
+    } catch (err) {
+      alert('Ошибка при взятии задачи');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleComplete = async () => {
+    if (!task) return;
+    setIsLoading(true);
+    try {
+      const response = await fetch(`/api/tasks/${task.id}/complete`, {
+        method: 'PUT',
+      });
+      if (response.ok) {
+        closeModal();
+        window.location.reload();
+      } else {
+        const data = await response.json();
+        alert(data.message || 'Ошибка при выполнении задачи');
+      }
+    } catch (err) {
+      alert('Ошибка при выполнении задачи');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleDecline = async () => {
+    if (!task) return;
+    setIsLoading(true);
+    try {
+      const response = await fetch(`/api/tasks/${task.id}/decline`, {
+        method: 'PUT',
+      });
+      if (response.ok) {
+        closeModal();
+        window.location.reload();
+      } else {
+        const data = await response.json();
+        alert(data.message || 'Ошибка при отказе от задачи');
+      }
+    } catch (err) {
+      alert('Ошибка при отказе от задачи');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleReassign = async () => {
+    if (!task) return;
+    setIsLoading(true);
+    try {
+      const response = await fetch(`/api/tasks/${task.id}/reassign`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ user_name: user?.name || 'Неизвестно' }),
+      });
+      if (response.ok) {
+        closeModal();
+        window.location.reload();
+      } else {
+        const data = await response.json();
+        alert(data.message || 'Ошибка при переназначении задачи');
+      }
+    } catch (err) {
+      alert('Ошибка при переназначении задачи');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  if (!isOpen || !task) return null;
 
   const renderTypeSpecificFields = () => {
     switch (taskType) {
@@ -140,21 +234,56 @@ function TaskModal() {
         </div>
 
         <div className="modal-footer">
-          {task.status === 'new' && (
-            <ActionButton variant="primary" size="large" onClick={() => {}}>
+          {/* Новая задача */}
+          {actions.canTake && (
+            <ActionButton 
+              variant="primary" 
+              size="large" 
+              onClick={handleTake}
+              disabled={isLoading}
+            >
               Взять в работу
             </ActionButton>
           )}
-          {task.status === 'in_progress' && (
-            <>
-              <ActionButton variant="success" size="large" onClick={() => {}}>
-                ✅ Выполнить
-              </ActionButton>
-              <ActionButton variant="danger" size="large" onClick={() => {}}>
-                ❌ Отказаться
-              </ActionButton>
-            </>
+
+          {/* Задача в работе у текущего пользователя */}
+          {actions.canComplete && (
+            <ActionButton 
+              variant="success" 
+              size="large" 
+              onClick={handleComplete}
+              disabled={isLoading}
+            >
+              ✅ Выполнить
+            </ActionButton>
           )}
+          {actions.canDecline && (
+            <ActionButton 
+              variant="danger" 
+              size="large" 
+              onClick={handleDecline}
+              disabled={isLoading}
+            >
+              ❌ Отказаться
+            </ActionButton>
+          )}
+
+          {/* Задача в работе у другого пользователя */}
+          {actions.canReassign && (
+            <ActionButton 
+              variant="warning" 
+              size="large" 
+              onClick={handleReassign}
+              disabled={isLoading}
+            >
+              📥 Забрать задачу
+            </ActionButton>
+          )}
+
+          {task.status === 'completed' && (
+            <span className="status-completed-modal">✅ Задача завершена</span>
+          )}
+
           <ActionButton variant="outline" size="large" onClick={closeModal}>
             Закрыть
           </ActionButton>

@@ -2,7 +2,7 @@ import './ActionButton.css';
 
 function ActionButton({ 
   children, 
-  variant = 'primary', // 'primary' | 'success' | 'danger' | 'outline'
+  variant = 'primary', // 'primary' | 'success' | 'danger' | 'outline' | 'warning'
   onClick, 
   disabled = false,
   size = 'medium', // 'small' | 'medium' | 'large'
@@ -14,6 +14,7 @@ function ActionButton({
       case 'primary': return 'btn-primary';
       case 'success': return 'btn-success';
       case 'danger': return 'btn-danger';
+      case 'warning': return 'btn-warning';
       case 'outline': return 'btn-outline';
       default: return 'btn-primary';
     }

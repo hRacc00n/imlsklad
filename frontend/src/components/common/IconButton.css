@@ -1,0 +1,96 @@
+.icon-btn {
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  user-select: none;
+  flex-shrink: 0;
+}
+
+.icon-btn:active {
+  transform: scale(0.92);
+}
+
+.icon-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* ===== Размеры ===== */
+.icon-btn-sm {
+  width: 28px;
+  height: 28px;
+  font-size: 14px;
+  border-radius: 6px;
+}
+
+.icon-btn-md {
+  width: 36px;
+  height: 36px;
+  font-size: 18px;
+  border-radius: 8px;
+}
+
+.icon-btn-lg {
+  width: 44px;
+  height: 44px;
+  font-size: 22px;
+  border-radius: 10px;
+}
+
+/* ===== Варианты ===== */
+.icon-btn-primary {
+  color: #2563eb;
+  background: transparent;
+}
+
+.icon-btn-primary:hover:not(:disabled) {
+  background: #eff6ff;
+  color: #1d4ed8;
+}
+
+.icon-btn-success {
+  color: #22c55e;
+  background: transparent;
+}
+
+.icon-btn-success:hover:not(:disabled) {
+  background: #f0fdf4;
+  color: #16a34a;
+}
+
+.icon-btn-danger {
+  color: #ef4444;
+  background: transparent;
+}
+
+.icon-btn-danger:hover:not(:disabled) {
+  background: #fef2f2;
+  color: #dc2626;
+}
+
+.icon-btn-outline {
+  color: #64748b;
+  border: 1.5px solid #e2e8f0;
+  background: transparent;
+}
+
+.icon-btn-outline:hover:not(:disabled) {
+  background: #f1f5f9;
+  color: #475569;
+}
+
+.icon-btn-ghost {
+  color: #94a3b8;
+  background: transparent;
+}
+
+.icon-btn-ghost:hover:not(:disabled) {
+  background: #f1f5f9;
+  color: #64748b;
+}

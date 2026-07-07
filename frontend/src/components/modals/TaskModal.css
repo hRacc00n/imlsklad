@@ -323,3 +323,12 @@
     min-height: 48px;
   }
 }
+
+.status-completed-modal {
+  padding: 10px 24px;
+  font-size: 16px;
+  font-weight: 600;
+  color: #16a34a;
+  background: #f0fdf4;
+  border-radius: 10px;
+}

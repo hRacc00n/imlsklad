@@ -23,6 +23,13 @@ function ArrivalsHub() {
   const [galleryIndex, setGalleryIndex] = useState(0);
   const [galleryPhotos, setGalleryPhotos] = useState([]);
 
+  // Состояние для редактирования
+  const [editingTask, setEditingTask] = useState(null);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editForm, setEditForm] = useState({ supplier: '', comment: '' });
+  const [editPhotos, setEditPhotos] = useState([]);
+  const [editing, setEditing] = useState(false);
+
   const handlePhotoClick = (task, photoIndex) => {
     if (!task.photos || task.photos.length === 0) return;
     setGalleryPhotos(task.photos);
@@ -51,20 +58,141 @@ function ArrivalsHub() {
     navigate('/');
   };
 
-  const handleTake = (taskId) => {
-    console.log(`Задача ${taskId} взята в работу`);
+  const handleTake = async (taskId) => {
+    try {
+      const response = await fetch(`/api/tasks/${taskId}/take`, {
+        method: 'PUT',  // Заменили POST на PUT
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          user_name: user?.name || 'Неизвестно'  // Исправили поле
+        }),
+      });
+      if (response.ok) {
+        await loadTasks();
+      } else {
+        const data = await response.json();
+        alert(data.message || 'Ошибка при взятии задачи');
+      }
+    } catch (err) {
+      console.error('Ошибка при взятии задачи:', err);
+      alert('Ошибка при взятии задачи');
+    }
   };
 
-  const handleComplete = (taskId) => {
-    console.log(`Задача ${taskId} выполнена`);
+  const handleComplete = async (taskId) => {
+    try {
+      const response = await fetch(`/api/tasks/${taskId}/complete`, {
+        method: 'PUT',  // Заменили POST на PUT
+      });
+      if (response.ok) {
+        await loadTasks();
+      } else {
+        const data = await response.json();
+        alert(data.message || 'Ошибка при выполнении задачи');
+      }
+    } catch (err) {
+      console.error('Ошибка при выполнении задачи:', err);
+      alert('Ошибка при выполнении задачи');
+    }
   };
 
-  const handleDecline = (taskId) => {
-    console.log(`Задача ${taskId} отклонена`);
+  const handleDecline = async (taskId) => {
+    try {
+      const response = await fetch(`/api/tasks/${taskId}/decline`, {
+        method: 'PUT',  // Заменили POST на PUT
+      });
+      if (response.ok) {
+        await loadTasks();
+      } else {
+        const data = await response.json();
+        alert(data.message || 'Ошибка при отказе от задачи');
+      }
+    } catch (err) {
+      console.error('Ошибка при отказе от задачи:', err);
+      alert('Ошибка при отказе от задачи');
+    }
   };
 
   const handleCardClick = (task) => {
     openModal(task, 'arrival');
+  };
+
+  // ===== Обработчики редактирования =====
+  const handleEditTask = (task) => {
+    setEditingTask(task);
+    setEditForm({
+      supplier: task.supplier || '',
+      comment: task.comment || '',
+    });
+    setEditPhotos(task.photos || []);
+    setShowEditModal(true);
+  };
+
+  const handleEditSubmit = async (e) => {
+    e.preventDefault();
+    if (!editForm.supplier) {
+      alert('Заполните поле "Кто привез"');
+      return;
+    }
+
+    setEditing(true);
+    try {
+      const response = await fetch(`/api/tasks/${editingTask.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          supplier: editForm.supplier,
+          comment: editForm.comment || '',
+          photos: editPhotos,
+        }),
+      });
+      
+      const data = await response.json();
+      if (data.success) {
+        setShowEditModal(false);
+        setEditingTask(null);
+        setEditForm({ supplier: '', comment: '' });
+        setEditPhotos([]);
+        await loadTasks();
+      } else {
+        alert(data.message || 'Ошибка при обновлении задачи');
+      }
+    } catch (err) {
+      alert('Ошибка при обновлении задачи');
+    } finally {
+      setEditing(false);
+    }
+  };
+
+  // ===== Обработчик удаления =====
+  const handleDeleteTask = async (task) => {
+    if (!window.confirm(`Вы уверены, что хотите удалить задачу от "${task.supplier}"?\n${task.photos?.length > 0 ? `\n⚠️ Будет удалено ${task.photos.length} фото` : ''}`)) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/tasks/${task.id}`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      const data = await response.json();
+      
+      if (response.ok && data.success) {
+        // Показываем сколько фото удалено
+        if (data.deleted_photos > 0) {
+          console.log(`Удалено ${data.deleted_photos} фото`);
+        }
+        await loadTasks();
+      } else {
+        alert(data.message || 'Ошибка при удалении задачи');
+      }
+    } catch (err) {
+      console.error('Ошибка удаления:', err);
+      alert(`Ошибка при удалении задачи: ${err.message}`);
+    }
   };
 
   const handleCreateSubmit = async (e) => {
@@ -76,7 +204,6 @@ function ArrivalsHub() {
 
     setSubmitting(true);
     try {
-      // 1. Создаём задачу
       const response = await fetch('/api/tasks/arrivals', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -89,7 +216,6 @@ function ArrivalsHub() {
       const data = await response.json();
       
       if (data.success) {
-        // 2. Если есть фото — загружаем их
         if (newPhotos.length > 0) {
           try {
             const photoResponse = await fetch(`/api/tasks/${data.task.id}/photos`, {
@@ -122,6 +248,32 @@ function ArrivalsHub() {
     }
   };
 
+  // ===== Обработчик переназначения =====
+  const handleReassign = async (task) => {
+    if (!task || !user) return;
+    
+    try {
+      const response = await fetch(`/api/tasks/${task.id}/reassign`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          user_name: user?.name || 'Неизвестно'
+        }),
+      });
+      
+      const data = await response.json();
+      
+      if (response.ok && data.success) {
+        await loadTasks();
+      } else {
+        alert(data.message || 'Ошибка при переназначении задачи');
+      }
+    } catch (err) {
+      console.error('Ошибка при переназначении:', err);
+      alert('Ошибка при переназначении задачи');
+    }
+  };
+
   return (
     <div className="arrivals-page">
       <div className="arrivals-header">
@@ -147,11 +299,15 @@ function ArrivalsHub() {
               <TaskCard
                 key={task.id}
                 task={task}
+                currentUser={user}
                 onTake={handleTake}
                 onComplete={handleComplete}
                 onDecline={handleDecline}
+                onReassign={handleReassign}
                 onClick={handleCardClick}
                 onPhotoClick={(photoIndex) => handlePhotoClick(task, photoIndex)}
+                onEdit={handleEditTask}
+                onDelete={handleDeleteTask}
               />
             ))}
           </div>
@@ -215,6 +371,65 @@ function ArrivalsHub() {
           </div>
         </div>
       )}
+
+      {/* Модальное окно редактирования */}
+      {showEditModal && editingTask && (
+        <div className="modal-overlay create-modal-overlay" onClick={() => setShowEditModal(false)}>
+          <div className="modal-content create-modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="create-modal-header">
+              <h2>✏️ Редактировать поступление</h2>
+              <button className="create-modal-close" onClick={() => setShowEditModal(false)}>
+                ✕
+              </button>
+            </div>
+            <form onSubmit={handleEditSubmit} className="create-modal-body">
+              <div className="create-form-group">
+                <label>Кто привез *</label>
+                <input
+                  type="text"
+                  value={editForm.supplier}
+                  onChange={(e) => setEditForm({ ...editForm, supplier: e.target.value })}
+                  placeholder="Введите поставщика или водителя"
+                  required
+                />
+              </div>
+              <div className="create-form-group">
+                <label>Комментарий</label>
+                <textarea
+                  value={editForm.comment}
+                  onChange={(e) => setEditForm({ ...editForm, comment: e.target.value })}
+                  placeholder="Введите комментарий к задаче"
+                  rows={4}
+                />
+              </div>
+              <div className="create-form-group">
+                <label>Фотографии</label>
+                <PhotoUploader
+                  onPhotosChange={setEditPhotos}
+                  existingPhotos={editPhotos}
+                />
+              </div>
+              <div className="create-modal-footer">
+                <button
+                  type="button"
+                  className="create-btn-cancel"
+                  onClick={() => setShowEditModal(false)}
+                >
+                  Отмена
+                </button>
+                <button
+                  type="submit"
+                  className="create-btn-submit"
+                  disabled={editing}
+                >
+                  {editing ? 'Сохранение...' : 'Сохранить'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
       <ImageGallery
         photos={galleryPhotos}
         isOpen={galleryOpen}

@@ -236,3 +236,29 @@
     padding: 1px 8px;
   }
 }
+
+/* ===== Админские кнопки в статус-баре ===== */
+.task-admin-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: auto;
+}
+
+/* Статус-бар должен быть flex контейнером */
+.task-status-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 12px;
+  border-radius: 8px 8px 0 0;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+/* Немного отступаем для маленьких экранов */
+@media (max-width: 480px) {
+  .task-admin-actions {
+    gap: 2px;
+  }
+}

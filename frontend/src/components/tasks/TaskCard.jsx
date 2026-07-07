@@ -1,8 +1,22 @@
 import ActionButton from '../common/ActionButton';
+import IconButton from '../common/IconButton';
 import PhotoViewer from '../common/PhotoViewer';
+import { canEditTask, canDeleteTask } from '../../utils/taskPermissions';
+import { getAvailableActions } from '../../utils/taskActions';
 import './TaskCard.css';
 
-function TaskCard({ task, onTake, onComplete, onDecline, onClick, onPhotoClick }) {
+function TaskCard({ 
+  task, 
+  onTake, 
+  onComplete, 
+  onDecline, 
+  onReassign,
+  onClick, 
+  onPhotoClick,
+  onEdit,
+  onDelete,
+  currentUser,
+}) {
   const {
     id,
     author,
@@ -29,9 +43,14 @@ function TaskCard({ task, onTake, onComplete, onDecline, onClick, onPhotoClick }
   };
 
   const statusInfo = getStatusInfo();
+  
+  const canEdit = canEditTask(currentUser, task);
+  const canDelete = canDeleteTask(currentUser, task);
+  const actions = getAvailableActions(currentUser, task);
 
   const handleClick = (e) => {
     if (e.target.closest('.task-actions')) return;
+    if (e.target.closest('.task-admin-actions')) return;
     if (onClick) onClick(task);
   };
 
@@ -41,15 +60,52 @@ function TaskCard({ task, onTake, onComplete, onDecline, onClick, onPhotoClick }
     return text.slice(0, maxLength) + '...';
   };
 
+  const handleEditClick = (e) => {
+    e.stopPropagation();
+    if (onEdit) onEdit(task);
+  };
+
+  const handleDeleteClick = (e) => {
+    e.stopPropagation();
+    if (onDelete) onDelete(task);
+  };
+
+  const handleReassignClick = (e) => {
+    e.stopPropagation();
+    if (onReassign) onReassign(task);
+  };
+
   return (
     <div className="task-card" onClick={handleClick}>
-      {/* Статусная полоска */}
       <div className={`task-status-bar ${statusInfo.class}`}>
-        {statusInfo.label}
+        <span>{statusInfo.label}</span>
+        {(canEdit || canDelete) && (
+          <div className="task-admin-actions" onClick={(e) => e.stopPropagation()}>
+            {canEdit && (
+              <IconButton
+                icon="✏️"
+                variant="primary"
+                size="small"
+                onClick={handleEditClick}
+                title="Редактировать задачу"
+                ariaLabel="Редактировать"
+              />
+            )}
+            {canDelete && (
+              <IconButton
+                icon="🗑️"
+                variant="danger"
+                size="small"
+                onClick={handleDeleteClick}
+                title="Удалить задачу"
+                ariaLabel="Удалить"
+              />
+            )}
+          </div>
+        )}
       </div>
 
       <div className="task-card-body">
-        {/* Шапка: Автор + Дата */}
         <div className="task-card-header">
           <span className="task-author">
             <span className="task-author-label">Автор:</span> {author}
@@ -57,20 +113,16 @@ function TaskCard({ task, onTake, onComplete, onDecline, onClick, onPhotoClick }
           <span className="task-date">🕐 {created_at}</span>
         </div>
 
-        {/* Кто привез */}
         <div className="task-supplier">
           <strong>Кто привез:</strong> {supplier}
         </div>
 
-        {/* Комментарий с фиксированной высотой */}
         <div className="task-comment-box">
           {truncateComment(comment)}
         </div>
 
-        {/* Превью фото */}
         <PhotoViewer photos={photos} onPhotoClick={onPhotoClick} />
 
-        {/* Низ карточки */}
         <div className="task-card-footer">
           <div className="task-footer-row">
             {comments_count > 0 && (
@@ -78,11 +130,11 @@ function TaskCard({ task, onTake, onComplete, onDecline, onClick, onPhotoClick }
                 💬 {comments_count}
               </div>
             )}
-            {/* Исполнитель теперь отображается только в статусной полоске сверху */}
           </div>
 
           <div className="task-actions" onClick={(e) => e.stopPropagation()}>
-            {status === 'new' && (
+            {/* Новая задача - только "Взять в работу" */}
+            {actions.canTake && (
               <ActionButton
                 variant="primary"
                 size="medium"
@@ -91,24 +143,39 @@ function TaskCard({ task, onTake, onComplete, onDecline, onClick, onPhotoClick }
                 Взять в работу
               </ActionButton>
             )}
-            {status === 'in_progress' && (
-              <>
-                <ActionButton
-                  variant="success"
-                  size="medium"
-                  onClick={() => onComplete && onComplete(id)}
-                >
-                  Выполнить
-                </ActionButton>
-                <ActionButton
-                  variant="danger"
-                  size="medium"
-                  onClick={() => onDecline && onDecline(id)}
-                >
-                  Отказаться
-                </ActionButton>
-              </>
+
+            {/* Задача в работе у текущего пользователя */}
+            {actions.canComplete && (
+              <ActionButton
+                variant="success"
+                size="medium"
+                onClick={() => onComplete && onComplete(id)}
+              >
+                Выполнить
+              </ActionButton>
             )}
+            {actions.canDecline && (
+              <ActionButton
+                variant="danger"
+                size="medium"
+                onClick={() => onDecline && onDecline(id)}
+              >
+                Отказаться
+              </ActionButton>
+            )}
+
+            {/* Задача в работе у другого пользователя */}
+            {actions.canReassign && (
+              <ActionButton
+                variant="warning"
+                size="medium"
+                onClick={handleReassignClick}
+              >
+                📥 Забрать задачу
+              </ActionButton>
+            )}
+
+            {/* Завершенная задача */}
             {status === 'completed' && (
               <span className="status-completed">✅ Завершена</span>
             )}

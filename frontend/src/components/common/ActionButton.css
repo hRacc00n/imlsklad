@@ -107,3 +107,12 @@
     min-height: 44px;
   }
 }
+
+.btn-warning {
+  background: #f59e0b;
+  color: white;
+}
+
+.btn-warning:hover:not(:disabled) {
+  background: #d97706;
+}
