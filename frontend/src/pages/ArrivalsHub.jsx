@@ -1,8 +1,7 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useModal } from '../contexts/ModalContext';
 import TaskCard from '../components/tasks/TaskCard';
-import ActionButton from '../components/common/ActionButton';
 import { useAuth } from '../contexts/AuthContext';
 import PhotoUploader from '../components/common/PhotoUploader';
 import ImageGallery from '../components/common/ImageGallery';
@@ -19,7 +18,11 @@ function ArrivalsHub() {
   const { user } = useAuth();
   const [newPhotos, setNewPhotos] = useState([]);
 
-  const [hideCompleted, setHideCompleted] = useState(true);
+  // Состояние для чекбокса (сохраняем в localStorage)
+  const [hideCompleted, setHideCompleted] = useState(() => {
+    const saved = localStorage.getItem('arrivals_hide_completed');
+    return saved !== null ? JSON.parse(saved) : true;
+  });
 
   const [galleryOpen, setGalleryOpen] = useState(false);
   const [galleryIndex, setGalleryIndex] = useState(0);
@@ -32,16 +35,12 @@ function ArrivalsHub() {
   const [editPhotos, setEditPhotos] = useState([]);
   const [editing, setEditing] = useState(false);
 
-  const filteredTasks = useMemo(() => {
-    if (hideCompleted) {
-      const completedStatuses = ['completed', 'done', 'finished', 'closed', 'complete', 'завершена'];
-      return tasks.filter(task => {
-        const status = task.status?.toLowerCase();
-        return !completedStatuses.includes(status);
-      });
-    }
-    return tasks;
-  }, [tasks, hideCompleted]);
+  // Состояние для пагинации
+  const [page, setPage] = useState(1);
+  const [perPage] = useState(10);
+  const [totalPages, setTotalPages] = useState(0);
+  const [hasNext, setHasNext] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
 
   const handlePhotoClick = (task, photoIndex) => {
     if (!task.photos || task.photos.length === 0) return;
@@ -50,42 +49,82 @@ function ArrivalsHub() {
     setGalleryOpen(true);
   };
 
-  // Загрузка задач
-  const loadTasks = async () => {
+  // ===== Загрузка задач с пагинацией и фильтрацией =====
+  const loadTasks = useCallback(async (pageNum = 1, append = false) => {
     try {
-      const response = await fetch('/api/tasks/arrivals');
+      if (append) {
+        setLoadingMore(true);
+      } else {
+        setLoading(true);
+      }
+
+      // Передаём параметр hide_completed на сервер
+      const url = `/api/tasks/arrivals?page=${pageNum}&per_page=${perPage}&hide_completed=${hideCompleted}`;
+      console.log('Загрузка задач:', url);
+      
+      const response = await fetch(url);
       const data = await response.json();
-      setTasks(data);
-      setLoading(false);
+
+      if (append) {
+        // Добавляем новые задачи к существующим
+        setTasks(prev => [...prev, ...data.data]);
+      } else {
+        setTasks(data.data);
+      }
+
+      // Обновляем информацию о пагинации
+      setTotalPages(data.pagination.total_pages);
+      setHasNext(data.pagination.has_next);
+
     } catch (err) {
       console.error('Ошибка загрузки задач:', err);
+      alert('Ошибка при загрузке задач');
+    } finally {
       setLoading(false);
+      setLoadingMore(false);
     }
+  }, [perPage, hideCompleted]);
+
+  // Загружаем первую страницу при монтировании или изменении фильтра
+  useEffect(() => {
+    setPage(1);
+    loadTasks(1, false);
+  }, [hideCompleted, loadTasks]);
+
+  // ===== Обработчик переключения чекбокса =====
+  const handleHideCompletedChange = (e) => {
+    const value = e.target.checked;
+    setHideCompleted(value);
+    localStorage.setItem('arrivals_hide_completed', JSON.stringify(value));
+    // Сбрасываем пагинацию - страница сбросится в useEffect
   };
 
-  useEffect(() => {
-    loadTasks();
-  }, []);
+  // ===== Обработчик загрузки следующей страницы =====
+  const handleLoadMore = () => {
+    if (!loadingMore && hasNext) {
+      const nextPage = page + 1;
+      setPage(nextPage);
+      loadTasks(nextPage, true);
+    }
+  };
 
   const handleBack = () => {
     navigate('/');
   };
 
-  const handleHideCompletedChange = (e) => {
-    setHideCompleted(e.target.checked);
-  };
-
+  // ===== Обработчики действий с задачами =====
   const handleTake = async (taskId) => {
     try {
       const response = await fetch(`/api/tasks/${taskId}/take`, {
-        method: 'PUT',  // Заменили POST на PUT
+        method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
-          user_name: user?.name || 'Неизвестно'  // Исправили поле
+          user_name: user?.name || 'Неизвестно'
         }),
       });
       if (response.ok) {
-        await loadTasks();
+        // Перезагружаем текущую страницу
+        loadTasks(page, false);
       } else {
         const data = await response.json();
         alert(data.message || 'Ошибка при взятии задачи');
@@ -99,10 +138,10 @@ function ArrivalsHub() {
   const handleComplete = async (taskId) => {
     try {
       const response = await fetch(`/api/tasks/${taskId}/complete`, {
-        method: 'PUT',  // Заменили POST на PUT
+        method: 'PUT',
       });
       if (response.ok) {
-        await loadTasks();
+        loadTasks(page, false);
       } else {
         const data = await response.json();
         alert(data.message || 'Ошибка при выполнении задачи');
@@ -116,10 +155,10 @@ function ArrivalsHub() {
   const handleDecline = async (taskId) => {
     try {
       const response = await fetch(`/api/tasks/${taskId}/decline`, {
-        method: 'PUT',  // Заменили POST на PUT
+        method: 'PUT',
       });
       if (response.ok) {
-        await loadTasks();
+        loadTasks(page, false);
       } else {
         const data = await response.json();
         alert(data.message || 'Ошибка при отказе от задачи');
@@ -170,7 +209,7 @@ function ArrivalsHub() {
         setEditingTask(null);
         setEditForm({ supplier: '', comment: '' });
         setEditPhotos([]);
-        await loadTasks();
+        loadTasks(page, false);
       } else {
         alert(data.message || 'Ошибка при обновлении задачи');
       }
@@ -198,11 +237,10 @@ function ArrivalsHub() {
       const data = await response.json();
       
       if (response.ok && data.success) {
-        // Показываем сколько фото удалено
         if (data.deleted_photos > 0) {
           console.log(`Удалено ${data.deleted_photos} фото`);
         }
-        await loadTasks();
+        loadTasks(page, false);
       } else {
         alert(data.message || 'Ошибка при удалении задачи');
       }
@@ -212,6 +250,7 @@ function ArrivalsHub() {
     }
   };
 
+  // ===== Обработчик создания задачи =====
   const handleCreateSubmit = async (e) => {
     e.preventDefault();
     if (!newTask.supplier) {
@@ -254,7 +293,8 @@ function ArrivalsHub() {
         setShowCreateModal(false);
         setNewTask({ supplier: '', comment: '' });
         setNewPhotos([]);
-        loadTasks();
+        loadTasks(1, false);
+        setPage(1);
       } else {
         alert(data.message || 'Ошибка при создании задачи');
       }
@@ -281,7 +321,7 @@ function ArrivalsHub() {
       const data = await response.json();
       
       if (response.ok && data.success) {
-        await loadTasks();
+        loadTasks(page, false);
       } else {
         alert(data.message || 'Ошибка при переназначении задачи');
       }
@@ -314,32 +354,48 @@ function ArrivalsHub() {
       </div>
 
       <div className="arrivals-content">
-        {loading ? (
+        {loading && tasks.length === 0 ? (
           <p>Загрузка...</p>
-        ) : filteredTasks.length === 0 ? (
+        ) : tasks.length === 0 ? (
           <div className="empty-state">
-            {hideCompleted && tasks.some(t => t.status === 'completed') 
-              ? 'Все задачи выполнены 🎉' 
-              : 'Нет задач в этом хабе'}
+            {hideCompleted ? 'Все задачи выполнены 🎉' : 'Нет задач в этом хабе'}
           </div>
         ) : (
-          <div className="tasks-grid">
-            {filteredTasks.map((task) => (
-              <TaskCard
-                key={task.id}
-                task={task}
-                currentUser={user}
-                onTake={handleTake}
-                onComplete={handleComplete}
-                onDecline={handleDecline}
-                onReassign={handleReassign}
-                onClick={handleCardClick}
-                onPhotoClick={(photoIndex) => handlePhotoClick(task, photoIndex)}
-                onEdit={handleEditTask}
-                onDelete={handleDeleteTask}
-              />
-            ))}
-          </div>
+          <>
+            <div className="tasks-grid">
+              {tasks.map((task) => (
+                <TaskCard
+                  key={task.id}
+                  task={task}
+                  currentUser={user}
+                  onTake={handleTake}
+                  onComplete={handleComplete}
+                  onDecline={handleDecline}
+                  onReassign={handleReassign}
+                  onClick={handleCardClick}
+                  onPhotoClick={(photoIndex) => handlePhotoClick(task, photoIndex)}
+                  onEdit={handleEditTask}
+                  onDelete={handleDeleteTask}
+                />
+              ))}
+            </div>
+            
+            {/* Кнопка "Показать еще" */}
+            {hasNext && (
+              <div className="load-more-wrapper">
+                <button 
+                  className="load-more-btn"
+                  onClick={handleLoadMore}
+                  disabled={loadingMore}
+                >
+                  {loadingMore ? 'Загрузка...' : 'Показать еще'}
+                </button>
+                <span className="load-more-info">
+                  Показано {tasks.length} задач
+                </span>
+              </div>
+            )}
+          </>
         )}
       </div>
 

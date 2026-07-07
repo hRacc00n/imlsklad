@@ -13,8 +13,30 @@ def register_tasks_routes(app):
     # ===== GET: Получить все задачи типа "arrival" =====
     @app.route('/api/tasks/arrivals', methods=['GET'])
     def get_arrivals():
+        # Получаем параметры из запроса
+        page = request.args.get('page', 1, type=int)
+        per_page = request.args.get('per_page', 10, type=int)
+        hide_completed = request.args.get('hide_completed', 'false').lower() == 'true'
+        offset = (page - 1) * per_page
+        
         with get_db() as db:
-            tasks = db.query(Order).filter(Order.type == 'arrival').order_by(Order.created_at.desc()).all()
+            # Базовый запрос - только задачи типа "arrival"
+            query = db.query(Order).filter(Order.type == 'arrival')
+            
+            # Если нужно скрыть выполненные - фильтруем
+            if hide_completed:
+                query = query.filter(Order.status != 'completed')
+            
+            # Получаем общее количество (с учётом фильтра)
+            total_count = query.count()
+            
+            # Получаем задачи с пагинацией
+            tasks = query.order_by(Order.created_at.desc())\
+                .offset(offset)\
+                .limit(per_page)\
+                .all()
+            
+            # Формируем результат
             result = []
             for task in tasks:
                 email_data = {}
@@ -24,7 +46,7 @@ def register_tasks_routes(app):
                     except:
                         pass
                 
-                # Приводим статус к единому формату (английский, нижний регистр)
+                # Приводим статус к единому формату (на случай если в БД есть русские статусы)
                 status = task.status
                 if status == 'Новая':
                     status = 'new'
@@ -40,11 +62,23 @@ def register_tasks_routes(app):
                     'supplier': email_data.get('supplier', task.client or 'Неизвестно'),
                     'comment': task.description or '',
                     'assigned_to': task.assigned_to,
-                    'status': status,  # ← Исправленный статус
+                    'status': status,
                     'comments_count': 0,
-                    'photos': email_data.get('photos', []),  # ← Убрали дублирование
+                    'photos': email_data.get('photos', []),
                 })
-            return jsonify(result), 200
+            
+            # Возвращаем данные с мета-информацией о пагинации
+            return jsonify({
+                'data': result,
+                'pagination': {
+                    'page': page,
+                    'per_page': per_page,
+                    'total': total_count,
+                    'total_pages': (total_count + per_page - 1) // per_page,
+                    'has_next': page * per_page < total_count,
+                    'has_previous': page > 1
+                }
+            }), 200
     
     # ===== POST: Создать задачу типа "arrival" =====
     @app.route('/api/tasks/arrivals', methods=['POST'])

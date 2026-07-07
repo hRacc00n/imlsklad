@@ -391,3 +391,60 @@
     height: 20px;
   }
 }
+
+/* ===== Кнопка "Показать еще" ===== */
+.load-more-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  margin-top: 32px;
+  padding: 20px 0;
+}
+
+.load-more-btn {
+  padding: 12px 40px;
+  background: transparent;
+  color: #2563eb;
+  border: 2px solid #2563eb;
+  border-radius: 10px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  min-width: 200px;
+}
+
+.load-more-btn:hover:not(:disabled) {
+  background: #2563eb;
+  color: white;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+}
+
+.load-more-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.load-more-info {
+  font-size: 13px;
+  color: #94a3b8;
+}
+
+/* Адаптация для мобильных */
+@media (max-width: 480px) {
+  .load-more-btn {
+    padding: 10px 24px;
+    font-size: 14px;
+    min-width: 150px;
+    width: 100%;
+  }
+  
+  .load-more-wrapper {
+    gap: 8px;
+    margin-top: 24px;
+    padding: 16px 0;
+  }
+}
