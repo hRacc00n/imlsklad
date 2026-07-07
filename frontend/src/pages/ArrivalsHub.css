@@ -5,25 +5,25 @@
 }
 
 .arrivals-header {
-  max-width: 1280px;
-  margin: 0 auto 24px auto;
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  width: 100%;
+  justify-content: space-between;
+  padding: 16px 0;
+  flex-wrap: wrap;
+  gap: 12px;
 }
 
 .arrivals-header h1 {
-  font-size: 24px;
-  font-weight: 700;
-  color: #0f172a;
   margin: 0;
+  font-size: 24px;
+  color: #1e293b;
 }
 
 .arrivals-actions {
   display: flex;
   align-items: center;
   gap: 12px;
+  flex-wrap: wrap;
 }
 
 .btn-create {
@@ -317,5 +317,77 @@
     width: 100%;
     justify-content: center;
     text-align: center;
+  }
+}
+
+/* ===== Панель фильтров ===== */
+.arrivals-filters {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 0;
+  margin-bottom: 16px;
+  border-bottom: 1px solid #e2e8f0;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.filter-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  color: #475569;
+  user-select: none;
+  padding: 8px 12px;
+  background: #f8fafc;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.filter-checkbox:hover {
+  background: #f1f5f9;
+  border-color: #cbd5e1;
+}
+
+.filter-checkbox input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+  accent-color: #2563eb;
+  flex-shrink: 0;
+}
+
+.filter-checkbox span {
+  font-weight: 500;
+}
+
+.filter-count {
+  margin-left: 8px;
+  padding: 2px 10px;
+  background: #f1f5f9;
+  border-radius: 12px;
+  font-size: 12px;
+  color: #64748b;
+  font-weight: 500;
+}
+
+/* Адаптация для мобильных */
+@media (max-width: 480px) {
+  .arrivals-filters {
+    padding: 8px 0;
+    margin-bottom: 12px;
+  }
+  
+  .filter-checkbox {
+    font-size: 13px;
+  }
+  
+  .filter-checkbox input[type="checkbox"] {
+    width: 20px;
+    height: 20px;
   }
 }

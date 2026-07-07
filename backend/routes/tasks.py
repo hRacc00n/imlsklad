@@ -17,7 +17,6 @@ def register_tasks_routes(app):
             tasks = db.query(Order).filter(Order.type == 'arrival').order_by(Order.created_at.desc()).all()
             result = []
             for task in tasks:
-                # Парсим email_data для получения supplier и author
                 email_data = {}
                 if task.email_data:
                     try:
@@ -25,17 +24,25 @@ def register_tasks_routes(app):
                     except:
                         pass
                 
+                # Приводим статус к единому формату (английский, нижний регистр)
+                status = task.status
+                if status == 'Новая':
+                    status = 'new'
+                elif status == 'В работе':
+                    status = 'in_progress'
+                elif status == 'Завершена':
+                    status = 'completed'
+                
                 result.append({
                     'id': task.id,
                     'author': email_data.get('author', 'Неизвестно'),
                     'created_at': task.created_at.strftime('%Y-%m-%d %H:%M') if task.created_at else '',
                     'supplier': email_data.get('supplier', task.client or 'Неизвестно'),
                     'comment': task.description or '',
-                    'photos': [],  # TODO: реализовать загрузку фото
                     'assigned_to': task.assigned_to,
-                    'status': task.status,
-                    'comments_count': 0,  # TODO: реализовать комментарии
-                    'photos': email_data.get('photos', []),
+                    'status': status,  # ← Исправленный статус
+                    'comments_count': 0,
+                    'photos': email_data.get('photos', []),  # ← Убрали дублирование
                 })
             return jsonify(result), 200
     

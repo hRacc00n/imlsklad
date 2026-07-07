@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useModal } from '../contexts/ModalContext';
 import TaskCard from '../components/tasks/TaskCard';
@@ -19,6 +19,8 @@ function ArrivalsHub() {
   const { user } = useAuth();
   const [newPhotos, setNewPhotos] = useState([]);
 
+  const [hideCompleted, setHideCompleted] = useState(true);
+
   const [galleryOpen, setGalleryOpen] = useState(false);
   const [galleryIndex, setGalleryIndex] = useState(0);
   const [galleryPhotos, setGalleryPhotos] = useState([]);
@@ -29,6 +31,17 @@ function ArrivalsHub() {
   const [editForm, setEditForm] = useState({ supplier: '', comment: '' });
   const [editPhotos, setEditPhotos] = useState([]);
   const [editing, setEditing] = useState(false);
+
+  const filteredTasks = useMemo(() => {
+    if (hideCompleted) {
+      const completedStatuses = ['completed', 'done', 'finished', 'closed', 'complete', 'завершена'];
+      return tasks.filter(task => {
+        const status = task.status?.toLowerCase();
+        return !completedStatuses.includes(status);
+      });
+    }
+    return tasks;
+  }, [tasks, hideCompleted]);
 
   const handlePhotoClick = (task, photoIndex) => {
     if (!task.photos || task.photos.length === 0) return;
@@ -56,6 +69,10 @@ function ArrivalsHub() {
 
   const handleBack = () => {
     navigate('/');
+  };
+
+  const handleHideCompletedChange = (e) => {
+    setHideCompleted(e.target.checked);
   };
 
   const handleTake = async (taskId) => {
@@ -279,6 +296,14 @@ function ArrivalsHub() {
       <div className="arrivals-header">
         <h1>📦 Поступление</h1>
         <div className="arrivals-actions">
+          <label className="filter-checkbox">
+            <input
+              type="checkbox"
+              checked={hideCompleted}
+              onChange={handleHideCompletedChange}
+            />
+            <span>Скрыть выполненные</span>
+          </label>
           <button className="btn-create" onClick={() => setShowCreateModal(true)}>
             ➕ Создать поступление
           </button>
@@ -291,11 +316,15 @@ function ArrivalsHub() {
       <div className="arrivals-content">
         {loading ? (
           <p>Загрузка...</p>
-        ) : tasks.length === 0 ? (
-          <div className="empty-state">Нет задач в этом хабе</div>
+        ) : filteredTasks.length === 0 ? (
+          <div className="empty-state">
+            {hideCompleted && tasks.some(t => t.status === 'completed') 
+              ? 'Все задачи выполнены 🎉' 
+              : 'Нет задач в этом хабе'}
+          </div>
         ) : (
           <div className="tasks-grid">
-            {tasks.map((task) => (
+            {filteredTasks.map((task) => (
               <TaskCard
                 key={task.id}
                 task={task}
