@@ -7,6 +7,7 @@ from db.models import Order, OrderHistory
 import json
 import glob
 from datetime import datetime, timedelta, timezone
+from routes.sse import sse_publisher
 
 def register_tasks_routes(app):
     
@@ -89,7 +90,7 @@ def register_tasks_routes(app):
         author = data.get('author', 'Неизвестно')
         
         if not supplier:
-          return jsonify({'success': False, 'message': 'Заполните поле "Кто привез"'}), 400
+            return jsonify({'success': False, 'message': 'Заполните поле "Кто привез"'}), 400
         
         with get_db() as db:
             new_task = Order(
@@ -110,7 +111,6 @@ def register_tasks_routes(app):
             db.commit()
             db.refresh(new_task)
             
-            # Создаём запись в истории
             history = OrderHistory(
                 order_id=new_task.id,
                 user_id=0,
@@ -120,6 +120,12 @@ def register_tasks_routes(app):
             )
             db.add(history)
             db.commit()
+            
+            # ===== ОТПРАВЛЯЕМ СОБЫТИЕ =====
+            sse_publisher.publish('task_created', {
+                'task_id': new_task.id,
+                'type': 'arrival'
+            })
             
             return jsonify({
                 'success': True,
@@ -155,6 +161,14 @@ def register_tasks_routes(app):
             task.updated_at = datetime.utcnow()
             db.commit()
             
+            # ===== ОТПРАВЛЯЕМ СОБЫТИЕ =====
+            sse_publisher.publish('task_updated', {
+                'task_id': task.id,
+                'type': 'arrival',
+                'action': 'taken',
+                'assigned_to': user_name
+            })
+            
             return jsonify({'success': True, 'task': {
                 'id': task.id,
                 'status': task.status,
@@ -176,6 +190,13 @@ def register_tasks_routes(app):
             task.updated_at = datetime.utcnow()
             db.commit()
             
+            # ===== ОТПРАВЛЯЕМ СОБЫТИЕ =====
+            sse_publisher.publish('task_updated', {
+                'task_id': task.id,
+                'type': 'arrival',
+                'action': 'completed'
+            })
+            
             return jsonify({'success': True, 'task': {
                 'id': task.id,
                 'status': task.status
@@ -196,6 +217,13 @@ def register_tasks_routes(app):
             task.assigned_to = None
             task.updated_at = datetime.utcnow()
             db.commit()
+            
+            # ===== ОТПРАВЛЯЕМ СОБЫТИЕ =====
+            sse_publisher.publish('task_updated', {
+                'task_id': task.id,
+                'type': 'arrival',
+                'action': 'declined'
+            })
             
             return jsonify({'success': True, 'task': {
                 'id': task.id,
@@ -298,12 +326,10 @@ def register_tasks_routes(app):
                 if not task:
                     return jsonify({'success': False, 'message': 'Задача не найдена'}), 404
                 
-                # Обновляем основные поля
                 task.client = supplier
                 task.description = comment
                 task.updated_at = datetime.utcnow()
                 
-                # Обновляем email_data
                 email_data = {}
                 if task.email_data:
                     try:
@@ -314,13 +340,11 @@ def register_tasks_routes(app):
                 email_data['supplier'] = supplier
                 email_data['comment'] = comment
                 
-                # Если переданы новые фото - обновляем
                 if photos:
                     email_data['photos'] = photos
                 
                 task.email_data = json.dumps(email_data, ensure_ascii=False)
                 
-                # Добавляем запись в историю
                 history = OrderHistory(
                     order_id=task.id,
                     user_id=0,
@@ -331,6 +355,13 @@ def register_tasks_routes(app):
                 db.add(history)
                 db.commit()
                 db.refresh(task)
+                
+                # ===== ОТПРАВЛЯЕМ СОБЫТИЕ =====
+                sse_publisher.publish('task_updated', {
+                    'task_id': task.id,
+                    'type': 'arrival',
+                    'action': 'updated'
+                })
                 
                 return jsonify({
                     'success': True,
@@ -360,7 +391,6 @@ def register_tasks_routes(app):
                 if not task:
                     return jsonify({'success': False, 'message': 'Задача не найдена'}), 404
                 
-                # Получаем список фотографий из email_data
                 email_data = {}
                 if task.email_data:
                     try:
@@ -370,13 +400,11 @@ def register_tasks_routes(app):
                 
                 photos = email_data.get('photos', [])
                 
-                # Удаляем файлы фотографий
                 if photos:
                     upload_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'data', 'uploads', 'photos')
                     deleted_count = 0
                     for photo_path in photos:
                         try:
-                            # Извлекаем имя файла из пути
                             filename = os.path.basename(photo_path)
                             filepath = os.path.join(upload_dir, filename)
                             if os.path.exists(filepath):
@@ -388,12 +416,15 @@ def register_tasks_routes(app):
                     
                     print(f"Удалено файлов: {deleted_count} из {len(photos)}")
                 
-                # Удаляем связанные записи в истории
                 db.query(OrderHistory).filter(OrderHistory.order_id == task_id).delete()
-                
-                # Удаляем саму задачу
                 db.delete(task)
                 db.commit()
+                
+                # ===== ОТПРАВЛЯЕМ СОБЫТИЕ =====
+                sse_publisher.publish('task_deleted', {
+                    'task_id': task_id,
+                    'type': 'arrival'
+                })
                 
                 return jsonify({
                     'success': True, 
@@ -425,6 +456,14 @@ def register_tasks_routes(app):
             task.assigned_to = user_name
             task.updated_at = datetime.utcnow()
             db.commit()
+            
+            # ===== ОТПРАВЛЯЕМ СОБЫТИЕ =====
+            sse_publisher.publish('task_updated', {
+                'task_id': task.id,
+                'type': 'arrival',
+                'action': 'reassigned',
+                'assigned_to': user_name
+            })
             
             return jsonify({'success': True, 'task': {
                 'id': task.id,

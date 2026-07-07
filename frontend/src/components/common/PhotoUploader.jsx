@@ -1,116 +1,118 @@
 import { useState, useRef } from 'react';
-import imageCompression from 'browser-image-compression';
 import './PhotoUploader.css';
 
-function PhotoUploader({ onPhotosChange, existingPhotos = [] }) {
+function PhotoUploader({ onPhotosChange, existingPhotos = [], onUploadStart, onUploadComplete }) {
   const [photos, setPhotos] = useState(existingPhotos);
-  const [uploading, setUploading] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef(null);
   const cameraInputRef = useRef(null);
 
-  const handleFileSelect = async (event) => {
-    const files = Array.from(event.target.files);
+  const processFiles = (files) => {
     if (files.length === 0) return;
 
-    setUploading(true);
-    try {
-      const compressedPhotos = await Promise.all(
-        files.map(async (file) => {
-          // Настройки сжатия
-          const options = {
-            maxSizeMB: 1.0, // максимум 500KB
-            maxWidthOrHeight: 1300,
-            useWebWorker: true,
-          };
-          const compressedFile = await imageCompression(file, options);
-          return compressedFile;
-        })
-      );
+    setIsUploading(true);
+    if (onUploadStart) onUploadStart();
 
-      // Преобразуем в base64 для превью
-      const photoUrls = await Promise.all(
-        compressedPhotos.map((file) => {
-          return new Promise((resolve) => {
-            const reader = new FileReader();
-            reader.onloadend = () => resolve(reader.result);
-            reader.readAsDataURL(file);
-          });
-        })
-      );
+    const readers = Array.from(files).map((file) => {
+      return new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          resolve(event.target.result);
+        };
+        reader.readAsDataURL(file);
+      });
+    });
 
-      const newPhotos = [...photos, ...photoUrls];
-      setPhotos(newPhotos);
-      onPhotosChange(newPhotos);
-    } catch (err) {
-      console.error('Ошибка при сжатии фото:', err);
-      alert('Не удалось обработать фотографии');
-    } finally {
-      setUploading(false);
-      event.target.value = '';
+    Promise.all(readers).then((newPhotos) => {
+      const updatedPhotos = [...photos, ...newPhotos];
+      setPhotos(updatedPhotos);
+      if (onPhotosChange) {
+        onPhotosChange(updatedPhotos);
+      }
+      setIsUploading(false);
+      if (onUploadComplete) onUploadComplete();
+    }).catch(() => {
+      setIsUploading(false);
+      if (onUploadComplete) onUploadComplete();
+    });
+  };
+
+  const handleFileSelect = (e) => {
+    processFiles(e.target.files);
+    e.target.value = ''; // Сброс, чтобы можно было выбрать те же файлы снова
+  };
+
+  const handleCameraCapture = (e) => {
+    processFiles(e.target.files);
+    e.target.value = ''; // Сброс
+  };
+
+  const handleRemovePhoto = (index) => {
+    const updatedPhotos = photos.filter((_, i) => i !== index);
+    setPhotos(updatedPhotos);
+    if (onPhotosChange) {
+      onPhotosChange(updatedPhotos);
     }
-  };
-
-  const removePhoto = (index) => {
-    const newPhotos = photos.filter((_, i) => i !== index);
-    setPhotos(newPhotos);
-    onPhotosChange(newPhotos);
-  };
-
-  const triggerFileInput = () => {
-    fileInputRef.current?.click();
-  };
-
-  const triggerCamera = () => {
-    cameraInputRef.current?.click();
   };
 
   return (
     <div className="photo-uploader">
       <div className="photo-uploader-actions">
-        <button
+        <button 
           type="button"
           className="photo-upload-btn"
-          onClick={triggerFileInput}
-          disabled={uploading}
+          onClick={() => fileInputRef.current?.click()}
+          disabled={isUploading}
         >
-          📁 Загрузить с компьютера
+          <span className="btn-icon">📁</span>
+          Загрузить фото
         </button>
-        <button
+        <button 
           type="button"
           className="photo-camera-btn"
-          onClick={triggerCamera}
-          disabled={uploading}
+          onClick={() => cameraInputRef.current?.click()}
+          disabled={isUploading}
         >
-          📷 Сделать фото
+          <span className="btn-icon">📷</span>
+          Сделать фото
         </button>
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept="image/*"
-          multiple
-          onChange={handleFileSelect}
-          style={{ display: 'none' }}
-        />
-        <input
-          ref={cameraInputRef}
-          type="file"
-          accept="image/*"
-          capture="environment"
-          onChange={handleFileSelect}
-          style={{ display: 'none' }}
-        />
-        {uploading && <span className="photo-uploading">⏳ Сжатие...</span>}
       </div>
 
+      {/* Скрытый input для выбора файлов из галереи */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*"
+        multiple
+        onChange={handleFileSelect}
+        style={{ display: 'none' }}
+        disabled={isUploading}
+      />
+
+      {/* Скрытый input для камеры (capture атрибут) */}
+      <input
+        ref={cameraInputRef}
+        type="file"
+        accept="image/*"
+        capture="environment"
+        onChange={handleCameraCapture}
+        style={{ display: 'none' }}
+        disabled={isUploading}
+      />
+
+      {isUploading && (
+        <div className="photo-uploading-status">⏳ Загрузка фотографий...</div>
+      )}
+
       {photos.length > 0 && (
-        <div className="photo-preview-grid">
+        <div className="photo-uploader-preview">
           {photos.map((photo, index) => (
-            <div key={index} className="photo-preview-item">
-              <img src={photo} alt={`Фото ${index + 1}`} className="photo-preview-img" />
-              <button
-                type="button"
+            <div key={index} className="photo-uploader-item">
+              <img src={photo} alt={`Фото ${index + 1}`} />
+              <button 
                 className="photo-remove-btn"
-                onClick={() => removePhoto(index)}
+                onClick={() => handleRemovePhoto(index)}
+                type="button"
               >
                 ✕
               </button>

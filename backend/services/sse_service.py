@@ -1,66 +1,85 @@
-from queue import Queue
-import threading
+# backend/services/sse_service.py
+import queue
 import time
+from threading import Lock
 
 class SSEService:
     def __init__(self):
-        # Храним: client_id -> {queue, user, ip, connected_at}
         self.clients = {}
-        self.lock = threading.Lock()
+        self.lock = Lock()
+        self.max_clients = 100
     
-    def add_client(self, client_id, response=None, user=None, ip=None):
+    def add_client(self, client_id, queue_obj=None, user=None, ip=None):
         with self.lock:
-            if client_id in self.clients:
-                return self.clients[client_id]['queue']
+            # Проверяем, есть ли уже соединение от этого пользователя
+            existing_client = None
+            for cid, data in self.clients.items():
+                if data.get('user') == user and data.get('ip') == ip:
+                    existing_client = cid
+                    break
             
-            if len(self.clients) > 100:
+            # Если есть существующее соединение - закрываем его
+            if existing_client:
+                print(f"[SSE] Closing duplicate connection for {user} (ID: {existing_client})")
+                try:
+                    self.clients[existing_client]['queue'].put({'type': 'close'})
+                except:
+                    pass
+                del self.clients[existing_client]
+            
+            if len(self.clients) >= self.max_clients:
                 return None
             
-            queue = Queue()
+            if queue_obj is None:
+                queue_obj = queue.Queue()
+            
             self.clients[client_id] = {
-                'queue': queue,
-                'user': user or 'Unknown',
-                'ip': ip or 'Unknown',
+                'queue': queue_obj,
+                'user': user,
+                'ip': ip,
                 'connected_at': time.time()
             }
-            print(f"[SSE] + Client: {client_id} (user: {user}). Total: {len(self.clients)}")
-            return queue
+            return queue_obj
     
     def remove_client(self, client_id):
         with self.lock:
             if client_id in self.clients:
                 del self.clients[client_id]
-                print(f"[SSE] - Client: {client_id}. Total: {len(self.clients)}")
+                return True
+            return False
+    
+    def broadcast(self, message):
+        """Отправить сообщение всем клиентам"""
+        with self.lock:
+            for client_id, client_data in list(self.clients.items()):
+                try:
+                    client_data['queue'].put(message)
+                except:
+                    self.remove_client(client_id)
     
     def get_all_connections(self):
-        """Возвращает список всех активных соединений для админ-панели"""
+        """Получить список всех подключений"""
         with self.lock:
-            result = []
-            for client_id, data in self.clients.items():
-                result.append({
+            return [
+                {
                     'client_id': client_id,
-                    'user': data.get('user', 'Unknown'),
-                    'ip': data.get('ip', 'Unknown'),
-                    'connected_at': data.get('connected_at', time.time())
-                })
-            return result
+                    'user': data['user'],
+                    'ip': data['ip'],
+                    'connected_at': data['connected_at']
+                }
+                for client_id, data in self.clients.items()
+            ]
     
     def close_connection(self, client_id):
-        """Принудительно закрывает соединение по client_id"""
+        """Принудительно закрыть соединение"""
         with self.lock:
             if client_id in self.clients:
-                del self.clients[client_id]
-                print(f"[SSE] 🔒 Force closed: {client_id}. Total: {len(self.clients)}")
+                try:
+                    self.clients[client_id]['queue'].put({'type': 'close'})
+                except:
+                    pass
                 return True
-        return False
-    
-    def broadcast(self, data, exclude_client_id=None):
-        with self.lock:
-            for cid, client_data in self.clients.items():
-                if cid != exclude_client_id:
-                    try:
-                        client_data['queue'].put(data)
-                    except:
-                        pass
+            return False
 
+# Создаем глобальный экземпляр
 sse_service = SSEService()

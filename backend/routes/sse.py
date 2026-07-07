@@ -3,6 +3,24 @@ from services.sse_service import sse_service
 import json
 import time
 
+# ===== Глобальный Publisher для отправки событий =====
+class SSEPublisher:
+    def __init__(self):
+        self.service = sse_service
+    
+    def publish(self, event_type, data):
+        """Отправить событие всем подключенным клиентам"""
+        message = {
+            'type': event_type,
+            'data': data,
+            'timestamp': time.time()
+        }
+        self.service.broadcast(message)
+        print(f"[SSE] Published: {event_type} -> {data}")
+
+# Создаем глобальный экземпляр
+sse_publisher = SSEPublisher()
+
 def register_sse_routes(app):
     
     @app.route('/api/events/stream')
@@ -25,11 +43,17 @@ def register_sse_routes(app):
                 while True:
                     try:
                         data = queue.get(timeout=15)
+                        # Проверяем, не является ли это сообщением о закрытии
+                        if isinstance(data, dict) and data.get('type') == 'close':
+                            print(f"[SSE] Received close signal for {client_id}")
+                            break
                         yield f"data: {json.dumps(data)}\n\n"
                     except:
                         yield f": keep-alive {time.time()}\n\n"
             except GeneratorExit:
                 print(f"[SSE] GeneratorExit: {client_id}")
+                # Не делаем ничего, просто выходим
+                return
             except Exception as e:
                 print(f"[SSE] Exception: {client_id} - {e}")
             finally:
@@ -47,7 +71,7 @@ def register_sse_routes(app):
             }
         )
     
-    # ========== НОВЫЕ ЭНДПОЙНТЫ ДЛЯ АДМИН-ПАНЕЛИ ==========
+    # ========== ЭНДПОЙНТЫ ДЛЯ АДМИН-ПАНЕЛИ ==========
     
     @app.route('/api/events/stats')
     def sse_stats():

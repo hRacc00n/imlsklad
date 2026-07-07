@@ -1,8 +1,9 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useModal } from '../contexts/ModalContext';
 import TaskCard from '../components/tasks/TaskCard';
 import { useAuth } from '../contexts/AuthContext';
+import { useAppContext } from '../contexts/AppContext';
 import PhotoUploader from '../components/common/PhotoUploader';
 import ImageGallery from '../components/common/ImageGallery';
 import './ArrivalsHub.css';
@@ -16,9 +17,9 @@ function ArrivalsHub() {
   const [newTask, setNewTask] = useState({ supplier: '', comment: '' });
   const [submitting, setSubmitting] = useState(false);
   const { user } = useAuth();
+  const { sse } = useAppContext(); // ← Добавляем SSE контекст
   const [newPhotos, setNewPhotos] = useState([]);
 
-  // Состояние для чекбокса (сохраняем в localStorage)
   const [hideCompleted, setHideCompleted] = useState(() => {
     const saved = localStorage.getItem('arrivals_hide_completed');
     return saved !== null ? JSON.parse(saved) : true;
@@ -28,19 +29,22 @@ function ArrivalsHub() {
   const [galleryIndex, setGalleryIndex] = useState(0);
   const [galleryPhotos, setGalleryPhotos] = useState([]);
 
-  // Состояние для редактирования
   const [editingTask, setEditingTask] = useState(null);
   const [showEditModal, setShowEditModal] = useState(false);
   const [editForm, setEditForm] = useState({ supplier: '', comment: '' });
   const [editPhotos, setEditPhotos] = useState([]);
   const [editing, setEditing] = useState(false);
 
-  // Состояние для пагинации
   const [page, setPage] = useState(1);
   const [perPage] = useState(10);
   const [totalPages, setTotalPages] = useState(0);
   const [hasNext, setHasNext] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
+
+  const [isPhotosUploading, setIsPhotosUploading] = useState(false);
+
+  // Реф для отслеживания обновлений
+  const isUpdatingRef = useRef(false);
 
   const handlePhotoClick = (task, photoIndex) => {
     if (!task.photos || task.photos.length === 0) return;
@@ -49,8 +53,21 @@ function ArrivalsHub() {
     setGalleryOpen(true);
   };
 
-  // ===== Загрузка задач с пагинацией и фильтрацией =====
+  // ===== Функции для отслеживания загрузки фото =====
+  const handlePhotoUploadStart = () => {
+    setIsPhotosUploading(true);
+  };
+
+  const handlePhotoUploadComplete = () => {
+    setIsPhotosUploading(false);
+  };
+
+  // ===== Загрузка задач =====
   const loadTasks = useCallback(async (pageNum = 1, append = false) => {
+    // Предотвращаем множественные обновления
+    if (isUpdatingRef.current) return;
+    isUpdatingRef.current = true;
+
     try {
       if (append) {
         setLoadingMore(true);
@@ -58,32 +75,56 @@ function ArrivalsHub() {
         setLoading(true);
       }
 
-      // Передаём параметр hide_completed на сервер
       const url = `/api/tasks/arrivals?page=${pageNum}&per_page=${perPage}&hide_completed=${hideCompleted}`;
-      console.log('Загрузка задач:', url);
+      console.log('[SSE] Загрузка задач:', url);
       
       const response = await fetch(url);
       const data = await response.json();
 
       if (append) {
-        // Добавляем новые задачи к существующим
         setTasks(prev => [...prev, ...data.data]);
       } else {
         setTasks(data.data);
       }
 
-      // Обновляем информацию о пагинации
       setTotalPages(data.pagination.total_pages);
       setHasNext(data.pagination.has_next);
 
     } catch (err) {
       console.error('Ошибка загрузки задач:', err);
-      alert('Ошибка при загрузке задач');
     } finally {
       setLoading(false);
       setLoadingMore(false);
+      isUpdatingRef.current = false;
     }
   }, [perPage, hideCompleted]);
+
+  // ===== Обработка SSE событий =====
+  useEffect(() => {
+    const handleSSEEvent = (event) => {
+      const data = event.detail;
+      console.log('[ArrivalsHub] SSE event received:', data);
+      
+      // Обновляем задачи в зависимости от типа события
+      if (data.type === 'task_created' || 
+          data.type === 'task_updated' || 
+          data.type === 'task_deleted') {
+        console.log('[ArrivalsHub] Reloading tasks...');
+        // Перезагружаем первую страницу
+        setPage(1);
+        loadTasks(1, false);
+      }
+    };
+
+    // Подписываемся на событие
+    window.addEventListener('sse-message', handleSSEEvent);
+    console.log('[ArrivalsHub] Subscribed to sse-message events');
+
+    return () => {
+      window.removeEventListener('sse-message', handleSSEEvent);
+      console.log('[ArrivalsHub] Unsubscribed from sse-message events');
+    };
+  }, [loadTasks]); // ← Убрали зависимости от sse и page
 
   // Загружаем первую страницу при монтировании или изменении фильтра
   useEffect(() => {
@@ -96,7 +137,6 @@ function ArrivalsHub() {
     const value = e.target.checked;
     setHideCompleted(value);
     localStorage.setItem('arrivals_hide_completed', JSON.stringify(value));
-    // Сбрасываем пагинацию - страница сбросится в useEffect
   };
 
   // ===== Обработчик загрузки следующей страницы =====
@@ -123,8 +163,8 @@ function ArrivalsHub() {
         }),
       });
       if (response.ok) {
-        // Перезагружаем текущую страницу
-        loadTasks(page, false);
+        // SSE обновит задачи автоматически
+        // loadTasks(page, false); // Не нужно, SSE сделает это
       } else {
         const data = await response.json();
         alert(data.message || 'Ошибка при взятии задачи');
@@ -141,7 +181,7 @@ function ArrivalsHub() {
         method: 'PUT',
       });
       if (response.ok) {
-        loadTasks(page, false);
+        // SSE обновит задачи автоматически
       } else {
         const data = await response.json();
         alert(data.message || 'Ошибка при выполнении задачи');
@@ -158,7 +198,7 @@ function ArrivalsHub() {
         method: 'PUT',
       });
       if (response.ok) {
-        loadTasks(page, false);
+        // SSE обновит задачи автоматически
       } else {
         const data = await response.json();
         alert(data.message || 'Ошибка при отказе от задачи');
@@ -166,6 +206,30 @@ function ArrivalsHub() {
     } catch (err) {
       console.error('Ошибка при отказе от задачи:', err);
       alert('Ошибка при отказе от задачи');
+    }
+  };
+
+  const handleReassign = async (task) => {
+    if (!task || !user) return;
+    
+    try {
+      const response = await fetch(`/api/tasks/${task.id}/reassign`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          user_name: user?.name || 'Неизвестно'
+        }),
+      });
+      
+      if (response.ok) {
+        // SSE обновит задачи автоматически
+      } else {
+        const data = await response.json();
+        alert(data.message || 'Ошибка при переназначении задачи');
+      }
+    } catch (err) {
+      console.error('Ошибка при переназначении:', err);
+      alert('Ошибка при переназначении задачи');
     }
   };
 
@@ -209,7 +273,7 @@ function ArrivalsHub() {
         setEditingTask(null);
         setEditForm({ supplier: '', comment: '' });
         setEditPhotos([]);
-        loadTasks(page, false);
+        // SSE обновит задачи автоматически
       } else {
         alert(data.message || 'Ошибка при обновлении задачи');
       }
@@ -240,7 +304,7 @@ function ArrivalsHub() {
         if (data.deleted_photos > 0) {
           console.log(`Удалено ${data.deleted_photos} фото`);
         }
-        loadTasks(page, false);
+        // SSE обновит задачи автоматически
       } else {
         alert(data.message || 'Ошибка при удалении задачи');
       }
@@ -253,8 +317,16 @@ function ArrivalsHub() {
   // ===== Обработчик создания задачи =====
   const handleCreateSubmit = async (e) => {
     e.preventDefault();
+    
+    // Проверяем заполненность поля "Кто привез"
     if (!newTask.supplier) {
       alert('Заполните поле "Кто привез"');
+      return;
+    }
+    
+    // ===== НОВОЕ: Проверяем наличие хотя бы одного фото =====
+    if (newPhotos.length === 0) {
+      alert('Добавьте хотя бы одну фотографию');
       return;
     }
 
@@ -272,29 +344,29 @@ function ArrivalsHub() {
       const data = await response.json();
       
       if (data.success) {
-        if (newPhotos.length > 0) {
-          try {
-            const photoResponse = await fetch(`/api/tasks/${data.task.id}/photos`, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                photos: newPhotos,
-              }),
-            });
-            const photoData = await photoResponse.json();
-            if (!photoData.success) {
-              console.warn('Фото не загружены:', photoData.message);
-            }
-          } catch (photoErr) {
-            console.error('Ошибка загрузки фото:', photoErr);
+        // Загружаем фото
+        try {
+          const photoResponse = await fetch(`/api/tasks/${data.task.id}/photos`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              photos: newPhotos,
+            }),
+          });
+          const photoData = await photoResponse.json();
+          if (!photoData.success) {
+            console.warn('Фото не загружены:', photoData.message);
+            alert('Задача создана, но фото не загружены');
           }
+        } catch (photoErr) {
+          console.error('Ошибка загрузки фото:', photoErr);
+          alert('Задача создана, но фото не загружены');
         }
 
         setShowCreateModal(false);
         setNewTask({ supplier: '', comment: '' });
         setNewPhotos([]);
-        loadTasks(1, false);
-        setPage(1);
+        // SSE обновит задачи автоматически
       } else {
         alert(data.message || 'Ошибка при создании задачи');
       }
@@ -302,32 +374,6 @@ function ArrivalsHub() {
       alert('Ошибка при создании задачи');
     } finally {
       setSubmitting(false);
-    }
-  };
-
-  // ===== Обработчик переназначения =====
-  const handleReassign = async (task) => {
-    if (!task || !user) return;
-    
-    try {
-      const response = await fetch(`/api/tasks/${task.id}/reassign`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          user_name: user?.name || 'Неизвестно'
-        }),
-      });
-      
-      const data = await response.json();
-      
-      if (response.ok && data.success) {
-        loadTasks(page, false);
-      } else {
-        alert(data.message || 'Ошибка при переназначении задачи');
-      }
-    } catch (err) {
-      console.error('Ошибка при переназначении:', err);
-      alert('Ошибка при переназначении задачи');
     }
   };
 
@@ -343,6 +389,9 @@ function ArrivalsHub() {
               onChange={handleHideCompletedChange}
             />
             <span>Скрыть выполненные</span>
+            {sse?.isConnected && (
+              <span className="sse-status">🟢</span>
+            )}
           </label>
           <button className="btn-create" onClick={() => setShowCreateModal(true)}>
             ➕ Создать поступление
@@ -380,7 +429,6 @@ function ArrivalsHub() {
               ))}
             </div>
             
-            {/* Кнопка "Показать еще" */}
             {hasNext && (
               <div className="load-more-wrapper">
                 <button 
@@ -430,11 +478,30 @@ function ArrivalsHub() {
                 />
               </div>
               <div className="create-form-group">
-                <label>Фотографии</label>
+                <label>
+                  Фотографии <span style={{ color: '#ef4444' }}>*</span>
+                </label>
                 <PhotoUploader
                   onPhotosChange={setNewPhotos}
                   existingPhotos={[]}
+                  onUploadStart={handlePhotoUploadStart}
+                  onUploadComplete={handlePhotoUploadComplete}
                 />
+                {newPhotos.length === 0 && !isPhotosUploading && (
+                  <div style={{ color: '#ef4444', fontSize: '12px', marginTop: '4px' }}>
+                    ⚠️ Добавьте хотя бы одну фотографию
+                  </div>
+                )}
+                {isPhotosUploading && (
+                  <div style={{ color: '#f59e0b', fontSize: '12px', marginTop: '4px' }}>
+                    ⏳ Загрузка фотографий...
+                  </div>
+                )}
+                {newPhotos.length > 0 && !isPhotosUploading && (
+                  <div style={{ color: '#22c55e', fontSize: '12px', marginTop: '4px' }}>
+                    ✅ Загружено {newPhotos.length} фото
+                  </div>
+                )}
               </div>
               <div className="create-modal-footer">
                 <button
@@ -447,9 +514,9 @@ function ArrivalsHub() {
                 <button
                   type="submit"
                   className="create-btn-submit"
-                  disabled={submitting}
+                  disabled={submitting || isPhotosUploading || newPhotos.length === 0}
                 >
-                  {submitting ? 'Создание...' : 'Создать'}
+                  {submitting ? 'Создание...' : isPhotosUploading ? 'Загрузка фото...' : 'Создать'}
                 </button>
               </div>
             </form>
@@ -457,7 +524,6 @@ function ArrivalsHub() {
         </div>
       )}
 
-      {/* Модальное окно редактирования */}
       {showEditModal && editingTask && (
         <div className="modal-overlay create-modal-overlay" onClick={() => setShowEditModal(false)}>
           <div className="modal-content create-modal-content" onClick={(e) => e.stopPropagation()}>
