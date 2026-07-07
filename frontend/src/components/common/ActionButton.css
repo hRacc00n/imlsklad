@@ -1,0 +1,109 @@
+.action-btn {
+  border: none;
+  border-radius: 10px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  white-space: nowrap;
+  user-select: none;
+}
+
+.action-btn:active {
+  transform: scale(0.96);
+}
+
+.action-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* ===== Размеры ===== */
+.btn-sm {
+  padding: 4px 12px;
+  font-size: 12px;
+  min-height: 30px;
+}
+
+.btn-md {
+  padding: 8px 20px;
+  font-size: 14px;
+  min-height: 40px;
+}
+
+.btn-lg {
+  padding: 12px 28px;
+  font-size: 16px;
+  min-height: 50px;
+  border-radius: 12px;
+}
+
+/* ===== Варианты ===== */
+.btn-primary {
+  background: #2563eb;
+  color: white;
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: #1d4ed8;
+}
+
+.btn-success {
+  background: #22c55e;
+  color: white;
+}
+
+.btn-success:hover:not(:disabled) {
+  background: #16a34a;
+}
+
+.btn-danger {
+  background: #ef4444;
+  color: white;
+}
+
+.btn-danger:hover:not(:disabled) {
+  background: #dc2626;
+}
+
+.btn-outline {
+  background: transparent;
+  color: #64748b;
+  border: 1.5px solid #e2e8f0;
+}
+
+.btn-outline:hover:not(:disabled) {
+  background: #f1f5f9;
+}
+
+/* ===== Мобильная версия ===== */
+@media (max-width: 480px) {
+  .btn-sm {
+    padding: 6px 14px;
+    font-size: 13px;
+    min-height: 36px;
+  }
+
+  .btn-md {
+    padding: 10px 18px;
+    font-size: 15px;
+    min-height: 44px;
+  }
+
+  .btn-lg {
+    padding: 14px 24px;
+    font-size: 17px;
+    min-height: 52px;
+  }
+}
+
+/* ===== Для сенсорных устройств ===== */
+@media (hover: none) and (pointer: coarse) {
+  .action-btn {
+    min-height: 44px;
+  }
+}

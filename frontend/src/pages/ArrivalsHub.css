@@ -1,0 +1,321 @@
+.arrivals-page {
+  min-height: 100vh;
+  background: #f1f5f9;
+  padding: 24px 32px;
+}
+
+.arrivals-header {
+  max-width: 1280px;
+  margin: 0 auto 24px auto;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+}
+
+.arrivals-header h1 {
+  font-size: 24px;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0;
+}
+
+.arrivals-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.btn-create {
+  padding: 8px 20px;
+  background: #2563eb;
+  color: white;
+  border: none;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s;
+  white-space: nowrap;
+}
+
+.btn-create:hover {
+  background: #1d4ed8;
+}
+
+.back-btn {
+  padding: 8px 20px;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.2s;
+  color: #1e293b;
+  white-space: nowrap;
+}
+
+.back-btn:hover {
+  background: #f1f5f9;
+}
+
+.arrivals-content {
+  max-width: 1280px;
+  margin: 0 auto;
+}
+
+.tasks-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 16px;
+}
+
+.empty-state {
+  text-align: center;
+  color: #94a3b8;
+  padding: 60px 20px;
+  font-size: 16px;
+}
+
+/* ===== Модальное окно создания (уникальные классы) ===== */
+.create-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  padding: 20px;
+}
+
+.create-modal-content {
+  background: #ffffff;
+  border-radius: 20px;
+  max-width: 500px;
+  width: 100%;
+  box-shadow: 0 25px 80px rgba(0, 0, 0, 0.3);
+  animation: fadeIn 0.25s ease;
+  padding: 0;
+  overflow: hidden;
+}
+
+.create-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 24px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.create-modal-header h2 {
+  font-size: 20px;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0;
+}
+
+.create-modal-close {
+  background: transparent;
+  border: none;
+  font-size: 24px;
+  cursor: pointer;
+  color: #94a3b8;
+  padding: 4px 8px;
+  border-radius: 8px;
+  transition: all 0.2s;
+}
+
+.create-modal-close:hover {
+  background: #f1f5f9;
+  color: #0f172a;
+}
+
+.create-modal-body {
+  padding: 24px;
+}
+
+.create-form-group {
+  margin-bottom: 18px;
+}
+
+.create-form-group label {
+  display: block;
+  font-size: 14px;
+  font-weight: 600;
+  color: #1e293b;
+  margin-bottom: 4px;
+}
+
+.create-form-group input,
+.create-form-group textarea {
+  width: 100%;
+  padding: 10px 14px;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  font-size: 14px;
+  box-sizing: border-box;
+  transition: border-color 0.2s;
+  font-family: inherit;
+}
+
+.create-form-group input:focus,
+.create-form-group textarea:focus {
+  outline: none;
+  border-color: #2563eb;
+}
+
+.create-form-group textarea {
+  resize: vertical;
+  min-height: 80px;
+}
+
+.create-modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  padding-top: 4px;
+}
+
+.create-btn-cancel {
+  padding: 10px 24px;
+  background: transparent;
+  color: #64748b;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.create-btn-cancel:hover {
+  background: #f1f5f9;
+}
+
+.create-btn-submit {
+  padding: 10px 28px;
+  background: #2563eb;
+  color: white;
+  border: none;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.create-btn-submit:hover:not(:disabled) {
+  background: #1d4ed8;
+}
+
+.create-btn-submit:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* ===== Мобильные устройства ===== */
+@media (max-width: 768px) {
+  .arrivals-page {
+    padding: 16px;
+  }
+
+  .arrivals-header {
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  .arrivals-header h1 {
+    font-size: 20px;
+  }
+
+  .arrivals-actions {
+    margin-left: auto;
+  }
+
+  .btn-create {
+    font-size: 13px;
+    padding: 6px 14px;
+  }
+
+  .back-btn {
+    font-size: 13px;
+    padding: 6px 14px;
+  }
+
+  .tasks-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 480px) {
+  .arrivals-page {
+    padding: 12px;
+  }
+
+  .arrivals-header {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .arrivals-header h1 {
+    font-size: 18px;
+  }
+
+  .arrivals-actions {
+    gap: 8px;
+  }
+
+  .btn-create {
+    font-size: 12px;
+    padding: 4px 12px;
+  }
+
+  .back-btn {
+    font-size: 12px;
+    padding: 4px 12px;
+  }
+
+  .create-modal-content {
+    max-width: 100%;
+    margin: 0 10px;
+    border-radius: 16px;
+  }
+
+  .create-modal-header {
+    padding: 16px 18px;
+  }
+
+  .create-modal-header h2 {
+    font-size: 17px;
+  }
+
+  .create-modal-body {
+    padding: 16px 18px;
+  }
+
+  .create-modal-footer {
+    flex-direction: column;
+  }
+
+  .create-btn-cancel,
+  .create-btn-submit {
+    width: 100%;
+    justify-content: center;
+    text-align: center;
+  }
+}

@@ -1,0 +1,325 @@
+/* ===== Оверлей ===== */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  padding: 20px;
+  animation: fadeIn 0.2s ease;
+}
+
+.task-modal-content {
+  background: #ffffff;
+  border-radius: 20px;
+  max-width: 700px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 25px 80px rgba(0, 0, 0, 0.3);
+  animation: slideIn 0.25s ease;
+  display: flex;
+  flex-direction: column;
+  padding: 0; /* ← важно: убираем padding у контейнера */
+}
+
+/* ===== Статусная полоска ===== */
+.modal-status-bar {
+  padding: 8px 20px;
+  font-size: 13px;
+  font-weight: 600;
+  text-align: center;
+  letter-spacing: 0.3px;
+  border-radius: 20px 20px 0 0;
+  flex-shrink: 0;
+}
+
+.modal-status-bar.status-new {
+  background: #fef3c7;
+  color: #d97706;
+}
+
+.modal-status-bar.status-in_progress {
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+
+.modal-status-bar.status-completed {
+  background: #d1fae5;
+  color: #059669;
+}
+
+/* ===== Шапка ===== */
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 18px 24px 12px;
+  border-bottom: 1px solid #e2e8f0;
+  flex-shrink: 0;
+}
+
+.modal-header h2 {
+  font-size: 20px;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0;
+}
+
+.modal-close {
+  background: transparent;
+  border: none;
+  font-size: 24px;
+  cursor: pointer;
+  color: #94a3b8;
+  padding: 4px 8px;
+  border-radius: 8px;
+  transition: all 0.2s;
+  min-width: 40px;
+  min-height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.modal-close:hover {
+  background: #f1f5f9;
+  color: #0f172a;
+}
+
+/* ===== Мета: Автор + Дата ===== */
+.modal-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #f1f5f9;
+  margin-bottom: 16px;
+  font-size: 14px;
+  color: #64748b;
+}
+
+.modal-author {
+  font-weight: 500;
+  color: #1e293b;
+}
+
+.modal-date {
+  font-size: 13px;
+}
+
+/* ===== Поля ===== */
+.modal-body {
+  padding: 16px 24px;
+  flex: 1;
+  overflow-y: auto;
+}
+
+.modal-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 16px;
+}
+
+.modal-field label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.modal-field span {
+  font-size: 15px;
+  color: #1e293b;
+}
+
+.modal-comment-box {
+  background: #f8fafc;
+  border-radius: 10px;
+  padding: 12px 16px;
+  font-size: 15px;
+  color: #1e293b;
+  line-height: 1.6;
+  border: 1px solid #f1f5f9;
+  min-height: 60px;
+}
+
+.modal-photos {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 4px;
+}
+
+.modal-photo {
+  width: 120px;
+  height: 120px;
+  object-fit: cover;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+
+.modal-photo:hover {
+  transform: scale(1.05);
+}
+
+/* ===== Комментарии ===== */
+.modal-comments {
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid #e2e8f0;
+}
+
+.modal-comments h4 {
+  font-size: 15px;
+  font-weight: 600;
+  color: #0f172a;
+  margin-bottom: 12px;
+}
+
+.comments-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 180px;
+  overflow-y: auto;
+  margin-bottom: 12px;
+}
+
+.comment-item {
+  background: #f8fafc;
+  padding: 10px 14px;
+  border-radius: 10px;
+}
+
+.comment-author {
+  font-weight: 600;
+  font-size: 13px;
+  color: #0f172a;
+  display: block;
+}
+
+.comment-text {
+  font-size: 14px;
+  color: #1e293b;
+  display: block;
+  margin: 2px 0;
+}
+
+.comment-date {
+  font-size: 11px;
+  color: #94a3b8;
+}
+
+.comment-input-wrap {
+  display: flex;
+  gap: 8px;
+}
+
+.comment-input-wrap input {
+  flex: 1;
+  padding: 10px 14px;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  font-size: 14px;
+  outline: none;
+  transition: border-color 0.2s;
+  min-height: 44px;
+}
+
+.comment-input-wrap input:focus {
+  border-color: #2563eb;
+}
+
+/* ===== Футер ===== */
+.modal-footer {
+  display: flex;
+  gap: 12px;
+  padding: 16px 24px;
+  border-top: 1px solid #e2e8f0;
+  flex-wrap: wrap;
+  background: #f8fafc;
+  border-radius: 0 0 20px 20px;
+  flex-shrink: 0;
+}
+
+/* ===== Анимации ===== */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideIn {
+  from { transform: translateY(20px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+/* ===== Мобильные устройства ===== */
+@media (max-width: 480px) {
+  .modal-overlay {
+    padding: 10px;
+  }
+
+  .task-modal-content {
+    max-height: 95vh;
+    border-radius: 16px;
+  }
+
+  .modal-status-bar {
+    border-radius: 16px 16px 0 0;
+    font-size: 12px;
+    padding: 6px 16px;
+  }
+
+  .modal-header {
+    padding: 14px 16px 10px;
+  }
+
+  .modal-header h2 {
+    font-size: 17px;
+  }
+
+  .modal-body {
+    padding: 12px 16px;
+  }
+
+  .modal-meta {
+    font-size: 13px;
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+
+  .modal-comment-box {
+    font-size: 14px;
+    padding: 10px 12px;
+  }
+
+  .modal-photo {
+    width: 80px;
+    height: 80px;
+  }
+
+  .modal-footer {
+    flex-direction: column;
+    gap: 8px;
+    padding: 12px 16px;
+  }
+
+  .comment-input-wrap {
+    flex-direction: column;
+  }
+
+  .comment-input-wrap input {
+    min-height: 48px;
+  }
+}

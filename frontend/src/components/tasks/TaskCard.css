@@ -1,0 +1,238 @@
+.task-card {
+  background: #ffffff;
+  border-radius: 16px;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  transition: all 0.25s ease;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  height: 100%;
+  min-height: 280px;
+}
+
+.task-card:hover {
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+  transform: translateY(-2px);
+}
+
+/* ===== Статусная полоска ===== */
+.task-status-bar {
+  padding: 6px 16px;
+  font-size: 12px;
+  font-weight: 600;
+  text-align: center;
+  letter-spacing: 0.3px;
+  flex-shrink: 0;
+}
+
+.task-status-bar.status-new {
+  background: #fef3c7;
+  color: #d97706;
+}
+
+.task-status-bar.status-in_progress {
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+
+.task-status-bar.status-completed {
+  background: #d1fae5;
+  color: #059669;
+}
+
+/* ===== Тело карточки ===== */
+.task-card-body {
+  padding: 14px 16px 12px;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+/* Шапка: автор + дата */
+.task-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 13px;
+  color: #64748b;
+  margin-bottom: 10px;
+}
+
+.task-author {
+  font-weight: 500;
+  color: #1e293b;
+}
+
+.task-author-label {
+  color: #64748b;
+  font-weight: 400;
+}
+
+.task-date {
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+/* Кто привез */
+.task-supplier {
+  font-size: 14px;
+  color: #1e293b;
+  margin-bottom: 8px;
+}
+
+.task-supplier strong {
+  color: #0f172a;
+}
+
+/* Комментарий с фиксированной минимальной высотой */
+.task-comment-box {
+  background: #f8fafc;
+  border-radius: 10px;
+  padding: 10px 14px;
+  font-size: 14px;
+  color: #1e293b;
+  line-height: 1.5;
+  min-height: 60px;
+  max-height: 80px;
+  overflow: hidden;
+  flex: 0 0 auto;
+  margin-bottom: 10px;
+  border: 1px solid #f1f5f9;
+  word-break: break-word;
+}
+
+/* Превью фото */
+.task-photos-preview {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 10px;
+  flex-wrap: wrap;
+}
+
+.photo-thumbnail {
+  width: 56px;
+  height: 56px;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  flex-shrink: 0;
+}
+
+.photo-thumbnail img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.photo-more {
+  width: 56px;
+  height: 56px;
+  border-radius: 8px;
+  background: #eef2ff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 600;
+  color: #4f46e5;
+  border: 1px solid #e2e8f0;
+  flex-shrink: 0;
+}
+
+/* ===== Низ карточки ===== */
+.task-card-footer {
+  margin-top: auto;
+  padding-top: 10px;
+  border-top: 1px solid #f1f5f9;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.task-footer-row {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+}
+
+.task-comments-indicator {
+  font-size: 13px;
+  color: #64748b;
+  background: #f1f5f9;
+  padding: 2px 10px;
+  border-radius: 12px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.task-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+}
+
+/* Кнопки */
+
+.status-completed {
+  font-size: 13px;
+  color: #22c55e;
+  font-weight: 600;
+}
+
+/* ===== Мобильные устройства ===== */
+@media (max-width: 480px) {
+  .task-card {
+    min-height: 220px;
+    border-radius: 12px;
+  }
+
+  .task-card-body {
+    padding: 10px 12px 10px;
+  }
+
+  .task-card-header {
+    font-size: 12px;
+    flex-wrap: wrap;
+  }
+
+  .task-author {
+    font-size: 13px;
+  }
+
+  .task-supplier {
+    font-size: 13px;
+  }
+
+  .task-comment-box {
+    font-size: 13px;
+    padding: 8px 12px;
+    min-height: 48px;
+    max-height: 64px;
+  }
+
+  .photo-thumbnail {
+    width: 44px;
+    height: 44px;
+  }
+
+  .photo-more {
+    width: 44px;
+    height: 44px;
+    font-size: 11px;
+  }
+
+  .task-actions {
+    gap: 4px;
+  }
+
+  .task-comments-indicator {
+    font-size: 11px;
+    padding: 1px 8px;
+  }
+}

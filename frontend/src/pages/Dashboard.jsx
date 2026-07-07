@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import HubCard from '../components/hubs/HubCard';
 import TasksTable from '../components/tasks/TasksTable';
 import './Dashboard.css';
@@ -7,6 +8,8 @@ function Dashboard({ user, onLogout }) {
   const [hubs, setHubs] = useState([]);
   const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(true);
+
+  const navigate = useNavigate()
 
   // Конфигурация хабов: имя, иконка
   const hubConfig = [
@@ -48,8 +51,12 @@ function Dashboard({ user, onLogout }) {
   }, []);
 
   const handleHubClick = (hubName) => {
-    console.log(`Переход в хаб: ${hubName}`);
-    // TODO: переход на страницу хаба
+    if (hubName === 'Поступления') {
+      navigate('/hub/arrivals');
+    } else {
+      console.log(`Переход в хаб: ${hubName}`);
+      // TODO: другие хабы
+    }
   };
 
   return (
