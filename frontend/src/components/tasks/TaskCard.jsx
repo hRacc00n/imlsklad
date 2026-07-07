@@ -1,7 +1,8 @@
 import ActionButton from '../common/ActionButton';
+import PhotoViewer from '../common/PhotoViewer';
 import './TaskCard.css';
 
-function TaskCard({ task, onTake, onComplete, onDecline, onClick }) {
+function TaskCard({ task, onTake, onComplete, onDecline, onClick, onPhotoClick }) {
   const {
     id,
     author,
@@ -67,18 +68,7 @@ function TaskCard({ task, onTake, onComplete, onDecline, onClick }) {
         </div>
 
         {/* Превью фото */}
-        {photos.length > 0 && (
-          <div className="task-photos-preview">
-            {photos.slice(0, 4).map((photo, idx) => (
-              <div key={idx} className="photo-thumbnail">
-                <img src={photo} alt={`Фото ${idx + 1}`} />
-              </div>
-            ))}
-            {photos.length > 4 && (
-              <div className="photo-more">+{photos.length - 4}</div>
-            )}
-          </div>
-        )}
+        <PhotoViewer photos={photos} onPhotoClick={onPhotoClick} />
 
         {/* Низ карточки */}
         <div className="task-card-footer">

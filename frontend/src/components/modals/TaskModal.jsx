@@ -1,12 +1,15 @@
-import { useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useModal } from '../../contexts/ModalContext';
 import ActionButton from '../common/ActionButton';
 import ModalCloseButton from '../common/ModalCloseButton';
+import ImageGallery from '../common/ImageGallery';
 import './TaskModal.css';
 
 function TaskModal() {
   const { isOpen, task, taskType, closeModal } = useModal();
   const modalRef = useRef(null);
+  const [galleryOpen, setGalleryOpen] = useState(false);
+  const [galleryIndex, setGalleryIndex] = useState(0);
 
   useEffect(() => {
     const handleEsc = (e) => {
@@ -26,9 +29,14 @@ function TaskModal() {
     if (e.target === e.currentTarget) closeModal();
   };
 
+  const handlePhotoClick = (index) => {
+    if (!task?.photos || task.photos.length === 0) return;
+    setGalleryIndex(index);
+    setGalleryOpen(true);
+  };
+
   if (!isOpen || !task) return null;
 
-  // Определяем статус
   const getStatusInfo = () => {
     switch (task.status) {
       case 'new':
@@ -44,7 +52,6 @@ function TaskModal() {
 
   const statusInfo = getStatusInfo();
 
-  // Заголовок: "Поступление от {supplier}"
   const getTitle = () => {
     switch (taskType) {
       case 'arrival':
@@ -58,7 +65,6 @@ function TaskModal() {
     }
   };
 
-  // Рендерим специфичные поля
   const renderTypeSpecificFields = () => {
     switch (taskType) {
       case 'arrival':
@@ -77,69 +83,44 @@ function TaskModal() {
                 <label>Фотографии</label>
                 <div className="modal-photos">
                   {task.photos.map((photo, idx) => (
-                    <img key={idx} src={photo} alt={`Фото ${idx + 1}`} className="modal-photo" />
+                    <img
+                      key={idx}
+                      src={photo}
+                      alt={`Фото ${idx + 1}`}
+                      className="modal-photo"
+                      onClick={() => handlePhotoClick(idx)}
+                    />
                   ))}
                 </div>
               </div>
             )}
           </>
         );
-      case 'region':
-        return (
-          <>
-            <div className="modal-field">
-              <label>Регион</label>
-              <span>{task.region || '—'}</span>
-            </div>
-            <div className="modal-field">
-              <label>Координатор</label>
-              <span>{task.coordinator || '—'}</span>
-            </div>
-          </>
-        );
-      case 'spb':
-        return (
-          <>
-            <div className="modal-field">
-              <label>Терминал</label>
-              <span>{task.terminal || '—'}</span>
-            </div>
-          </>
-        );
       default:
-        return (
-          <div className="modal-field">
-            <label>Описание</label>
-            <span>{task.description || '—'}</span>
-          </div>
-        );
+        return null;
     }
   };
 
   return (
     <div className="modal-overlay" onClick={handleOverlayClick}>
       <div className="modal-content task-modal-content" ref={modalRef}>
-        {/* Статусная полоска */}
         <div className={`modal-status-bar ${statusInfo.class}`}>
           {statusInfo.label}
         </div>
 
         <div className="modal-header">
           <h2>{getTitle()}</h2>
-          <button className="modal-close" onClick={closeModal}>✕</button>
+          <ModalCloseButton onClick={closeModal} />
         </div>
 
         <div className="modal-body">
-          {/* Автор + Дата */}
           <div className="modal-meta">
             <span className="modal-author">✍️ {task.author || '—'}</span>
             <span className="modal-date">🕐 {task.created_at || '—'}</span>
           </div>
 
-          {/* Типовые поля */}
           {renderTypeSpecificFields()}
 
-          {/* Блок комментариев (заглушка) */}
           <div className="modal-comments">
             <h4>💬 Комментарии</h4>
             <div className="comments-list">
@@ -179,6 +160,13 @@ function TaskModal() {
           </ActionButton>
         </div>
       </div>
+
+      <ImageGallery
+        photos={task.photos || []}
+        isOpen={galleryOpen}
+        onClose={() => setGalleryOpen(false)}
+        initialIndex={galleryIndex}
+      />
     </div>
   );
 }

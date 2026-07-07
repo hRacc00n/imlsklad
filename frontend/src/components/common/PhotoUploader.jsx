@@ -18,8 +18,8 @@ function PhotoUploader({ onPhotosChange, existingPhotos = [] }) {
         files.map(async (file) => {
           // Настройки сжатия
           const options = {
-            maxSizeMB: 0.5, // максимум 500KB
-            maxWidthOrHeight: 1024,
+            maxSizeMB: 1.0, // максимум 500KB
+            maxWidthOrHeight: 1300,
             useWebWorker: true,
           };
           const compressedFile = await imageCompression(file, options);

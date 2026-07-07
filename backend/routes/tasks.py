@@ -1,8 +1,11 @@
+import os
+import base64
+import uuid
 from flask import request, jsonify
 from db.database import get_db
 from db.models import Order, OrderHistory
 import json
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 
 def register_tasks_routes(app):
     
@@ -161,35 +164,77 @@ def register_tasks_routes(app):
       # ===== POST: Загрузить фото для задачи =====
     @app.route('/api/tasks/<int:task_id>/photos', methods=['POST'])
     def upload_photos(task_id):
-        data = request.get_json()
-        photos = data.get('photos', [])
-        
-        if not photos:
-            return jsonify({'success': False, 'message': 'Нет фото для загрузки'}), 400
-        
-        with get_db() as db:
-            task = db.query(Order).filter(Order.id == task_id).first()
-            if not task:
-                return jsonify({'success': False, 'message': 'Задача не найдена'}), 404
+        try:
+            data = request.get_json()
+            photos = data.get('photos', [])
             
-            # TODO: сохранять фото на диск
-            # Пока просто сохраняем ссылки в email_data
-            email_data = {}
-            if task.email_data:
+            if not photos:
+                return jsonify({'success': False, 'message': 'Нет фото для загрузки'}), 400
+            
+            saved_photos = []
+            upload_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'data', 'uploads', 'photos')
+            os.makedirs(upload_dir, exist_ok=True)
+            
+            for idx, photo_base64 in enumerate(photos):
                 try:
-                    email_data = json.loads(task.email_data)
-                except:
-                    pass
+                    # Проверяем, что это base64 строка
+                    if not photo_base64:
+                        continue
+                        
+                    # Убираем префикс data:image/jpeg;base64,
+                    if ',' in photo_base64:
+                        _, data_str = photo_base64.split(',', 1)
+                    else:
+                        data_str = photo_base64
+                    
+                    # Декодируем base64
+                    image_data = base64.b64decode(data_str)
+                    
+                    # Проверяем, что это изображение (магия JPEG)
+                    if len(image_data) < 100:
+                        continue
+                    
+                    # Генерируем уникальное имя
+                    filename = f"task_{task_id}_{uuid.uuid4().hex[:8]}.jpg"
+                    filepath = os.path.join(upload_dir, filename)
+                    
+                    with open(filepath, 'wb') as f:
+                        f.write(image_data)
+                    
+                    saved_photos.append(f"/uploads/photos/{filename}")
+                    
+                except Exception as e:
+                    print(f"Ошибка обработки фото {idx}: {e}")
+                    continue
             
-            if 'photos' not in email_data:
-                email_data['photos'] = []
+            if not saved_photos:
+                return jsonify({'success': False, 'message': 'Не удалось сохранить фото'}), 500
             
-            # Добавляем новые фото (пока base64)
-            email_data['photos'].extend(photos)
-            task.email_data = json.dumps(email_data, ensure_ascii=False)
-            db.commit()
-            
-            return jsonify({
-                'success': True,
-                'photos': email_data['photos']
-            }), 200
+            # Обновляем БД
+            with get_db() as db:
+                task = db.query(Order).filter(Order.id == task_id).first()
+                if not task:
+                    return jsonify({'success': False, 'message': 'Задача не найдена'}), 404
+                
+                email_data = {}
+                if task.email_data:
+                    try:
+                        email_data = json.loads(task.email_data)
+                    except:
+                        pass
+                
+                if 'photos' not in email_data:
+                    email_data['photos'] = []
+                
+                email_data['photos'].extend(saved_photos)
+                task.email_data = json.dumps(email_data, ensure_ascii=False)
+                db.commit()
+                
+                return jsonify({
+                    'success': True,
+                    'photos': saved_photos
+                }), 200
+                
+        except Exception as e:
+            print(f"Ошибка в upload_photos: {e}")
+            return jsonify({'success': False, 'message': str(e)}), 500

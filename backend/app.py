@@ -1,5 +1,6 @@
 import sys
 import io
+import os
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
 sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8')
 
@@ -13,6 +14,7 @@ from routes.users import register_users_routes
 from routes.roles import register_roles_routes
 from routes.sse import register_sse_routes
 from routes.tasks import register_tasks_routes
+from flask import send_from_directory
 
 app = Flask(__name__)
 app.config['JSON_AS_ASCII'] = False
@@ -26,6 +28,16 @@ register_users_routes(app)
 register_roles_routes(app)
 register_sse_routes(app)
 register_tasks_routes(app)
+
+@app.route('/uploads/<filename>')
+def uploaded_file(filename):
+    upload_dir = os.path.join(os.path.dirname(__file__), 'data', 'uploads')
+    return send_from_directory(upload_dir, filename)
+
+@app.route('/uploads/photos/<filename>')
+def uploaded_photo(filename):
+    upload_dir = os.path.join(os.path.dirname(__file__), 'data', 'uploads', 'photos')
+    return send_from_directory(upload_dir, filename)
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)

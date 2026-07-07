@@ -5,6 +5,7 @@ import TaskCard from '../components/tasks/TaskCard';
 import ActionButton from '../components/common/ActionButton';
 import { useAuth } from '../contexts/AuthContext';
 import PhotoUploader from '../components/common/PhotoUploader';
+import ImageGallery from '../components/common/ImageGallery';
 import './ArrivalsHub.css';
 
 function ArrivalsHub() {
@@ -17,6 +18,17 @@ function ArrivalsHub() {
   const [submitting, setSubmitting] = useState(false);
   const { user } = useAuth();
   const [newPhotos, setNewPhotos] = useState([]);
+
+  const [galleryOpen, setGalleryOpen] = useState(false);
+  const [galleryIndex, setGalleryIndex] = useState(0);
+  const [galleryPhotos, setGalleryPhotos] = useState([]);
+
+  const handlePhotoClick = (task, photoIndex) => {
+    if (!task.photos || task.photos.length === 0) return;
+    setGalleryPhotos(task.photos);
+    setGalleryIndex(photoIndex);
+    setGalleryOpen(true);
+  };
 
   // Загрузка задач
   const loadTasks = async () => {
@@ -139,6 +151,7 @@ function ArrivalsHub() {
                 onComplete={handleComplete}
                 onDecline={handleDecline}
                 onClick={handleCardClick}
+                onPhotoClick={(photoIndex) => handlePhotoClick(task, photoIndex)}
               />
             ))}
           </div>
@@ -202,6 +215,12 @@ function ArrivalsHub() {
           </div>
         </div>
       )}
+      <ImageGallery
+        photos={galleryPhotos}
+        isOpen={galleryOpen}
+        onClose={() => setGalleryOpen(false)}
+        initialIndex={galleryIndex}
+      />
     </div>
   );
 }
