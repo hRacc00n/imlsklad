@@ -1,15 +1,22 @@
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth } from './contexts/AuthContext';
 import { AppProvider } from './contexts/AppContext';
-import Login from './pages/Login';
-import Dashboard from './pages/Dashboard';
-import UsersPage from './pages/UsersPage';
-import RolesPage from './pages/RolesPage';
-import SettingsPage from './pages/SettingsPage';
+import {
+  Login,
+  Dashboard,
+  UsersPage,
+  RolesPage,
+  SettingsPage,
+  SystemPage,
+  ArrivalsHub,
+  RegionsHub,
+  SpbHub,
+  InvoicesHub,
+  AirTrafficHub,
+  TasksHub,
+} from './pages';
 import Layout from './components/Layout';
 import AdminLayout from './components/AdminLayout';
-import SystemPage from './pages/SystemPage';
-import ArrivalsHub from './pages/ArrivalsHub';
 import TaskModal from './components/modals/TaskModal';
 import './App.css';
 
@@ -21,12 +28,21 @@ function App() {
   }
 
   return (
-    <AppProvider>  {/* ← Обёртываем в AppProvider */}
+    <AppProvider>
       <Routes>
         <Route element={<Layout user={user} onLogout={logout} />}>
+          {/* Главная */}
           <Route path="/" element={<Dashboard user={user} onLogout={logout} />} />
-          <Route path="/hub/arrivals" element={<ArrivalsHub />} />
           
+          {/* Хабы */}
+          <Route path="/hub/arrivals" element={<ArrivalsHub />} />
+          <Route path="/hub/regions" element={<RegionsHub />} />
+          <Route path="/hub/spb" element={<SpbHub />} />
+          <Route path="/hub/invoices" element={<InvoicesHub />} />
+          <Route path="/hub/airtraffic" element={<AirTrafficHub />} />
+          <Route path="/hub/tasks" element={<TasksHub />} />
+          
+          {/* Админка */}
           <Route path="/admin" element={<AdminLayout />}>
             <Route path="users" element={<UsersPage user={user} onLogout={logout} />} />
             <Route path="roles" element={<RolesPage />} />

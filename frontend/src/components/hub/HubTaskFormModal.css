@@ -1,0 +1,214 @@
+/* ===== Модальное окно ===== */
+.hub-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  padding: 20px;
+}
+
+.hub-modal-content {
+  background: #ffffff;
+  border-radius: 20px;
+  max-width: 500px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 25px 80px rgba(0, 0, 0, 0.3);
+  animation: hub-modal-fade-in 0.25s ease;
+}
+
+@keyframes hub-modal-fade-in {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.hub-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 24px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.hub-modal-header h2 {
+  font-size: 20px;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0;
+}
+
+.hub-modal-close {
+  background: transparent;
+  border: none;
+  font-size: 24px;
+  cursor: pointer;
+  color: #94a3b8;
+  padding: 4px 8px;
+  border-radius: 8px;
+  transition: all 0.2s;
+}
+
+.hub-modal-close:hover {
+  background: #f1f5f9;
+  color: #0f172a;
+}
+
+.hub-modal-body {
+  padding: 24px;
+}
+
+.hub-modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  padding-top: 4px;
+}
+
+/* ===== Форма ===== */
+.hub-form-group {
+  margin-bottom: 18px;
+}
+
+.hub-form-group label {
+  display: block;
+  font-size: 14px;
+  font-weight: 600;
+  color: #1e293b;
+  margin-bottom: 4px;
+}
+
+.hub-form-required {
+  color: #ef4444;
+}
+
+.hub-form-group input,
+.hub-form-group textarea {
+  width: 100%;
+  padding: 10px 14px;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  font-size: 14px;
+  box-sizing: border-box;
+  transition: border-color 0.2s;
+  font-family: inherit;
+}
+
+.hub-form-group input:focus,
+.hub-form-group textarea:focus {
+  outline: none;
+  border-color: #2563eb;
+}
+
+.hub-form-group textarea {
+  resize: vertical;
+  min-height: 80px;
+}
+
+.hub-form-error {
+  color: #ef4444;
+  font-size: 12px;
+  margin-top: 4px;
+}
+
+.hub-form-hint {
+  font-size: 12px;
+  margin-top: 4px;
+}
+
+.hub-form-hint-error {
+  color: #ef4444;
+}
+
+.hub-form-hint-loading {
+  color: #f59e0b;
+}
+
+.hub-form-hint-success {
+  color: #22c55e;
+}
+
+/* ===== Кнопки ===== */
+.hub-btn-cancel {
+  padding: 10px 24px;
+  background: transparent;
+  color: #64748b;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.hub-btn-cancel:hover {
+  background: #f1f5f9;
+}
+
+.hub-btn-submit {
+  padding: 10px 28px;
+  background: #2563eb;
+  color: white;
+  border: none;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.hub-btn-submit:hover:not(:disabled) {
+  background: #1d4ed8;
+}
+
+.hub-btn-submit:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* ============================================ */
+/* ===== Адаптация для мобильных ===== */
+/* ============================================ */
+@media (max-width: 480px) {
+  .hub-modal-content {
+    max-width: 100%;
+    margin: 0 10px;
+    border-radius: 16px;
+  }
+  
+  .hub-modal-header {
+    padding: 16px 18px;
+  }
+  
+  .hub-modal-header h2 {
+    font-size: 17px;
+  }
+  
+  .hub-modal-body {
+    padding: 16px 18px;
+  }
+  
+  .hub-modal-footer {
+    flex-direction: column;
+  }
+  
+  .hub-btn-cancel,
+  .hub-btn-submit {
+    width: 100%;
+    justify-content: center;
+    text-align: center;
+  }
+}

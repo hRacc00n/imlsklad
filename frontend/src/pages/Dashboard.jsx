@@ -9,28 +9,26 @@ function Dashboard({ user, onLogout }) {
   const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  const navigate = useNavigate()
+  const navigate = useNavigate();
 
-  // Конфигурация хабов: имя, иконка
+  // Конфигурация хабов: имя, иконка, маршрут
   const hubConfig = [
-    { name: 'Регионы', icon: '🌍' },
-    { name: 'СПб', icon: '🏙️' },
-    { name: 'Счета', icon: '📊' },
-    { name: 'Поступления', icon: '📦' },
-    { name: 'ЭйрТрафик', icon: '✈️' },
-    { name: 'Задачи', icon: '📋' },
+    { name: 'Регионы', icon: '🌍', route: '/hub/regions' },
+    { name: 'СПб', icon: '🏙️', route: '/hub/spb' },
+    { name: 'Счета', icon: '📊', route: '/hub/invoices' },
+    { name: 'Поступления', icon: '📦', route: '/hub/arrivals' },
+    { name: 'ЭйрТрафик', icon: '✈️', route: '/hub/airtraffic' },
+    { name: 'Задачи', icon: '📋', route: '/hub/tasks' },
   ];
 
   useEffect(() => {
     // TODO: загружать реальные данные из БД
-    // Пока заглушка
     const hubData = hubConfig.map((h, index) => ({
       ...h,
-      count: Math.floor(Math.random() * 10), // временно случайные числа
+      count: Math.floor(Math.random() * 10),
     }));
     setHubs(hubData);
 
-    // Временная заглушка для задач
     setTasks([
       {
         tracking: 'ARR-2025-001',
@@ -50,19 +48,13 @@ function Dashboard({ user, onLogout }) {
     setLoading(false);
   }, []);
 
-  const handleHubClick = (hubName) => {
-    if (hubName === 'Поступления') {
-      navigate('/hub/arrivals');
-    } else {
-      console.log(`Переход в хаб: ${hubName}`);
-      // TODO: другие хабы
-    }
+  const handleHubClick = (hubName, route) => {
+    navigate(route);
   };
 
   return (
     <div className="dashboard">
       <main className="main">
-        {/* Блок Хабы */}
         <section className="hubs-section">
           <div className="hubs-grid">
             {hubs.map((hub, index) => (
@@ -71,13 +63,12 @@ function Dashboard({ user, onLogout }) {
                 name={hub.name}
                 icon={hub.icon}
                 count={hub.count}
-                onClick={() => handleHubClick(hub.name)}
+                onClick={() => handleHubClick(hub.name, hub.route)}
               />
             ))}
           </div>
         </section>
 
-        {/* Блок Актуальные задачи */}
         <section className="tasks-section">
           <h2 className="section-title">📋 Актуальные задачи</h2>
           <TasksTable tasks={tasks} loading={loading} />
