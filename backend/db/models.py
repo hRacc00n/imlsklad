@@ -91,6 +91,13 @@ class Comment(Base):
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
     def to_dict(self):
+        # Считаем отредактированным только если updated_at существенно отличается от created_at
+        is_edited = False
+        if self.updated_at and self.created_at:
+            # Если разница больше 1 секунды — значит действительно редактировали
+            diff = (self.updated_at - self.created_at).total_seconds()
+            is_edited = diff > 1
+        
         return {
             'id': self.id,
             'task_id': self.task_id,
@@ -99,5 +106,5 @@ class Comment(Base):
             'is_deleted': self.is_deleted,
             'created_at': self.created_at.isoformat() if self.created_at else None,
             'updated_at': self.updated_at.isoformat() if self.updated_at else None,
-            'is_edited': self.updated_at and self.updated_at != self.created_at
+            'is_edited': is_edited
         }
