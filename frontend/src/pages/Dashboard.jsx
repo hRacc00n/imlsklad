@@ -18,7 +18,7 @@ function Dashboard({ user, onLogout }) {
   const [hasNext, setHasNext] = useState(false);
   const [hasPrevious, setHasPrevious] = useState(false);
 
-  const { openModal } = useModal();
+  const { openModal, updateTask } = useModal();
 
   const hubConfig = [
     { name: 'Регионы', icon: '🌍', route: '/hub/regions' },
@@ -50,7 +50,110 @@ function Dashboard({ user, onLogout }) {
 
   const handleTaskClick = (task) => {
     const taskType = task.type || 'arrival';
-    openModal(task, taskType);
+    
+    openModal(task, taskType, {
+      onTake: async (taskId) => {
+        try {
+          const response = await fetch(`/api/tasks/${taskType}/${taskId}/take`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ user_name: user?.name || 'Неизвестно' }),
+          });
+          const data = await response.json();
+          if (data.success) {
+            const updatedTask = { ...task, status: 'in_progress', assigned_to: user?.name };
+            updateTask(updatedTask);
+            await loadActiveTasks();
+          }
+        } catch (err) {
+          console.error(err);
+        }
+      },
+      onComplete: async (taskId) => {
+        try {
+          const response = await fetch(`/api/tasks/${taskType}/${taskId}/complete`, {
+            method: 'PUT',
+          });
+          const data = await response.json();
+          if (data.success) {
+            const updatedTask = { ...task, status: 'completed' };
+            updateTask(updatedTask);
+            await loadActiveTasks();
+          }
+        } catch (err) {
+          console.error(err);
+        }
+      },
+      onDecline: async (taskId) => {
+        try {
+          const response = await fetch(`/api/tasks/${taskType}/${taskId}/decline`, {
+            method: 'PUT',
+          });
+          const data = await response.json();
+          if (data.success) {
+            const updatedTask = { ...task, status: 'new', assigned_to: null };
+            updateTask(updatedTask);
+            await loadActiveTasks();
+          }
+        } catch (err) {
+          console.error(err);
+        }
+      },
+      onReassign: async (taskId) => {
+        try {
+          const response = await fetch(`/api/tasks/${taskType}/${taskId}/reassign`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ user_name: user?.name || 'Неизвестно' }),
+          });
+          const data = await response.json();
+          if (data.success) {
+            const updatedTask = { ...task, assigned_to: user?.name };
+            updateTask(updatedTask);
+            await loadActiveTasks();
+          }
+        } catch (err) {
+          console.error(err);
+        }
+      },
+      onEdit: async (taskId, values, photos) => {
+        try {
+          const response = await fetch(`/api/tasks/${taskId}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ ...values, photos }),
+          });
+          const data = await response.json();
+          if (data.success) {
+            const updatedTask = { ...task, ...data.task };
+            updateTask(updatedTask);
+            await loadActiveTasks();
+          }
+        } catch (err) {
+          console.error(err);
+        }
+      },
+      onUploadPhotos: async (taskId, photos) => {
+        try {
+          const response = await fetch(`/api/tasks/${taskId}/photos`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ photos }),
+          });
+          const data = await response.json();
+          if (data.success) {
+            const updatedTask = { ...task, photos: data.photos };
+            updateTask(updatedTask);
+            await loadActiveTasks();
+          }
+        } catch (err) {
+          console.error(err);
+        }
+      },
+      onRefresh: loadActiveTasks,
+      onPhotoUploadStart: () => {},
+      onPhotoUploadComplete: () => {},
+    });
   };
 
   const loadStats = async () => {
