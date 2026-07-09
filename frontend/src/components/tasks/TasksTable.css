@@ -95,3 +95,12 @@
     padding: 0 6px;
   }
 }
+
+.task-row-clickable {
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.task-row-clickable:hover {
+  background: #f1f5f9;
+}

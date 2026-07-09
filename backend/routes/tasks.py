@@ -109,6 +109,135 @@ def register_tasks_routes(app):
             response.headers['Expires'] = '0'
             return response, 200
 
+    # ===== GET: Актуальные задачи для пользователя =====
+    @app.route('/api/tasks/active', methods=['GET'])
+    def get_active_tasks():
+        """Получить актуальные задачи для текущего пользователя"""
+        user_name = request.args.get('user_name', '')
+        user_role = request.args.get('user_role', '')
+        page = request.args.get('page', 1, type=int)
+        per_page = request.args.get('per_page', 10, type=int)
+        
+        if not user_name:
+            return jsonify({'error': 'user_name required'}), 400
+        
+        with get_db() as db:
+            # 1. Получаем роль пользователя
+            from utils.file_loader import load_json
+            users = load_json('users.json')
+            roles = load_json('roles.json')
+            
+            user_data = None
+            for u in users:
+                if u.get('name') == user_name:
+                    user_data = u
+                    break
+            
+            if not user_data:
+                return jsonify({'error': 'User not found'}), 404
+            
+            role_key = user_data.get('role', '')
+            user_role_obj = None
+            for r in roles:
+                if r.get('role_key') == role_key:
+                    user_role_obj = r
+                    break
+            
+            # 2. Получаем хабы, к которым у пользователя есть доступ
+            hub_ids = []
+            if user_role_obj and 'hub_access' in user_role_obj:
+                hub_ids = user_role_obj['hub_access']
+            
+            # 3. Запрос к БД: невыполненные задачи
+            query = db.query(Order).filter(Order.status != 'completed')
+            
+            # Фильтр по хабам (если есть ограничения)
+            if hub_ids:
+                hubs = load_json('hubs.json')
+                hub_keys = []
+                for hub in hubs:
+                    if hub['id'] in hub_ids:
+                        hub_keys.append(hub['key'])
+                
+                if hub_keys:
+                    query = query.filter(Order.type.in_(hub_keys))
+            
+            # 4. Добавляем задачи, которые пользователь взял в работу (даже если не в его роли)
+            assigned_tasks = db.query(Order).filter(
+                Order.status != 'completed',
+                Order.assigned_to == user_name
+            ).all()
+            
+            # 5. Объединяем и убираем дубликаты
+            main_tasks = query.all()
+            task_ids = set()
+            result_tasks = []
+            
+            for task in main_tasks:
+                if task.id not in task_ids:
+                    task_ids.add(task.id)
+                    result_tasks.append(task)
+            
+            for task in assigned_tasks:
+                if task.id not in task_ids:
+                    task_ids.add(task.id)
+                    result_tasks.append(task)
+            
+            # 6. Сортируем по дате (новые сверху)
+            result_tasks.sort(key=lambda x: x.created_at, reverse=True)
+            
+            # 7. Пагинация
+            total = len(result_tasks)
+            start = (page - 1) * per_page
+            end = start + per_page
+            paginated_tasks = result_tasks[start:end]
+            
+            # 8. Форматируем результат
+            result = []
+            for task in paginated_tasks:
+                email_data = {}
+                if task.email_data:
+                    try:
+                        email_data = json.loads(task.email_data)
+                    except:
+                        pass
+                
+                status = task.status
+                if status == 'Новая':
+                    status = 'new'
+                elif status == 'В работе':
+                    status = 'in_progress'
+                elif status == 'Завершена':
+                    status = 'completed'
+                
+                result.append({
+                    'id': task.id,
+                    'author': email_data.get('author', 'Неизвестно'),
+                    'created_at': task.created_at.strftime('%Y-%m-%d %H:%M') if task.created_at else '',
+                    'supplier': email_data.get('supplier', task.client or 'Неизвестно'),
+                    'comment': task.description or '',
+                    'assigned_to': task.assigned_to,
+                    'status': status,
+                    'comments_count': db.query(Comment).filter(
+                        Comment.task_id == task.id,
+                        Comment.is_deleted == False
+                    ).count(),
+                    'photos': email_data.get('photos', []),
+                    'type': task.type,
+                })
+            
+            return jsonify({
+                'data': result,
+                'pagination': {
+                    'page': page,
+                    'per_page': per_page,
+                    'total': total,
+                    'total_pages': (total + per_page - 1) // per_page,
+                    'has_next': end < total,
+                    'has_previous': page > 1
+                }
+            }), 200
+
     # ===== POST: Создать задачу =====
     @app.route('/api/tasks/arrivals', methods=['POST'])
     def create_arrival():

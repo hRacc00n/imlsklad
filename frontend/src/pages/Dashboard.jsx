@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import HubCard from '../components/hubs/HubCard';
 import TasksTable from '../components/tasks/TasksTable';
+import { useModal } from '../contexts/ModalContext';
 import './Dashboard.css';
 
 function Dashboard({ user, onLogout }) {
@@ -12,6 +13,13 @@ function Dashboard({ user, onLogout }) {
 
   const navigate = useNavigate();
 
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [hasNext, setHasNext] = useState(false);
+  const [hasPrevious, setHasPrevious] = useState(false);
+
+  const { openModal } = useModal();
+
   const hubConfig = [
     { name: 'Регионы', icon: '🌍', route: '/hub/regions' },
     { name: 'СПб', icon: '🏙️', route: '/hub/spb' },
@@ -20,6 +28,30 @@ function Dashboard({ user, onLogout }) {
     { name: 'ЭйрТрафик', icon: '✈️', route: '/hub/airtraffic' },
     { name: 'Задачи', icon: '📋', route: '/hub/tasks' },
   ];
+
+  const loadActiveTasks = async (page = 1) => {
+    try {
+      const response = await fetch(`/api/tasks/active?user_name=${encodeURIComponent(user?.name || '')}&user_role=${user?.role || ''}&page=${page}&per_page=10`);
+      const data = await response.json();
+      setTasks(data.data || []);
+      setCurrentPage(data.pagination?.page || 1);
+      setTotalPages(data.pagination?.total_pages || 1);
+      setHasNext(data.pagination?.has_next || false);
+      setHasPrevious(data.pagination?.has_previous || false);
+    } catch (err) {
+      console.error('Ошибка загрузки активных задач:', err);
+    }
+  };
+
+  const goToPage = (page) => {
+    if (page < 1 || page > totalPages) return;
+    loadActiveTasks(page);
+  };
+
+  const handleTaskClick = (task) => {
+    const taskType = task.type || 'arrival';
+    openModal(task, taskType);
+  };
 
   const loadStats = async () => {
     try {
@@ -69,23 +101,7 @@ function Dashboard({ user, onLogout }) {
     // Загрузка реальных данных
     loadStats();
 
-    // Загрузка задач (заглушка)
-    setTasks([
-      {
-        tracking: 'ARR-2025-001',
-        client: 'ООО "Транспортник"',
-        description: 'Приемка товара, 5 паллет',
-        assigned_to: 'Анна Менеджер',
-        comments_count: 3,
-      },
-      {
-        tracking: 'SHIP-2025-042',
-        client: 'ИП "Грузовичок"',
-        description: 'Отгрузка в СПб',
-        assigned_to: '—',
-        comments_count: 0,
-      },
-    ]);
+    loadActiveTasks();
     setLoading(false);
 
     const handleSSEEvent = (event) => {
@@ -96,6 +112,12 @@ function Dashboard({ user, onLogout }) {
       if (data.type === 'hub_stats_updated' && data.data?.hub_type === 'arrival') {
         console.log('[Dashboard] Обновление счетчика Поступления');
         loadStats();
+      }
+      if (data.type === 'task_created' || 
+          data.type === 'task_updated' || 
+          data.type === 'task_deleted' ||
+          data.type === 'comment_count_updated') {
+        loadActiveTasks();
       }
     };
 
@@ -131,7 +153,19 @@ function Dashboard({ user, onLogout }) {
 
         <section className="tasks-section">
           <h2 className="section-title">📋 Актуальные задачи</h2>
-          <TasksTable tasks={tasks} loading={loading} />
+          <TasksTable tasks={tasks} loading={loading} onRowClick={handleTaskClick} />
+          
+          {totalPages > 1 && (
+            <div className="pagination">
+              <button onClick={() => goToPage(currentPage - 1)} disabled={!hasPrevious}>
+                ← Назад
+              </button>
+              <span>Страница {currentPage} из {totalPages}</span>
+              <button onClick={() => goToPage(currentPage + 1)} disabled={!hasNext}>
+                Вперед →
+              </button>
+            </div>
+          )}
         </section>
       </main>
     </div>
