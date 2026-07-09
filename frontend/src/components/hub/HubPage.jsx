@@ -10,6 +10,7 @@ import HubTaskFormModal from './HubTaskFormModal';
 import useTasks from '../../hooks/useTasks';
 import useTaskList from '../../hooks/useTaskList';
 import useTaskActions from '../../hooks/useTaskActions';
+import HubTaskEditModal from './HubTaskEditModal';
 import './HubPage.css';
 
 function HubPage({ config }) {
@@ -28,6 +29,10 @@ function HubPage({ config }) {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [isPhotosUploading, setIsPhotosUploading] = useState(false);
 
+  // Состояния для модалки редактирования
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editingTask, setEditingTask] = useState(null);
+
   // Хуки для работы с задачами
   const { 
     tasks, 
@@ -39,7 +44,7 @@ function HubPage({ config }) {
     loadMore,
     refresh,
   } = useTaskList({
-    apiUrl: config.api.list,
+    apiUrl: config.apiUrl,
     perPage: config.perPage || 10,
     hideCompletedByDefault: config.hideCompletedByDefault !== false,
     storageKey: `${config.id}_hide_completed`,
@@ -55,9 +60,25 @@ function HubPage({ config }) {
     reassignTask,
     loading: taskLoading,
   } = useTasks({
-    apiUrl: config.api.list.replace(/\/[^\/]+$/, ''), // Базовый URL без последнего сегмента
+    apiUrl: config.apiUrl,
     onSuccess: () => refresh(),
   });
+
+  const handleEditTask = (task) => {
+    setEditingTask(task);
+    setShowEditModal(true);
+  };
+
+  const handleEditSubmit = async (taskId, values, photos) => {
+    try {
+      await updateTask(taskId, values, photos);
+      setShowEditModal(false);
+      setEditingTask(null);
+      await refresh();
+    } catch (err) {
+      alert('Ошибка при обновлении задачи');
+    }
+  };
 
   // Обработка SSE событий
   useEffect(() => {
@@ -85,7 +106,17 @@ function HubPage({ config }) {
   };
 
   const handleCardClick = (task) => {
-    openModal(task, config.modalType || config.id);
+    openModal(task, config.modalType || config.id, {
+      onTake: takeTask,
+      onComplete: completeTask,
+      onDecline: declineTask,
+      onReassign: reassignTask,
+      onDelete: deleteTask,
+      onEdit: updateTask, // ← передаём updateTask напрямую
+      onRefresh: refresh,
+      onPhotoUploadStart: handlePhotoUploadStart,
+      onPhotoUploadComplete: handlePhotoUploadComplete,
+    });
   };
 
   const handlePhotoUploadStart = () => setIsPhotosUploading(true);
@@ -94,10 +125,6 @@ function HubPage({ config }) {
   const handleCreateSubmit = async (values, photos) => {
     await createTask(values, photos);
     setShowCreateModal(false);
-  };
-
-  const handleEditSubmit = async (values, photos) => {
-    // TODO: реализовать редактирование
   };
 
   // Формируем поля формы из конфигурации
@@ -135,7 +162,7 @@ function HubPage({ config }) {
                   onReassign={() => reassignTask(task.id)}
                   onClick={handleCardClick}
                   onPhotoClick={(photoIndex) => handlePhotoClick(task, photoIndex)}
-                  onEdit={() => {} /* TODO: открыть модалку редактирования */}
+                  onEdit={handleEditTask} // ← открывает HubTaskEditModal
                   onDelete={() => {
                     if (confirm(`Удалить задачу от "${task.supplier || task.title}"?`)) {
                       deleteTask(task.id);
@@ -172,6 +199,21 @@ function HubPage({ config }) {
         initialValues={{}}
         initialPhotos={[]}
         submitLabel="Создать"
+        isSubmitting={taskLoading}
+        isPhotosUploading={isPhotosUploading}
+        onPhotoUploadStart={handlePhotoUploadStart}
+        onPhotoUploadComplete={handlePhotoUploadComplete}
+      />
+
+      <HubTaskEditModal
+        isOpen={showEditModal}
+        onClose={() => {
+          setShowEditModal(false);
+          setEditingTask(null);
+        }}
+        onSubmit={handleEditSubmit}
+        task={editingTask}
+        fields={formFields}
         isSubmitting={taskLoading}
         isPhotosUploading={isPhotosUploading}
         onPhotoUploadStart={handlePhotoUploadStart}

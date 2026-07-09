@@ -5,11 +5,13 @@ const ModalContext = createContext(null);
 export function ModalProvider({ children }) {
   const [isOpen, setIsOpen] = useState(false);
   const [task, setTask] = useState(null);
-  const [taskType, setTaskType] = useState(null); // 'arrival', 'region', 'spb', etc.
+  const [taskType, setTaskType] = useState(null);
+  const [actions, setActions] = useState({});
 
-  const openModal = (taskData, type) => {
+  const openModal = (taskData, type, modalActions = {}) => {
     setTask(taskData);
     setTaskType(type);
+    setActions(modalActions);
     setIsOpen(true);
   };
 
@@ -17,10 +19,23 @@ export function ModalProvider({ children }) {
     setIsOpen(false);
     setTask(null);
     setTaskType(null);
+    setActions({});
+  };
+
+  const updateTask = (updatedTask) => {
+    setTask(updatedTask);
   };
 
   return (
-    <ModalContext.Provider value={{ isOpen, task, taskType, openModal, closeModal }}>
+    <ModalContext.Provider value={{ 
+      isOpen, 
+      task, 
+      taskType, 
+      actions, 
+      openModal, 
+      closeModal,
+      updateTask,
+    }}>
       {children}
     </ModalContext.Provider>
   );

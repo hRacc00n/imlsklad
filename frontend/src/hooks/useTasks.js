@@ -14,7 +14,7 @@ export function useTasks(config = {}) {
   const [error, setError] = useState(null);
 
   const {
-    apiUrl = '/api/tasks',
+    apiUrl = '/api/tasks', // fallback
     onSuccess = null,
     onError = null,
   } = config;
@@ -93,21 +93,20 @@ export function useTasks(config = {}) {
    */
   const updateTask = useCallback(async (taskId, taskData, photos = []) => {
     try {
-      const result = await request(`${apiUrl}/${taskId}`, {
+      const result = await request(`/api/tasks/${taskId}`, {
         method: 'PUT',
         body: JSON.stringify({
           ...taskData,
           photos,
         }),
       });
-      
       if (onSuccess) onSuccess(result);
       return result;
     } catch (err) {
       if (onError) onError(err);
       throw err;
     }
-  }, [apiUrl, request, onSuccess, onError]);
+  }, [request, onSuccess, onError]);
 
   /**
    * Удалить задачу
@@ -115,17 +114,16 @@ export function useTasks(config = {}) {
    */
   const deleteTask = useCallback(async (taskId) => {
     try {
-      const result = await request(`${apiUrl}/${taskId}`, {
+      const result = await request(`/api/tasks/${taskId}`, {
         method: 'DELETE',
       });
-      
       if (onSuccess) onSuccess(result);
-      return result;
+      return result; // ← ДОБАВИТЬ
     } catch (err) {
       if (onError) onError(err);
       throw err;
     }
-  }, [apiUrl, request, onSuccess, onError]);
+  }, [request, onSuccess, onError]);
 
   /**
    * Загрузить фотографии для задачи
@@ -156,13 +154,10 @@ export function useTasks(config = {}) {
     try {
       const result = await request(`${apiUrl}/${taskId}/take`, {
         method: 'PUT',
-        body: JSON.stringify({ 
-          user_name: user?.name || 'Неизвестно' 
-        }),
+        body: JSON.stringify({ user_name: user?.name || 'Неизвестно' }),
       });
-      
       if (onSuccess) onSuccess(result);
-      return result;
+      return result; // ← ДОБАВИТЬ
     } catch (err) {
       if (onError) onError(err);
       throw err;

@@ -86,7 +86,7 @@ function TaskCard({
                 icon="✏️"
                 variant="primary"
                 size="small"
-                onClick={handleEditClick}
+                onClick={() => onEdit && onEdit(task)}
                 title="Редактировать задачу"
                 ariaLabel="Редактировать"
               />

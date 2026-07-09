@@ -3,48 +3,41 @@ import PhotoUploader from '../common/PhotoUploader';
 import ActionButton from '../common/ActionButton';
 import './HubTaskFormModal.css';
 
-function HubTaskFormModal({
+function HubTaskEditModal({
   isOpen,
   onClose,
   onSubmit,
-  title = 'Создать',
+  task,
   fields = [],
-  initialValues = {},
-  initialPhotos = [],
-  submitLabel = 'Создать',
   isSubmitting = false,
   isPhotosUploading = false,
   onPhotoUploadStart,
   onPhotoUploadComplete,
 }) {
-  const [values, setValues] = useState(initialValues);
-  const [photos, setPhotos] = useState(initialPhotos);
+  const [values, setValues] = useState({});
+  const [photos, setPhotos] = useState([]);
   const [errors, setErrors] = useState({});
 
-  // Сброс формы при ЗАКРЫТИИ (не при открытии)
+  // Заполняем форму данными задачи при открытии
   useEffect(() => {
-    if (!isOpen) {
-      setValues({});
-      setPhotos([]);
+    if (isOpen && task) {
+      const initialValues = {};
+      fields.forEach(field => {
+        if (field.name === 'supplier') {
+          initialValues[field.name] = task.supplier || '';
+        } else if (field.name === 'comment') {
+          initialValues[field.name] = task.comment || '';
+        } else {
+          initialValues[field.name] = task[field.name] || '';
+        }
+      });
+      setValues(initialValues);
+      setPhotos(task.photos || []);
       setErrors({});
     }
-  }, [isOpen]);
+  }, [isOpen, task, fields]);
 
-  // Обновляем values при изменении initialValues (но не сбрасываем)
-  useEffect(() => {
-    if (isOpen && Object.keys(initialValues).length > 0) {
-      setValues(initialValues);
-    }
-  }, [isOpen, initialValues]);
-
-  // Обновляем photos при изменении initialPhotos (но не сбрасываем)
-  useEffect(() => {
-    if (isOpen && initialPhotos.length > 0) {
-      setPhotos(initialPhotos);
-    }
-  }, [isOpen, initialPhotos]);
-
-  if (!isOpen) return null;
+  if (!isOpen || !task) return null;
 
   const handleChange = (name, value) => {
     setValues(prev => ({ ...prev, [name]: value }));
@@ -58,7 +51,6 @@ function HubTaskFormModal({
   };
 
   const handlePhotosChange = (newPhotos) => {
-    console.log('handlePhotosChange вызван, newPhotos:', newPhotos.length);
     setPhotos(newPhotos);
     if (errors.photos) {
       setErrors(prev => {
@@ -71,7 +63,6 @@ function HubTaskFormModal({
 
   const validate = () => {
     const newErrors = {};
-    
     fields.forEach(field => {
       if (field.required) {
         const value = values[field.name];
@@ -80,13 +71,6 @@ function HubTaskFormModal({
         }
       }
     });
-    
-    // Проверяем фото только если это требуется в конфиге
-    const photoField = fields.find(f => f.type === 'photos');
-    if (photoField && photoField.required && photos.length === 0) {
-      newErrors[photoField.name] = 'Добавьте хотя бы одну фотографию';
-    }
-    
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -94,7 +78,7 @@ function HubTaskFormModal({
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!validate()) return;
-    onSubmit(values, photos);
+    onSubmit(task.id, values, photos);
   };
 
   const renderField = (field) => {
@@ -113,7 +97,6 @@ function HubTaskFormModal({
               value={value}
               onChange={(e) => handleChange(field.name, e.target.value)}
               placeholder={field.placeholder}
-              required={field.required}
             />
             {error && <div className="hub-form-error">{error}</div>}
           </div>
@@ -130,7 +113,6 @@ function HubTaskFormModal({
               onChange={(e) => handleChange(field.name, e.target.value)}
               placeholder={field.placeholder}
               rows={field.rows || 4}
-              required={field.required}
             />
             {error && <div className="hub-form-error">{error}</div>}
           </div>
@@ -139,20 +121,13 @@ function HubTaskFormModal({
       case 'photos':
         return (
           <div className="hub-form-group" key={field.name}>
-            <label>
-              {field.label} {field.required && <span className="hub-form-required">*</span>}
-            </label>
+            <label>{field.label}</label>
             <PhotoUploader
               onPhotosChange={handlePhotosChange}
               existingPhotos={photos}
               onUploadStart={onPhotoUploadStart}
               onUploadComplete={onPhotoUploadComplete}
             />
-            {!isPhotosUploading && photos.length === 0 && (
-              <div className="hub-form-hint hub-form-hint-error">
-                ⚠️ Добавьте хотя бы одну фотографию
-              </div>
-            )}
             {isPhotosUploading && (
               <div className="hub-form-hint hub-form-hint-loading">
                 ⏳ Загрузка фотографий...
@@ -176,7 +151,7 @@ function HubTaskFormModal({
     <div className="hub-modal-overlay" onClick={onClose}>
       <div className="hub-modal-content" onClick={(e) => e.stopPropagation()}>
         <div className="hub-modal-header">
-          <h2>{title}</h2>
+          <h2>✏️ Редактировать задачу</h2>
           <button className="hub-modal-close" onClick={onClose}>
             ✕
           </button>
@@ -184,11 +159,7 @@ function HubTaskFormModal({
         <form onSubmit={handleSubmit} className="hub-modal-body">
           {fields.map(renderField)}
           <div className="hub-modal-footer">
-            <button
-              type="button"
-              className="hub-btn-cancel"
-              onClick={onClose}
-            >
+            <button type="button" className="hub-btn-cancel" onClick={onClose}>
               Отмена
             </button>
             <button
@@ -196,7 +167,7 @@ function HubTaskFormModal({
               className="hub-btn-submit"
               disabled={isSubmitting || isPhotosUploading}
             >
-              {isSubmitting ? 'Создание...' : isPhotosUploading ? 'Загрузка фото...' : submitLabel}
+              {isSubmitting ? 'Сохранение...' : isPhotosUploading ? 'Загрузка фото...' : 'Сохранить'}
             </button>
           </div>
         </form>
@@ -205,4 +176,4 @@ function HubTaskFormModal({
   );
 }
 
-export default HubTaskFormModal;
+export default HubTaskEditModal;

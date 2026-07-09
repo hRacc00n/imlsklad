@@ -4,16 +4,21 @@ import { useAuth } from '../../contexts/AuthContext';
 import ActionButton from '../common/ActionButton';
 import ModalCloseButton from '../common/ModalCloseButton';
 import ImageGallery from '../common/ImageGallery';
+import PhotoUploader from '../common/PhotoUploader';
 import { getAvailableActions } from '../../utils/taskActions';
 import './TaskModal.css';
 
-function TaskModal() {
-  const { isOpen, task, taskType, closeModal } = useModal();
+function TaskModal({ onPhotoUploadStart, onPhotoUploadComplete }) {
+  const { isOpen, task, taskType, actions, closeModal, updateTask } = useModal();
   const { user } = useAuth();
   const modalRef = useRef(null);
   const [galleryOpen, setGalleryOpen] = useState(false);
   const [galleryIndex, setGalleryIndex] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
+
+  const [isEditing, setIsEditing] = useState(false);
+  const [editValues, setEditValues] = useState({});
+  const [editPhotos, setEditPhotos] = useState([]);
 
   useEffect(() => {
     const handleEsc = (e) => {
@@ -53,7 +58,7 @@ function TaskModal() {
   };
 
   const statusInfo = getStatusInfo();
-  const actions = getAvailableActions(user, task);
+  const availableActions = getAvailableActions(user, task);
 
   const getTitle = () => {
     switch (taskType) {
@@ -68,22 +73,20 @@ function TaskModal() {
     }
   };
 
-  // Обработчики действий
+  const updateTaskInModal = (updatedData) => {
+    if (updateTask) {
+      updateTask({ ...task, ...updatedData });
+    }
+  };
+
   const handleTake = async () => {
-    if (!task) return;
+    if (!task || !actions.onTake) return;
     setIsLoading(true);
     try {
-      const response = await fetch(`/api/tasks/${task.id}/take`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ user_name: user?.name || 'Неизвестно' }),
-      });
-      if (response.ok) {
-        closeModal();
-        window.location.reload(); // или обновить список задач
-      } else {
-        const data = await response.json();
-        alert(data.message || 'Ошибка при взятии задачи');
+      const result = await actions.onTake(task.id);
+      if (result && result.task) {
+        updateTaskInModal(result.task);
+        if (actions.onRefresh) actions.onRefresh();
       }
     } catch (err) {
       alert('Ошибка при взятии задачи');
@@ -93,18 +96,13 @@ function TaskModal() {
   };
 
   const handleComplete = async () => {
-    if (!task) return;
+    if (!task || !actions.onComplete) return;
     setIsLoading(true);
     try {
-      const response = await fetch(`/api/tasks/${task.id}/complete`, {
-        method: 'PUT',
-      });
-      if (response.ok) {
-        closeModal();
-        window.location.reload();
-      } else {
-        const data = await response.json();
-        alert(data.message || 'Ошибка при выполнении задачи');
+      const result = await actions.onComplete(task.id);
+      if (result && result.task) {
+        updateTaskInModal(result.task);
+        if (actions.onRefresh) actions.onRefresh();
       }
     } catch (err) {
       alert('Ошибка при выполнении задачи');
@@ -114,18 +112,13 @@ function TaskModal() {
   };
 
   const handleDecline = async () => {
-    if (!task) return;
+    if (!task || !actions.onDecline) return;
     setIsLoading(true);
     try {
-      const response = await fetch(`/api/tasks/${task.id}/decline`, {
-        method: 'PUT',
-      });
-      if (response.ok) {
-        closeModal();
-        window.location.reload();
-      } else {
-        const data = await response.json();
-        alert(data.message || 'Ошибка при отказе от задачи');
+      const result = await actions.onDecline(task.id);
+      if (result && result.task) {
+        updateTaskInModal(result.task);
+        if (actions.onRefresh) actions.onRefresh();
       }
     } catch (err) {
       alert('Ошибка при отказе от задачи');
@@ -135,23 +128,56 @@ function TaskModal() {
   };
 
   const handleReassign = async () => {
-    if (!task) return;
+    if (!task || !actions.onReassign) return;
     setIsLoading(true);
     try {
-      const response = await fetch(`/api/tasks/${task.id}/reassign`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ user_name: user?.name || 'Неизвестно' }),
-      });
-      if (response.ok) {
-        closeModal();
-        window.location.reload();
-      } else {
-        const data = await response.json();
-        alert(data.message || 'Ошибка при переназначении задачи');
+      const result = await actions.onReassign(task.id);
+      if (result && result.task) {
+        updateTaskInModal(result.task);
+        if (actions.onRefresh) actions.onRefresh();
       }
     } catch (err) {
       alert('Ошибка при переназначении задачи');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Режим редактирования
+  const enableEditing = () => {
+    setIsEditing(true);
+    setEditValues({
+      supplier: task.supplier || '',
+      comment: task.comment || '',
+    });
+    setEditPhotos(task.photos || []);
+  };
+
+  const cancelEditing = () => {
+    setIsEditing(false);
+    setEditValues({});
+    setEditPhotos([]);
+  };
+
+  const handleSaveEdit = async () => {
+    if (!task) return;
+    setIsLoading(true);
+    try {
+      // Используем напрямую updateTask из пропсов
+      const result = await actions.onEdit(task.id, editValues, editPhotos);
+      if (result && result.task) {
+        updateTaskInModal(result.task);
+        setIsEditing(false);
+        if (actions.onRefresh) actions.onRefresh();
+      } else {
+        // Если updateTask не возвращает task, обновляем вручную
+        const updatedTask = { ...task, ...editValues, photos: editPhotos };
+        updateTaskInModal(updatedTask);
+        setIsEditing(false);
+        if (actions.onRefresh) actions.onRefresh();
+      }
+    } catch (err) {
+      alert('Ошибка при сохранении: ' + err.message);
     } finally {
       setIsLoading(false);
     }
@@ -166,28 +192,55 @@ function TaskModal() {
           <>
             <div className="modal-field">
               <label>Кто привез</label>
-              <span>{task.supplier || '—'}</span>
+              {isEditing ? (
+                <input
+                  type="text"
+                  className="modal-edit-input"
+                  value={editValues.supplier || ''}
+                  onChange={(e) => setEditValues({ ...editValues, supplier: e.target.value })}
+                />
+              ) : (
+                <span>{task.supplier || '—'}</span>
+              )}
             </div>
             <div className="modal-field">
               <label>Комментарий</label>
-              <div className="modal-comment-box">{task.comment || '—'}</div>
+              {isEditing ? (
+                <textarea
+                  className="modal-edit-textarea"
+                  value={editValues.comment || ''}
+                  onChange={(e) => setEditValues({ ...editValues, comment: e.target.value })}
+                  rows={4}
+                />
+              ) : (
+                <div className="modal-comment-box">{task.comment || '—'}</div>
+              )}
             </div>
-            {task.photos && task.photos.length > 0 && (
-              <div className="modal-field">
-                <label>Фотографии</label>
-                <div className="modal-photos">
-                  {task.photos.map((photo, idx) => (
-                    <img
-                      key={idx}
-                      src={photo}
-                      alt={`Фото ${idx + 1}`}
-                      className="modal-photo"
-                      onClick={() => handlePhotoClick(idx)}
-                    />
-                  ))}
-                </div>
-              </div>
-            )}
+            <div className="modal-field">
+              <label>Фотографии</label>
+              {isEditing ? (
+                <PhotoUploader
+                  onPhotosChange={setEditPhotos}
+                  existingPhotos={editPhotos}
+                  onUploadStart={actions.onPhotoUploadStart}
+                  onUploadComplete={actions.onPhotoUploadComplete}
+                />
+              ) : (
+                task.photos && task.photos.length > 0 && (
+                  <div className="modal-photos">
+                    {task.photos.map((photo, idx) => (
+                      <img
+                        key={idx}
+                        src={photo}
+                        alt={`Фото ${idx + 1}`}
+                        className="modal-photo"
+                        onClick={() => handlePhotoClick(idx)}
+                      />
+                    ))}
+                  </div>
+                )
+              )}
+            </div>
           </>
         );
       default:
@@ -234,59 +287,55 @@ function TaskModal() {
         </div>
 
         <div className="modal-footer">
-          {/* Новая задача */}
-          {actions.canTake && (
-            <ActionButton 
-              variant="primary" 
-              size="large" 
-              onClick={handleTake}
-              disabled={isLoading}
-            >
-              Взять в работу
-            </ActionButton>
-          )}
+          {isEditing ? (
+            // Режим редактирования
+            <>
+              <ActionButton variant="outline" size="large" onClick={cancelEditing}>
+                Отмена
+              </ActionButton>
+              <ActionButton variant="success" size="large" onClick={handleSaveEdit} disabled={isLoading}>
+                💾 Сохранить
+              </ActionButton>
+            </>
+          ) : (
+            // Режим просмотра
+            <>
+              {availableActions.canTake && (
+                <ActionButton variant="primary" size="large" onClick={handleTake} disabled={isLoading}>
+                  Взять в работу
+                </ActionButton>
+              )}
+              {availableActions.canComplete && (
+                <ActionButton variant="success" size="large" onClick={handleComplete} disabled={isLoading}>
+                  ✅ Выполнить
+                </ActionButton>
+              )}
+              {availableActions.canDecline && (
+                <ActionButton variant="danger" size="large" onClick={handleDecline} disabled={isLoading}>
+                  ❌ Отказаться
+                </ActionButton>
+              )}
+              {availableActions.canReassign && (
+                <ActionButton variant="warning" size="large" onClick={handleReassign} disabled={isLoading}>
+                  📥 Забрать задачу
+                </ActionButton>
+              )}
+              {task.status === 'completed' && (
+                <span className="status-completed-modal">✅ Задача завершена</span>
+              )}
 
-          {/* Задача в работе у текущего пользователя */}
-          {actions.canComplete && (
-            <ActionButton 
-              variant="success" 
-              size="large" 
-              onClick={handleComplete}
-              disabled={isLoading}
-            >
-              ✅ Выполнить
-            </ActionButton>
-          )}
-          {actions.canDecline && (
-            <ActionButton 
-              variant="danger" 
-              size="large" 
-              onClick={handleDecline}
-              disabled={isLoading}
-            >
-              ❌ Отказаться
-            </ActionButton>
-          )}
+              {/* Кнопка редактирования */}
+              {user?.role === 'admin' || user?.name === task?.author ? (
+                <ActionButton variant="outline" size="large" onClick={enableEditing}>
+                  ✏️ Редактировать
+                </ActionButton>
+              ) : null}
 
-          {/* Задача в работе у другого пользователя */}
-          {actions.canReassign && (
-            <ActionButton 
-              variant="warning" 
-              size="large" 
-              onClick={handleReassign}
-              disabled={isLoading}
-            >
-              📥 Забрать задачу
-            </ActionButton>
+              <ActionButton variant="outline" size="large" onClick={closeModal}>
+                Закрыть
+              </ActionButton>
+            </>
           )}
-
-          {task.status === 'completed' && (
-            <span className="status-completed-modal">✅ Задача завершена</span>
-          )}
-
-          <ActionButton variant="outline" size="large" onClick={closeModal}>
-            Закрыть
-          </ActionButton>
         </div>
       </div>
 

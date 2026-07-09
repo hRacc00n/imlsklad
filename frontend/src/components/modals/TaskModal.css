@@ -332,3 +332,57 @@
   background: #f0fdf4;
   border-radius: 10px;
 }
+
+.modal-icon-btn {
+  background: transparent;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 18px;
+  padding: 8px 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+  min-width: 44px;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.modal-icon-btn:hover {
+  background: #f1f5f9;
+}
+
+.modal-icon-btn-danger:hover {
+  background: #fee2e2;
+  border-color: #fecaca;
+}
+
+.modal-actions-right {
+  display: flex;
+  gap: 8px;
+  margin-left: auto;
+}
+
+.modal-edit-input,
+.modal-edit-textarea {
+  width: 100%;
+  padding: 10px 14px;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  font-size: 15px;
+  font-family: inherit;
+  transition: border-color 0.2s;
+  box-sizing: border-box;
+}
+
+.modal-edit-input:focus,
+.modal-edit-textarea:focus {
+  outline: none;
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+.modal-edit-textarea {
+  resize: vertical;
+  min-height: 80px;
+}

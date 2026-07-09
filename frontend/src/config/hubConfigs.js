@@ -1,5 +1,3 @@
-// config/hubConfigs.js
-
 /**
  * Типы хабов
  */
@@ -8,373 +6,230 @@ export const HUB_TYPES = {
   REGIONS: 'regions',
   SPB: 'spb',
   INVOICES: 'invoices',
-  AIR_TRAFFIC: 'airtraffic',
+  AIR_TRAFFIC: 'air_traffic',
   TASKS: 'tasks',
 };
 
 /**
  * Конфигурация для каждого хаба
  */
-export const hubConfigs = {
-  // ============================================
-  // Хаб: Поступления
-  // ============================================
+export const HUB_CONFIGS = {
   [HUB_TYPES.ARRIVALS]: {
-    id: 'arrivals',
-    title: '📦 Поступление',
+    id: HUB_TYPES.ARRIVALS,
+    title: 'Поступление',
     icon: '📦',
-    route: '/hub/arrivals',
-    
-    // API эндпоинты
-    api: {
-      list: '/api/tasks/arrivals',
-      create: '/api/tasks/arrivals',
-      update: (id) => `/api/tasks/${id}`,
-      delete: (id) => `/api/tasks/${id}`,
-      take: (id) => `/api/tasks/${id}/take`,
-      complete: (id) => `/api/tasks/${id}/complete`,
-      decline: (id) => `/api/tasks/${id}/decline`,
-      reassign: (id) => `/api/tasks/${id}/reassign`,
-      uploadPhotos: (id) => `/api/tasks/${id}/photos`,
-    },
-    
-    // Поля для формы создания/редактирования
+    apiUrl: '/api/tasks/arrivals', // ← УНИКАЛЬНЫЙ URL
+    modalType: 'arrival',
+    perPage: 10,
+    hideCompletedByDefault: true,
     formFields: [
       {
         name: 'supplier',
         label: 'Кто привез',
         type: 'text',
-        required: true,
         placeholder: 'Введите поставщика или водителя',
+        required: true,
       },
       {
         name: 'comment',
         label: 'Комментарий',
         type: 'textarea',
-        required: false,
         placeholder: 'Введите комментарий к задаче',
+        required: false,
         rows: 4,
       },
       {
         name: 'photos',
         label: 'Фотографии',
         type: 'photos',
-        required: true,
+        required: false,
       },
     ],
-    
-    // Тип задачи для модального окна
-    modalType: 'arrival',
-    
-    // Фильтр "Скрыть выполненные" (по умолчанию включен)
-    hideCompletedByDefault: true,
-    
-    // Количество задач на странице
-    perPage: 10,
   },
 
-  // ============================================
-  // Хаб: Регионы
-  // ============================================
   [HUB_TYPES.REGIONS]: {
-    id: 'regions',
-    title: '🌍 Регионы',
+    id: HUB_TYPES.REGIONS,
+    title: 'Регионы',
     icon: '🌍',
-    route: '/hub/regions',
-    
-    api: {
-      list: '/api/tasks/regions',
-      create: '/api/tasks/regions',
-      update: (id) => `/api/tasks/${id}`,
-      delete: (id) => `/api/tasks/${id}`,
-      take: (id) => `/api/tasks/${id}/take`,
-      complete: (id) => `/api/tasks/${id}/complete`,
-      decline: (id) => `/api/tasks/${id}/decline`,
-      reassign: (id) => `/api/tasks/${id}/reassign`,
-      uploadPhotos: (id) => `/api/tasks/${id}/photos`,
-    },
-    
+    apiUrl: '/api/tasks/regions',
+    modalType: 'region',
+    perPage: 10,
+    hideCompletedByDefault: true,
     formFields: [
       {
         name: 'region',
-        label: 'Название региона',
+        label: 'Регион',
         type: 'text',
+        placeholder: 'Введите регион',
         required: true,
-        placeholder: 'Введите название региона',
       },
       {
-        name: 'description',
-        label: 'Описание',
-        type: 'textarea',
+        name: 'coordinator',
+        label: 'Координатор',
+        type: 'text',
+        placeholder: 'Введите координатора',
         required: false,
-        placeholder: 'Введите описание региона',
+      },
+      {
+        name: 'comment',
+        label: 'Комментарий',
+        type: 'textarea',
+        placeholder: 'Введите комментарий',
+        required: false,
         rows: 4,
       },
-      {
-        name: 'photos',
-        label: 'Фотографии',
-        type: 'photos',
-        required: false,
-      },
     ],
-    
-    modalType: 'region',
-    hideCompletedByDefault: true,
-    perPage: 10,
   },
 
-  // ============================================
-  // Хаб: СПб
-  // ============================================
   [HUB_TYPES.SPB]: {
-    id: 'spb',
-    title: '🏙️ СПб',
+    id: HUB_TYPES.SPB,
+    title: 'СПб',
     icon: '🏙️',
-    route: '/hub/spb',
-    
-    api: {
-      list: '/api/tasks/spb',
-      create: '/api/tasks/spb',
-      update: (id) => `/api/tasks/${id}`,
-      delete: (id) => `/api/tasks/${id}`,
-      take: (id) => `/api/tasks/${id}/take`,
-      complete: (id) => `/api/tasks/${id}/complete`,
-      decline: (id) => `/api/tasks/${id}/decline`,
-      reassign: (id) => `/api/tasks/${id}/reassign`,
-      uploadPhotos: (id) => `/api/tasks/${id}/photos`,
-    },
-    
+    apiUrl: '/api/tasks/spb',
+    modalType: 'spb',
+    perPage: 10,
+    hideCompletedByDefault: true,
     formFields: [
       {
         name: 'terminal',
         label: 'Терминал',
         type: 'text',
+        placeholder: 'Введите терминал',
         required: true,
-        placeholder: 'Введите название терминала',
-      },
-      {
-        name: 'address',
-        label: 'Адрес',
-        type: 'text',
-        required: false,
-        placeholder: 'Введите адрес',
       },
       {
         name: 'comment',
         label: 'Комментарий',
         type: 'textarea',
-        required: false,
         placeholder: 'Введите комментарий',
+        required: false,
         rows: 4,
       },
-      {
-        name: 'photos',
-        label: 'Фотографии',
-        type: 'photos',
-        required: false,
-      },
     ],
-    
-    modalType: 'spb',
-    hideCompletedByDefault: true,
-    perPage: 10,
   },
 
-  // ============================================
-  // Хаб: Счета
-  // ============================================
   [HUB_TYPES.INVOICES]: {
-    id: 'invoices',
-    title: '📊 Счета',
+    id: HUB_TYPES.INVOICES,
+    title: 'Счета',
     icon: '📊',
-    route: '/hub/invoices',
-    
-    api: {
-      list: '/api/tasks/invoices',
-      create: '/api/tasks/invoices',
-      update: (id) => `/api/tasks/${id}`,
-      delete: (id) => `/api/tasks/${id}`,
-      take: (id) => `/api/tasks/${id}/take`,
-      complete: (id) => `/api/tasks/${id}/complete`,
-      decline: (id) => `/api/tasks/${id}/decline`,
-      reassign: (id) => `/api/tasks/${id}/reassign`,
-      uploadPhotos: (id) => `/api/tasks/${id}/photos`,
-    },
-    
+    apiUrl: '/api/tasks/invoices',
+    modalType: 'invoice',
+    perPage: 10,
+    hideCompletedByDefault: true,
     formFields: [
-      {
-        name: 'invoiceNumber',
-        label: 'Номер счета',
-        type: 'text',
-        required: true,
-        placeholder: 'Введите номер счета',
-      },
       {
         name: 'client',
         label: 'Клиент',
         type: 'text',
+        placeholder: 'Введите клиента',
         required: true,
-        placeholder: 'Введите название клиента',
       },
       {
         name: 'amount',
         label: 'Сумма',
         type: 'text',
-        required: false,
         placeholder: 'Введите сумму',
+        required: false,
       },
       {
         name: 'comment',
         label: 'Комментарий',
         type: 'textarea',
-        required: false,
         placeholder: 'Введите комментарий',
+        required: false,
         rows: 4,
       },
-      {
-        name: 'photos',
-        label: 'Фотографии',
-        type: 'photos',
-        required: false,
-      },
     ],
-    
-    modalType: 'invoice',
-    hideCompletedByDefault: true,
-    perPage: 10,
   },
 
-  // ============================================
-  // Хаб: ЭйрТрафик
-  // ============================================
   [HUB_TYPES.AIR_TRAFFIC]: {
-    id: 'airtraffic',
-    title: '✈️ ЭйрТрафик',
+    id: HUB_TYPES.AIR_TRAFFIC,
+    title: 'ЭйрТрафик',
     icon: '✈️',
-    route: '/hub/airtraffic',
-    
-    api: {
-      list: '/api/tasks/airtraffic',
-      create: '/api/tasks/airtraffic',
-      update: (id) => `/api/tasks/${id}`,
-      delete: (id) => `/api/tasks/${id}`,
-      take: (id) => `/api/tasks/${id}/take`,
-      complete: (id) => `/api/tasks/${id}/complete`,
-      decline: (id) => `/api/tasks/${id}/decline`,
-      reassign: (id) => `/api/tasks/${id}/reassign`,
-      uploadPhotos: (id) => `/api/tasks/${id}/photos`,
-    },
-    
+    apiUrl: '/api/tasks/air_traffic',
+    modalType: 'air_traffic',
+    perPage: 10,
+    hideCompletedByDefault: true,
     formFields: [
       {
-        name: 'flightNumber',
-        label: 'Номер рейса',
+        name: 'flight',
+        label: 'Рейс',
         type: 'text',
-        required: true,
         placeholder: 'Введите номер рейса',
+        required: true,
       },
       {
-        name: 'airline',
-        label: 'Авиакомпания',
+        name: 'cargo',
+        label: 'Груз',
         type: 'text',
+        placeholder: 'Введите описание груза',
         required: false,
-        placeholder: 'Введите авиакомпанию',
-      },
-      {
-        name: 'terminal',
-        label: 'Терминал',
-        type: 'text',
-        required: false,
-        placeholder: 'Введите терминал',
       },
       {
         name: 'comment',
         label: 'Комментарий',
         type: 'textarea',
-        required: false,
         placeholder: 'Введите комментарий',
+        required: false,
         rows: 4,
       },
-      {
-        name: 'photos',
-        label: 'Фотографии',
-        type: 'photos',
-        required: false,
-      },
     ],
-    
-    modalType: 'airtraffic',
-    hideCompletedByDefault: true,
-    perPage: 10,
   },
 
-  // ============================================
-  // Хаб: Задачи
-  // ============================================
   [HUB_TYPES.TASKS]: {
-    id: 'tasks',
-    title: '📋 Задачи',
+    id: HUB_TYPES.TASKS,
+    title: 'Задачи',
     icon: '📋',
-    route: '/hub/tasks',
-    
-    api: {
-      list: '/api/tasks/all',
-      create: '/api/tasks/all',
-      update: (id) => `/api/tasks/${id}`,
-      delete: (id) => `/api/tasks/${id}`,
-      take: (id) => `/api/tasks/${id}/take`,
-      complete: (id) => `/api/tasks/${id}/complete`,
-      decline: (id) => `/api/tasks/${id}/decline`,
-      reassign: (id) => `/api/tasks/${id}/reassign`,
-      uploadPhotos: (id) => `/api/tasks/${id}/photos`,
-    },
-    
+    apiUrl: '/api/tasks/general',
+    modalType: 'task',
+    perPage: 10,
+    hideCompletedByDefault: true,
     formFields: [
       {
         name: 'title',
         label: 'Название задачи',
         type: 'text',
+        placeholder: 'Введите название',
         required: true,
-        placeholder: 'Введите название задачи',
       },
       {
         name: 'description',
         label: 'Описание',
         type: 'textarea',
+        placeholder: 'Введите описание',
         required: false,
-        placeholder: 'Введите описание задачи',
         rows: 4,
       },
-      {
-        name: 'photos',
-        label: 'Фотографии',
-        type: 'photos',
-        required: false,
-      },
     ],
-    
-    modalType: 'task',
-    hideCompletedByDefault: true,
-    perPage: 10,
   },
 };
 
 /**
  * Получить конфигурацию хаба по типу
+ * @param {string} type - тип хаба из HUB_TYPES
+ * @returns {Object} конфигурация хаба
  */
-export const getHubConfig = (hubType) => {
-  return hubConfigs[hubType] || null;
+export const getHubConfig = (type) => {
+  const config = HUB_CONFIGS[type];
+  if (!config) {
+    console.warn(`Конфигурация для типа "${type}" не найдена`);
+    return null;
+  }
+  return config;
 };
 
 /**
- * Получить список всех типов хабов
+ * Получить список всех хабов для отображения на главной
+ * @returns {Array} массив конфигураций хабов
  */
-export const getHubTypes = () => {
-  return Object.keys(HUB_TYPES).map(key => ({
-    key: key,
-    type: HUB_TYPES[key],
-    config: hubConfigs[HUB_TYPES[key]],
+export const getAllHubs = () => {
+  return Object.values(HUB_CONFIGS).map((config) => ({
+    id: config.id,
+    name: config.title,
+    icon: config.icon,
+    apiUrl: config.apiUrl,
+    path: `/hub/${config.id}`,
   }));
 };
 
-export default hubConfigs;
+export default HUB_CONFIGS;
