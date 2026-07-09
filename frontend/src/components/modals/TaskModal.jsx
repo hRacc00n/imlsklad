@@ -6,6 +6,7 @@ import ModalCloseButton from '../common/ModalCloseButton';
 import ImageGallery from '../common/ImageGallery';
 import PhotoUploader from '../common/PhotoUploader';
 import { getAvailableActions } from '../../utils/taskActions';
+import CommentList from '../comments/CommentList';
 import './TaskModal.css';
 
 function TaskModal({ onPhotoUploadStart, onPhotoUploadComplete }) {
@@ -290,20 +291,7 @@ function TaskModal({ onPhotoUploadStart, onPhotoUploadComplete }) {
           {renderTypeSpecificFields()}
 
           <div className="modal-comments">
-            <h4>💬 Комментарии</h4>
-            <div className="comments-list">
-              <div className="comment-item">
-                <span className="comment-author">Анна Менеджер</span>
-                <span className="comment-text">Проверил документы, всё в порядке.</span>
-                <span className="comment-date">Сегодня 14:35</span>
-              </div>
-            </div>
-            <div className="comment-input-wrap">
-              <input type="text" placeholder="Написать комментарий..." />
-              <ActionButton variant="primary" size="medium">
-                Отправить
-              </ActionButton>
-            </div>
+            <CommentList taskId={task.id} currentUser={user} />
           </div>
         </div>
 

@@ -94,14 +94,9 @@ function HubPage({ config }) {
       const data = event.detail;
       if (data.type === 'task_created' || 
           data.type === 'task_updated' || 
-          data.type === 'task_deleted') {
-        
-        // Если это событие обновления фото — обновляем только фото у задачи
-        if (data.action === 'photos_uploaded' && data.task_id) {
-          refresh();
-          return;
-        }
-        
+          data.type === 'task_deleted' ||
+          data.type === 'comment_count_updated') {  // ← ДОБАВИТЬ
+        console.log('[HubPage] Обновление списка задач');
         refresh();
       }
     };

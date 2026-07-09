@@ -3,7 +3,7 @@ import base64
 import uuid
 from flask import request, jsonify
 from db.database import get_db
-from db.models import Order, OrderHistory
+from db.models import Order, OrderHistory, Comment
 import json
 import glob
 from datetime import datetime, timedelta, timezone
@@ -70,7 +70,10 @@ def register_tasks_routes(app):
                     'comment': task.description or '',
                     'assigned_to': task.assigned_to,
                     'status': status,
-                    'comments_count': 0,
+                    'comments_count': db.query(Comment).filter(
+                        Comment.task_id == task.id,
+                        Comment.is_deleted == False
+                    ).count(),
                     'photos': email_data.get('photos', []),
                 })
             

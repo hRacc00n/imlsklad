@@ -77,3 +77,27 @@ class OrderHistory(Base):
             'comment': self.comment,
             'created_at': self.created_at.isoformat() if self.created_at else None
         }
+
+class Comment(Base):
+    """Модель комментария к задаче"""
+    __tablename__ = 'comments'
+    
+    id = Column(Integer, primary_key=True, index=True)
+    task_id = Column(Integer, ForeignKey('orders.id'), index=True, nullable=False)
+    author = Column(String(100), nullable=False)
+    text = Column(Text, nullable=False)
+    is_deleted = Column(Boolean, default=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'task_id': self.task_id,
+            'author': self.author,
+            'text': self.text if not self.is_deleted else None,
+            'is_deleted': self.is_deleted,
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+            'updated_at': self.updated_at.isoformat() if self.updated_at else None,
+            'is_edited': self.updated_at and self.updated_at != self.created_at
+        }

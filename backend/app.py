@@ -14,6 +14,7 @@ from routes.users import register_users_routes
 from routes.roles import register_roles_routes
 from routes.sse import register_sse_routes
 from routes.tasks import register_tasks_routes
+from routes.comments import register_comments_routes
 from flask import send_from_directory
 
 app = Flask(__name__)
@@ -28,6 +29,7 @@ register_users_routes(app)
 register_roles_routes(app)
 register_sse_routes(app)
 register_tasks_routes(app)
+register_comments_routes(app)
 
 @app.route('/uploads/<filename>')
 def uploaded_file(filename):
