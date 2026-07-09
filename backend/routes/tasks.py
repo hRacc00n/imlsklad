@@ -65,7 +65,7 @@ def register_tasks_routes(app):
                 result.append({
                     'id': task.id,
                     'author': email_data.get('author', 'Неизвестно'),
-                    'created_at': task.created_at.strftime('%Y-%m-%d %H:%M') if task.created_at else '',
+                    'created_at': (task.created_at + timedelta(hours=3)).strftime('%Y-%m-%d %H:%M') if task.created_at else '',
                     'supplier': email_data.get('supplier', task.client or 'Неизвестно'),
                     'comment': task.description or '',
                     'assigned_to': task.assigned_to,
@@ -213,7 +213,7 @@ def register_tasks_routes(app):
                 result.append({
                     'id': task.id,
                     'author': email_data.get('author', 'Неизвестно'),
-                    'created_at': task.created_at.strftime('%Y-%m-%d %H:%M') if task.created_at else '',
+                    'created_at': (task.created_at + timedelta(hours=3)).strftime('%Y-%m-%d %H:%M') if task.created_at else '',
                     'supplier': email_data.get('supplier', task.client or 'Неизвестно'),
                     'comment': task.description or '',
                     'assigned_to': task.assigned_to,
@@ -257,7 +257,7 @@ def register_tasks_routes(app):
                 status='new',
                 description=comment,
                 assigned_to=None,
-                created_at=datetime.now(),
+                created_at=datetime.utcnow(),
                 email_data=json.dumps({
                     'author': author,
                     'supplier': supplier,
@@ -285,7 +285,7 @@ def register_tasks_routes(app):
                 'task': {
                     'id': new_task.id,
                     'author': author,
-                    'created_at': new_task.created_at.strftime('%Y-%m-%d %H:%M') if new_task.created_at else '',
+                    'created_at': (new_task.created_at + timedelta(hours=3)).strftime('%Y-%m-%d %H:%M') if new_task.created_at else '',
                     'supplier': supplier,
                     'comment': comment,
                     'photos': [],
