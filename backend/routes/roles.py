@@ -39,8 +39,7 @@ def register_roles_routes(app):
             'id': new_id,
             'name': data['name'],
             'role_key': data.get('role_key', ''),
-            'description': data.get('description', ''),
-            'hub_access': []  # пока пустой массив
+            'hub_access': data.get('hub_access', [])  # массив ID хабов
         }
         
         roles.append(new_role)
@@ -124,3 +123,10 @@ def register_roles_routes(app):
             'success': False,
             'message': 'Роль не найдена'
         }, ensure_ascii=False), 404, {'Content-Type': 'application/json; charset=utf-8'}
+
+    @app.route('/api/hubs', methods=['GET'])
+    def get_hubs():
+        """Получить список всех хабов"""
+        from utils.file_loader import load_json
+        hubs = load_json('hubs.json')
+        return json.dumps(hubs, ensure_ascii=False), 200, {'Content-Type': 'application/json; charset=utf-8'}

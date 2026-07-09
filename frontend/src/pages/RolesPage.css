@@ -274,3 +274,23 @@
     font-size: 16px;
   }
 }
+
+.hub-access-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.hub-access-tag {
+  background: #eef2ff;
+  color: #4f46e5;
+  padding: 2px 10px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.hub-access-empty {
+  color: #94a3b8;
+}

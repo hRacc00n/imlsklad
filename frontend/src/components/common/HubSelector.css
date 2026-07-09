@@ -1,0 +1,71 @@
+.hub-selector {
+  width: 100%;
+}
+
+.hub-selector-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.hub-selector-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: #f8fafc;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+  user-select: none;
+}
+
+.hub-selector-item:hover {
+  background: #f1f5f9;
+  border-color: #94a3b8;
+}
+
+.hub-selector-item.selected {
+  background: #eef2ff;
+  border-color: #4f46e5;
+}
+
+.hub-selector-item.selected:hover {
+  background: #e0e7ff;
+}
+
+.hub-selector-check {
+  font-size: 14px;
+  flex-shrink: 0;
+}
+
+.hub-selector-name {
+  font-size: 13px;
+  font-weight: 500;
+  color: #1e293b;
+}
+
+.hub-selector-info {
+  font-size: 13px;
+  color: #94a3b8;
+}
+
+.hub-selector-loading,
+.hub-selector-empty {
+  color: #94a3b8;
+  font-size: 14px;
+  padding: 8px 0;
+}
+
+@media (max-width: 480px) {
+  .hub-selector-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .hub-selector-item {
+    padding: 6px 10px;
+    font-size: 13px;
+  }
+}

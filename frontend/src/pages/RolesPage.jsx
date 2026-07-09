@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
+import HubSelector from '../components/common/HubSelector';
 import './RolesPage.css';
 
 function RolesPage() {
@@ -7,8 +8,9 @@ function RolesPage() {
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [editingRole, setEditingRole] = useState(null);
-  const [formData, setFormData] = useState({ name: '', role_key: '', description: '' });
+  const [formData, setFormData] = useState({ name: '', role_key: '', hub_access: [] });
   const [error, setError] = useState('');
+  const [hubsList, setHubsList] = useState([]);
 
   const loadRoles = async () => {
     try {
@@ -63,12 +65,26 @@ function RolesPage() {
     }
   };
 
+  const loadHubs = async () => {
+    try {
+      const response = await axios.get('/api/hubs');
+      setHubsList(response.data);
+    } catch (err) {
+      console.error('Ошибка загрузки хабов:', err);
+    }
+  };
+
+  useEffect(() => {
+    loadRoles();
+    loadHubs();
+  }, []);
+
   const openEditModal = (role) => {
     setEditingRole(role);
     setFormData({
       name: role.name,
       role_key: role.role_key || '',
-      description: role.description || '',
+      hub_access: role.hub_access || [],
     });
     setShowModal(true);
     setError('');
@@ -76,7 +92,7 @@ function RolesPage() {
 
   const openCreateModal = () => {
     setEditingRole(null);
-    setFormData({ name: '', role_key: '', description: '' });
+    setFormData({ name: '', role_key: '', hub_access: [] });
     setShowModal(true);
     setError('');
   };
@@ -84,7 +100,7 @@ function RolesPage() {
   const closeModal = () => {
     setShowModal(false);
     setEditingRole(null);
-    setFormData({ name: '', role_key: '', description: '' });
+    setFormData({ name: '', role_key: '', hub_access: [] });
     setError('');
   };
 
@@ -105,7 +121,7 @@ function RolesPage() {
                 <th>ID</th>
                 <th>Название</th>
                 <th>Ключ</th>
-                <th>Описание</th>
+                <th>Доступ к хабам</th>
                 <th>Действия</th>
               </tr>
             </thead>
@@ -115,7 +131,18 @@ function RolesPage() {
                   <td>{r.id}</td>
                   <td><strong>{r.name}</strong></td>
                   <td><code className="role-key">{r.role_key}</code></td>
-                  <td>{r.description || '—'}</td>
+                  <td>
+                    {r.hub_access && r.hub_access.length > 0 ? (
+                      <span className="hub-access-tags">
+                        {r.hub_access.map(hubId => {
+                          const hub = hubsList.find(h => h.id === hubId);
+                          return hub ? <span key={hubId} className="hub-access-tag">{hub.name}</span> : null;
+                        })}
+                      </span>
+                    ) : (
+                      <span className="hub-access-empty">—</span>
+                    )}
+                  </td>
                   <td className="actions">
                     <button className="btn-edit" onClick={() => openEditModal(r)}>✏️</button>
                     <button 
@@ -164,12 +191,10 @@ function RolesPage() {
                 </small>
               </div>
               <div className="form-group">
-                <label>Описание</label>
-                <input
-                  type="text"
-                  value={formData.description}
-                  onChange={e => setFormData({ ...formData, description: e.target.value })}
-                  placeholder="Краткое описание роли"
+                <label>Доступ к хабам</label>
+                <HubSelector
+                  selected={formData.hub_access || []}
+                  onChange={(hubs) => setFormData({ ...formData, hub_access: hubs })}
                 />
               </div>
 
