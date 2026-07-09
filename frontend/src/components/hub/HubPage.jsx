@@ -58,6 +58,7 @@ function HubPage({ config }) {
     completeTask,
     declineTask,
     reassignTask,
+    uploadPhotos,
     loading: taskLoading,
   } = useTasks({
     apiUrl: config.apiUrl,
@@ -112,7 +113,8 @@ function HubPage({ config }) {
       onDecline: declineTask,
       onReassign: reassignTask,
       onDelete: deleteTask,
-      onEdit: updateTask, // ← передаём updateTask напрямую
+      onEdit: updateTask,
+      onUploadPhotos: uploadPhotos, // ← добавляем
       onRefresh: refresh,
       onPhotoUploadStart: handlePhotoUploadStart,
       onPhotoUploadComplete: handlePhotoUploadComplete,

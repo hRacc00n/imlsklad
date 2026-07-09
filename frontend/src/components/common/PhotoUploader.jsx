@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import './PhotoUploader.css';
 
 function PhotoUploader({ onPhotosChange, existingPhotos = [], onUploadStart, onUploadComplete }) {
@@ -6,6 +6,10 @@ function PhotoUploader({ onPhotosChange, existingPhotos = [], onUploadStart, onU
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef(null);
   const cameraInputRef = useRef(null);
+
+  useEffect(() => {
+    setPhotos(existingPhotos);
+  }, [existingPhotos]);
 
   const processFiles = (files) => {
     if (files.length === 0) return;

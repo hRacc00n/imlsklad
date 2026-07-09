@@ -338,10 +338,13 @@ def register_tasks_routes(app):
                 if not task:
                     return jsonify({'success': False, 'message': 'Задача не найдена'}), 404
                 
-                task.client = supplier
-                task.description = comment
-                task.updated_at = datetime.utcnow()
+                # Обновляем поля
+                if supplier:
+                    task.client = supplier
+                if comment is not None:
+                    task.description = comment
                 
+                # Обновляем email_data
                 email_data = {}
                 if task.email_data:
                     try:
@@ -349,43 +352,28 @@ def register_tasks_routes(app):
                     except:
                         pass
                 
-                email_data['supplier'] = supplier
-                email_data['comment'] = comment
+                if supplier:
+                    email_data['supplier'] = supplier
+                if comment is not None:
+                    email_data['comment'] = comment
                 
+                # Фото: если переданы, заменяем (фронтенд уже объединил старые и новые)
                 if photos:
                     email_data['photos'] = photos
                 
                 task.email_data = json.dumps(email_data, ensure_ascii=False)
-                
-                history = OrderHistory(
-                    order_id=task.id,
-                    user_id=0,
-                    action='updated',
-                    new_status=task.status,
-                    comment='Задача обновлена'
-                )
-                db.add(history)
+                task.updated_at = datetime.utcnow()
                 db.commit()
-                db.refresh(task)
-                
-                sse_publisher.publish('task_updated', {
-                    'task_id': task.id,
-                    'type': 'arrival',
-                    'action': 'updated'
-                })
                 
                 return jsonify({
                     'success': True,
                     'task': {
                         'id': task.id,
-                        'author': email_data.get('author', 'Неизвестно'),
-                        'created_at': task.created_at.strftime('%Y-%m-%d %H:%M') if task.created_at else '',
-                        'supplier': supplier,
-                        'comment': comment,
+                        'supplier': task.client,
+                        'comment': task.description,
                         'photos': email_data.get('photos', []),
                         'assigned_to': task.assigned_to,
                         'status': task.status,
-                        'comments_count': 0
                     }
                 }), 200
                 

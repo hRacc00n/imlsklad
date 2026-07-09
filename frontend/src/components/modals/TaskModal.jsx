@@ -150,6 +150,7 @@ function TaskModal({ onPhotoUploadStart, onPhotoUploadComplete }) {
       supplier: task.supplier || '',
       comment: task.comment || '',
     });
+    // Передаём существующие фото в PhotoUploader
     setEditPhotos(task.photos || []);
   };
 
@@ -163,15 +164,35 @@ function TaskModal({ onPhotoUploadStart, onPhotoUploadComplete }) {
     if (!task) return;
     setIsLoading(true);
     try {
-      // Используем напрямую updateTask из пропсов
-      const result = await actions.onEdit(task.id, editValues, editPhotos);
+      // 1. Определяем, какие фото новые (base64) и какие старые (ссылки)
+      const oldPhotos = task.photos || [];
+      
+      // 2. Разделяем: если строка начинается с 'data:image' — это новое фото (base64)
+      const newBase64Photos = editPhotos.filter(p => p.startsWith('data:image'));
+      const existingPhotoUrls = editPhotos.filter(p => !p.startsWith('data:image'));
+      
+      // 3. Загружаем только новые фото
+      let uploadedPhotoUrls = [];
+      if (newBase64Photos.length > 0 && actions.onUploadPhotos) {
+        try {
+          uploadedPhotoUrls = await actions.onUploadPhotos(task.id, newBase64Photos);
+        } catch (photoErr) {
+          console.warn('Ошибка загрузки фото:', photoErr);
+          uploadedPhotoUrls = [];
+        }
+      }
+      
+      // 4. Объединяем старые и новые фото
+      const allPhotos = [...oldPhotos, ...uploadedPhotoUrls];
+      
+      // 5. Обновляем задачу
+      const result = await actions.onEdit(task.id, editValues, allPhotos);
       if (result && result.task) {
         updateTaskInModal(result.task);
         setIsEditing(false);
         if (actions.onRefresh) actions.onRefresh();
       } else {
-        // Если updateTask не возвращает task, обновляем вручную
-        const updatedTask = { ...task, ...editValues, photos: editPhotos };
+        const updatedTask = { ...task, ...editValues, photos: allPhotos };
         updateTaskInModal(updatedTask);
         setIsEditing(false);
         if (actions.onRefresh) actions.onRefresh();

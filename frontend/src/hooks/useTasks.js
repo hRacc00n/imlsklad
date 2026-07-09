@@ -134,17 +134,16 @@ export function useTasks(config = {}) {
     if (!photos || photos.length === 0) return [];
     
     try {
-      const result = await request(`${apiUrl}/${taskId}/photos`, {
+      const result = await request(`/api/tasks/${taskId}/photos`, {
         method: 'POST',
         body: JSON.stringify({ photos }),
       });
-      
       return result.photos || [];
     } catch (err) {
       console.error('Ошибка загрузки фото:', err);
       throw err;
     }
-  }, [apiUrl, request]);
+  }, [request]);
 
   /**
    * Взять задачу в работу
