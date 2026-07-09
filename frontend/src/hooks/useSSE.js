@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, useCallback } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { getApiBaseUrl } from '../utils/api';
 
 export function useSSE(userName, onMessage) {
@@ -8,31 +8,15 @@ export function useSSE(userName, onMessage) {
   const reconnectTimeoutRef = useRef(null);
   const mountedRef = useRef(true);
 
-  const handleMessage = useCallback((event) => {
-    try {
-      const data = JSON.parse(event.data);
-      console.log('[SSE] Event:', data.type, data);
-      
-      if (onMessage && typeof onMessage === 'function') {
-        onMessage(data);
-      }
-    } catch (err) {
-      console.error('[SSE] Parse error:', err);
-    }
-  }, [onMessage]);
-
   useEffect(() => {
     mountedRef.current = true;
     
-    // Если уже есть соединение - закрываем его
     if (eventSourceRef.current) {
-      console.log('[SSE] Closing existing connection');
       eventSourceRef.current.close();
       eventSourceRef.current = null;
     }
 
     if (!userName) {
-      console.log('[SSE] No userName, skipping');
       return;
     }
 
@@ -50,14 +34,25 @@ export function useSSE(userName, onMessage) {
       setStatus('connected');
       setIsConnected(true);
       
-      // Сбрасываем таймер переподключения
       if (reconnectTimeoutRef.current) {
         clearTimeout(reconnectTimeoutRef.current);
         reconnectTimeoutRef.current = null;
       }
     };
 
-    es.onmessage = handleMessage;
+    es.onmessage = (event) => {
+      try {
+        const data = JSON.parse(event.data);
+        console.log('[SSE] Received:', data);
+        
+        // Вызываем колбэк для любого сообщения
+        if (onMessage) {
+          onMessage(data);
+        }
+      } catch (err) {
+        console.error('[SSE] Parse error:', err);
+      }
+    };
 
     es.onerror = (err) => {
       if (!mountedRef.current) return;
@@ -68,14 +63,19 @@ export function useSSE(userName, onMessage) {
         setStatus('disconnected');
         setIsConnected(false);
         
-        // Пытаемся переподключиться через 3 секунды
         if (reconnectTimeoutRef.current) {
           clearTimeout(reconnectTimeoutRef.current);
         }
         reconnectTimeoutRef.current = setTimeout(() => {
-          if (mountedRef.current && !eventSourceRef.current) {
+          if (mountedRef.current) {
             console.log('[SSE] Reconnecting...');
-            // Перезапускаем эффект
+            // Пересоздаём соединение
+            if (eventSourceRef.current) {
+              eventSourceRef.current.close();
+              eventSourceRef.current = null;
+            }
+            // Повторно запускаем эффект через обновление состояния
+            setStatus('reconnecting');
           }
         }, 3000);
       }
@@ -97,7 +97,7 @@ export function useSSE(userName, onMessage) {
         setIsConnected(false);
       }
     };
-  }, [userName, handleMessage]);
+  }, [userName]);
 
   return { status, isConnected };
 }

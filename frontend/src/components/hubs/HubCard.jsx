@@ -1,6 +1,7 @@
 import './HubCard.css';
 
 function HubCard({ name, icon, count, onClick }) {
+  console.log(`[HubCard] Рендер ${name}: count=${count}`);
   return (
     <div className="hub-card" onClick={onClick}>
       <div className="hub-card-content">

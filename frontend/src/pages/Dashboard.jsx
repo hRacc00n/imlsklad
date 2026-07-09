@@ -8,10 +8,10 @@ function Dashboard({ user, onLogout }) {
   const [hubs, setHubs] = useState([]);
   const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [stats, setStats] = useState({});
 
   const navigate = useNavigate();
 
-  // Конфигурация хабов: имя, иконка, маршрут
   const hubConfig = [
     { name: 'Регионы', icon: '🌍', route: '/hub/regions' },
     { name: 'СПб', icon: '🏙️', route: '/hub/spb' },
@@ -21,14 +21,55 @@ function Dashboard({ user, onLogout }) {
     { name: 'Задачи', icon: '📋', route: '/hub/tasks' },
   ];
 
-  useEffect(() => {
-    // TODO: загружать реальные данные из БД
-    const hubData = hubConfig.map((h, index) => ({
-      ...h,
-      count: Math.floor(Math.random() * 10),
-    }));
-    setHubs(hubData);
+  const loadStats = async () => {
+    try {
+      console.log('[Dashboard] Загрузка статистики...');
+      const timestamp = Date.now();
+      const response = await fetch(`/api/tasks/arrivals/stats?_=${timestamp}`, {
+        cache: 'no-store',
+        headers: {
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache',
+          'Expires': '0'
+        }
+      });
+      const data = await response.json();
+      console.log('[Dashboard] Статистика получена:', data);
+      
+      // Принудительно обновляем состояние
+      setStats({ ...data });
+      
+      // Обновляем хабы с новым значением
+      setHubs(prevHubs => {
+        console.log('[Dashboard] prevHubs:', prevHubs);
+        const updated = prevHubs.map(hub => {
+          if (hub.name === 'Поступления') {
+            console.log(`[Dashboard] Обновляем Поступления с ${hub.count} на ${data.active_count}`);
+            return { ...hub, count: data.active_count || 0 };
+          }
+          return { ...hub };
+        });
+        console.log('[Dashboard] updated hubs:', updated);
+        return updated;
+      });
+    } catch (err) {
+      console.error('Ошибка загрузки статистики:', err);
+    }
+  };
 
+  useEffect(() => {
+    // Инициализация хабов
+    const hubData = hubConfig.map((h) => ({
+      ...h,
+      count: 0,
+    }));
+    console.log('[Dashboard] Инициализация хабов:', hubData);
+    setHubs(hubData);
+    
+    // Загрузка реальных данных
+    loadStats();
+
+    // Загрузка задач (заглушка)
     setTasks([
       {
         tracking: 'ARR-2025-001',
@@ -46,6 +87,25 @@ function Dashboard({ user, onLogout }) {
       },
     ]);
     setLoading(false);
+
+    const handleSSEEvent = (event) => {
+      const data = event.detail;
+      console.log('[Dashboard] SSE Event received:', data);
+      
+      // Проверяем правильный путь к hub_type
+      if (data.type === 'hub_stats_updated' && data.data?.hub_type === 'arrival') {
+        console.log('[Dashboard] Обновление счетчика Поступления');
+        loadStats();
+      }
+    };
+
+    window.addEventListener('sse-message', handleSSEEvent);
+    console.log('[Dashboard] Подписка на SSE события');
+
+    return () => {
+      window.removeEventListener('sse-message', handleSSEEvent);
+      console.log('[Dashboard] Отписка от SSE');
+    };
   }, []);
 
   const handleHubClick = (hubName, route) => {
@@ -59,7 +119,7 @@ function Dashboard({ user, onLogout }) {
           <div className="hubs-grid">
             {hubs.map((hub, index) => (
               <HubCard
-                key={index}
+                key={`${hub.name}-${hub.count}`} // ← добавляем count в key
                 name={hub.name}
                 icon={hub.icon}
                 count={hub.count}

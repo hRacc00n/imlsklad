@@ -86,6 +86,26 @@ def register_tasks_routes(app):
                 }
             }), 200
     
+    # ===== GET: Статистика по хабу =====
+    @app.route('/api/tasks/arrivals/stats', methods=['GET'])
+    def get_arrivals_stats():
+        with get_db() as db:
+            active_count = db.query(Order).filter(
+                Order.type == 'arrival',
+                Order.status != 'completed'
+            ).count()
+            
+            total_count = db.query(Order).filter(Order.type == 'arrival').count()
+            
+            response = jsonify({
+                'active_count': active_count,
+                'total_count': total_count
+            })
+            response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+            response.headers['Pragma'] = 'no-cache'
+            response.headers['Expires'] = '0'
+            return response, 200
+
     # ===== POST: Создать задачу =====
     @app.route('/api/tasks/arrivals', methods=['POST'])
     def create_arrival():
@@ -125,6 +145,7 @@ def register_tasks_routes(app):
             )
             db.add(history)
             db.commit()
+            db.refresh(new_task)  # ← ДОБАВЛЕНО
             
             sse_publisher.publish('task_created', {
                 'task_id': new_task.id,
@@ -135,11 +156,19 @@ def register_tasks_routes(app):
                     'created_at': new_task.created_at.strftime('%Y-%m-%d %H:%M') if new_task.created_at else '',
                     'supplier': supplier,
                     'comment': comment,
-                    'photos': [],  # пока пусто, фото загрузятся позже
+                    'photos': [],
                     'assigned_to': None,
                     'status': 'new',
                     'comments_count': 0
                 }
+            })
+
+            import time
+            time.sleep(0.1)
+            
+            sse_publisher.publish('hub_stats_updated', {
+                'hub_type': 'arrival',
+                'action': 'created'
             })
             
             return jsonify({
@@ -203,10 +232,19 @@ def register_tasks_routes(app):
             task.status = 'completed'
             task.updated_at = datetime.utcnow()
             db.commit()
+            db.refresh(task)  # ← ДОБАВЛЕНО
             
             sse_publisher.publish('task_updated', {
                 'task_id': task.id,
                 'type': task_type,
+                'action': 'completed'
+            })
+
+            import time
+            time.sleep(0.1)
+            
+            sse_publisher.publish('hub_stats_updated', {
+                'hub_type': 'arrival',
                 'action': 'completed'
             })
             
@@ -230,10 +268,19 @@ def register_tasks_routes(app):
             task.assigned_to = None
             task.updated_at = datetime.utcnow()
             db.commit()
+            db.refresh(task)  # ← ДОБАВЛЕНО
             
             sse_publisher.publish('task_updated', {
                 'task_id': task.id,
                 'type': task_type,
+                'action': 'declined'
+            })
+
+            import time
+            time.sleep(0.1)
+            
+            sse_publisher.publish('hub_stats_updated', {
+                'hub_type': 'arrival',
                 'action': 'declined'
             })
             
@@ -455,6 +502,14 @@ def register_tasks_routes(app):
                     'task_id': task_id,
                     'type': 'arrival'
                 })
+
+                import time
+                time.sleep(0.1)
+                
+                sse_publisher.publish('hub_stats_updated', {
+                    'hub_type': 'arrival',
+                    'action': 'deleted'
+                })
                 
                 return jsonify({
                     'success': True, 
@@ -463,5 +518,5 @@ def register_tasks_routes(app):
                 }), 200
                 
         except Exception as e:
-            print(f"Ошибка удаления задачи: {e}")
+            print(f"Ошибка удаления задачи: {e}")  
             return jsonify({'success': False, 'message': str(e)}), 500
