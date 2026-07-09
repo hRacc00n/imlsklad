@@ -128,7 +128,18 @@ def register_tasks_routes(app):
             
             sse_publisher.publish('task_created', {
                 'task_id': new_task.id,
-                'type': 'arrival'
+                'type': 'arrival',
+                'task': {
+                    'id': new_task.id,
+                    'author': author,
+                    'created_at': new_task.created_at.strftime('%Y-%m-%d %H:%M') if new_task.created_at else '',
+                    'supplier': supplier,
+                    'comment': comment,
+                    'photos': [],  # пока пусто, фото загрузятся позже
+                    'assigned_to': None,
+                    'status': 'new',
+                    'comments_count': 0
+                }
             })
             
             return jsonify({
@@ -328,6 +339,13 @@ def register_tasks_routes(app):
                 email_data['photos'].extend(saved_photos)
                 task.email_data = json.dumps(email_data, ensure_ascii=False)
                 db.commit()
+
+                sse_publisher.publish('task_updated', {
+                    'task_id': task_id,
+                    'type': 'arrival',
+                    'action': 'photos_uploaded',
+                    'photos': saved_photos
+                })
                 
                 return jsonify({
                     'success': True,

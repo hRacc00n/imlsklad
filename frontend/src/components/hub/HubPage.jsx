@@ -95,6 +95,13 @@ function HubPage({ config }) {
       if (data.type === 'task_created' || 
           data.type === 'task_updated' || 
           data.type === 'task_deleted') {
+        
+        // Если это событие обновления фото — обновляем только фото у задачи
+        if (data.action === 'photos_uploaded' && data.task_id) {
+          refresh();
+          return;
+        }
+        
         refresh();
       }
     };
