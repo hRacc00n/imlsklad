@@ -8,6 +8,7 @@ import json
 import glob
 from datetime import datetime, timedelta, timezone
 from routes.sse import sse_publisher
+from sqlalchemy import or_, func
 
 def register_tasks_routes(app):
     
@@ -17,17 +18,33 @@ def register_tasks_routes(app):
         page = request.args.get('page', 1, type=int)
         per_page = request.args.get('per_page', 10, type=int)
         hide_completed = request.args.get('hide_completed', 'false').lower() == 'true'
+        search = request.args.get('search', '')
         offset = (page - 1) * per_page
         
         with get_db() as db:
             query = db.query(Order).filter(Order.type == 'arrival')
             
-            if hide_completed:
-                query = query.filter(Order.status != 'completed')
+            # Поиск по полям (регистронезависимый через Python)
+            if search:
+                search_terms = search.strip().split()
+                all_tasks = query.all()
+                
+                filtered_tasks = []
+                for task in all_tasks:
+                    text = f"{task.client or ''} {task.description or ''} {task.tracking or ''}".lower()
+                    match = all(term.lower() in text for term in search_terms)
+                    if match:
+                        filtered_tasks.append(task)
+                
+                total_count = len(filtered_tasks)
+                tasks = filtered_tasks[offset:offset + per_page]
+            else:
+                if hide_completed:
+                    query = query.filter(Order.status != 'completed')
+                total_count = query.count()
+                tasks = query.order_by(Order.created_at.desc()).offset(offset).limit(per_page).all()
             
-            total_count = query.count()
-            tasks = query.order_by(Order.created_at.desc()).offset(offset).limit(per_page).all()
-            
+            # Формируем результат (как раньше)
             result = []
             for task in tasks:
                 email_data = {}
@@ -54,7 +71,7 @@ def register_tasks_routes(app):
                     'assigned_to': task.assigned_to,
                     'status': status,
                     'comments_count': 0,
-                    'photos': email_data.get('photos', []),  # ← ИСПРАВЛЕНО
+                    'photos': email_data.get('photos', []),
                 })
             
             return jsonify({

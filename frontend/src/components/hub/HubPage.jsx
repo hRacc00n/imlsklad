@@ -43,6 +43,8 @@ function HubPage({ config }) {
     toggleHideCompleted,
     loadMore,
     refresh,
+    searchQuery,
+    setSearchQuery,
   } = useTaskList({
     apiUrl: config.apiUrl,
     perPage: config.perPage || 10,
@@ -81,6 +83,11 @@ function HubPage({ config }) {
     }
   };
 
+  const handleSearch = (query) => {
+    console.log('[HubPage] Поиск:', query);
+    setSearchQuery(query);
+  };
+
   // Обработка SSE событий
   useEffect(() => {
     const handleSSEEvent = (event) => {
@@ -95,6 +102,11 @@ function HubPage({ config }) {
     window.addEventListener('sse-message', handleSSEEvent);
     return () => window.removeEventListener('sse-message', handleSSEEvent);
   }, [refresh]);
+
+  // Обновляем список при изменении поискового запроса
+  useEffect(() => {
+    refresh();
+  }, [searchQuery]);
 
   // Обработчики
   const handleBack = () => navigate('/');
@@ -142,6 +154,8 @@ function HubPage({ config }) {
           onCreate={() => setShowCreateModal(true)}
           onBack={handleBack}
           isConnected={sse?.isConnected}
+          onSearch={handleSearch}
+          searchPlaceholder={`Поиск по ${config.title.toLowerCase()}...`}
         />
 
         {loading && tasks.length === 0 ? (

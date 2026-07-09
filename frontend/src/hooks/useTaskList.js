@@ -9,6 +9,7 @@ export function useTaskList(config = {}) {
     perPage = 10,
     hideCompletedByDefault = true,
     storageKey = null,
+    searchFields = [], // поля для поиска
   } = config;
 
   const [tasks, setTasks] = useState([]);
@@ -19,6 +20,8 @@ export function useTaskList(config = {}) {
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(0);
   const [hasNext, setHasNext] = useState(false);
+
+  const [searchQuery, setSearchQuery] = useState('');
   
   const [hideCompleted, setHideCompleted] = useState(() => {
     if (storageKey) {
@@ -42,7 +45,7 @@ export function useTaskList(config = {}) {
       }
       setError(null);
 
-      const url = `${apiUrl}?page=${pageNum}&per_page=${perPage}&hide_completed=${hideCompleted}`;
+      const url = `${apiUrl}?page=${pageNum}&per_page=${perPage}&hide_completed=${hideCompleted}&search=${encodeURIComponent(searchQuery)}`;
       console.log('[useTaskList] Загрузка:', url);
       
       const response = await fetch(url);
@@ -56,6 +59,7 @@ export function useTaskList(config = {}) {
 
       setTotalPages(data.pagination?.total_pages || 0);
       setHasNext(data.pagination?.has_next || false);
+      setPage(pageNum);
 
     } catch (err) {
       console.error('[useTaskList] Ошибка:', err);
@@ -65,7 +69,7 @@ export function useTaskList(config = {}) {
       setLoadingMore(false);
       isUpdatingRef.current = false;
     }
-  }, [apiUrl, perPage, hideCompleted]);
+  }, [apiUrl, perPage, hideCompleted, searchQuery]);
 
   const toggleHideCompleted = useCallback((value) => {
     console.log('[useTaskList] toggleHideCompleted:', value);
@@ -107,6 +111,8 @@ export function useTaskList(config = {}) {
     refresh,
     hideCompleted,
     toggleHideCompleted,
+    searchQuery,
+    setSearchQuery,
   };
 }
 

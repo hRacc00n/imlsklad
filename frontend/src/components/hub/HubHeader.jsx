@@ -1,3 +1,4 @@
+import SearchBar from '../common/SearchBar';
 import './HubHeader.css';
 
 function HubHeader({
@@ -7,11 +8,17 @@ function HubHeader({
   onCreate,
   onBack,
   isConnected,
+  onSearch,
+  searchPlaceholder = 'Поиск...',
 }) {
   return (
     <div className="hub-header">
       <h1>{title}</h1>
       <div className="hub-actions">
+        <SearchBar
+          onSearch={onSearch}
+          placeholder={searchPlaceholder}
+        />
         <label className="hub-filter-checkbox">
           <input
             type="checkbox"

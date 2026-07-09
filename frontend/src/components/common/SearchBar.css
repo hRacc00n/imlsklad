@@ -1,0 +1,126 @@
+.search-bar {
+  display: flex;
+  align-items: center;
+  background: #ffffff;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 0 14px;
+  transition: all 0.2s ease;
+  min-height: 44px;
+  flex: 1;
+  max-width: 400px;
+}
+
+.search-bar:hover {
+  border-color: #94a3b8;
+}
+
+.search-bar-focused {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+.search-icon {
+  font-size: 18px;
+  color: #94a3b8;
+  margin-right: 10px;
+  flex-shrink: 0;
+}
+
+.search-input {
+  flex: 1;
+  border: none;
+  outline: none;
+  font-size: 14px;
+  color: #1e293b;
+  background: transparent;
+  min-height: 40px;
+  width: 100%;
+}
+
+.search-input::placeholder {
+  color: #94a3b8;
+}
+
+.search-clear {
+  background: transparent;
+  border: none;
+  color: #94a3b8;
+  font-size: 16px;
+  cursor: pointer;
+  padding: 4px 6px;
+  border-radius: 50%;
+  transition: all 0.2s;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.search-clear:hover {
+  background: #f1f5f9;
+  color: #1e293b;
+}
+
+/* Мобильные устройства */
+@media (max-width: 768px) {
+  .search-bar {
+    max-width: 100%;
+    min-height: 40px;
+    padding: 0 12px;
+  }
+
+  .search-input {
+    font-size: 16px;
+    min-height: 36px;
+  }
+
+  .search-icon {
+    font-size: 16px;
+  }
+}
+
+@media (max-width: 480px) {
+  .search-bar {
+    min-height: 36px;
+    padding: 0 10px;
+    border-radius: 10px;
+  }
+
+  .search-input {
+    font-size: 15px;
+    min-height: 32px;
+  }
+}
+
+.search-submit {
+  background: #2563eb;
+  border: none;
+  color: white;
+  font-size: 16px;
+  padding: 6px 14px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: 4px;
+  min-height: 32px;
+}
+
+.search-submit:hover {
+  background: #1d4ed8;
+}
+
+.search-submit:active {
+  transform: scale(0.95);
+}
+
+@media (max-width: 480px) {
+  .search-submit {
+    padding: 4px 10px;
+    font-size: 14px;
+    min-height: 28px;
+  }
+}
