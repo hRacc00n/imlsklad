@@ -33,6 +33,8 @@ function App() {
         <Route element={<Layout user={user} onLogout={logout} />}>
           {/* Главная */}
           <Route path="/" element={<Dashboard user={user} onLogout={logout} />} />
+
+          <Route path="/settings" element={<SettingsPage />} />
           
           {/* Хабы */}
           <Route path="/hub/arrivals" element={<ArrivalsHub />} />

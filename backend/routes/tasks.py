@@ -9,6 +9,7 @@ import glob
 from datetime import datetime, timedelta, timezone
 from routes.sse import sse_publisher
 from sqlalchemy import or_, func
+from services.notification_service import NotificationService
 
 def register_tasks_routes(app):
     
@@ -267,6 +268,17 @@ def register_tasks_routes(app):
             db.add(new_task)
             db.commit()
             db.refresh(new_task)
+
+            # ===== УВЕДОМЛЕНИЯ ПОЛЬЗОВАТЕЛЯМ С ДОСТУПОМ К ХАБУ =====
+            try:
+                NotificationService.send_to_hub(
+                    hub_type='arrival',
+                    supplier=supplier,
+                    task_id=new_task.id,
+                    author=author
+                )
+            except Exception as e:
+                print(f"[Notification] Ошибка отправки уведомлений: {e}")
             
             history = OrderHistory(
                 order_id=new_task.id,
@@ -652,3 +664,42 @@ def register_tasks_routes(app):
         except Exception as e:
             print(f"Ошибка удаления задачи: {e}")  
             return jsonify({'success': False, 'message': str(e)}), 500
+
+    # ===== GET: Получить задачу по ID =====
+    @app.route('/api/tasks/<int:task_id>', methods=['GET'])
+    def get_task_by_id(task_id):
+        with get_db() as db:
+            task = db.query(Order).filter(Order.id == task_id).first()
+            if not task:
+                return jsonify({'error': 'Task not found'}), 404
+            
+            email_data = {}
+            if task.email_data:
+                try:
+                    email_data = json.loads(task.email_data)
+                except:
+                    pass
+            
+            status = task.status
+            if status == 'Новая':
+                status = 'new'
+            elif status == 'В работе':
+                status = 'in_progress'
+            elif status == 'Завершена':
+                status = 'completed'
+            
+            return jsonify({
+                'id': task.id,
+                'author': email_data.get('author', 'Неизвестно'),
+                'created_at': (task.created_at + timedelta(hours=3)).strftime('%Y-%m-%d %H:%M') if task.created_at else '',
+                'supplier': email_data.get('supplier', task.client or 'Неизвестно'),
+                'comment': task.description or '',
+                'assigned_to': task.assigned_to,
+                'status': status,
+                'photos': email_data.get('photos', []),
+                'type': task.type,
+                'comments_count': db.query(Comment).filter(
+                    Comment.task_id == task.id,
+                    Comment.is_deleted == False
+                ).count(),
+            }), 200

@@ -4,6 +4,7 @@ import { useAppContext } from '../contexts/AppContext';
 import { getRoleLabel } from '../utils/roleUtils';
 import BurgerMenu from './BurgerMenu';
 import './Header.css';
+import NotificationsBell from './common/NotificationsBell';
 import axios from 'axios';
 
 function Header({ user, onLogout }) {
@@ -56,6 +57,8 @@ function Header({ user, onLogout }) {
             <span className={`sse-dot ${statusInfo.class}`}></span>
             <span className="sse-label">{statusInfo.label}</span>
           </div>
+
+          <NotificationsBell userName={user?.name} />
 
           <div className="user-profile" onClick={toggleMenu}>
             <span className="user-name-header">👋 {user?.name}</span>

@@ -16,6 +16,7 @@ from routes.sse import register_sse_routes
 from routes.tasks import register_tasks_routes
 from routes.comments import register_comments_routes
 from flask import send_from_directory
+from routes.notifications import register_notifications_routes
 
 app = Flask(__name__)
 app.config['JSON_AS_ASCII'] = False
@@ -30,6 +31,7 @@ register_roles_routes(app)
 register_sse_routes(app)
 register_tasks_routes(app)
 register_comments_routes(app)
+register_notifications_routes(app)
 
 @app.route('/uploads/<filename>')
 def uploaded_file(filename):

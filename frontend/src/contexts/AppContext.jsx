@@ -16,6 +16,17 @@ export function AppProvider({ children }) {
     const event = new CustomEvent('sse-message', { detail: data });
     window.dispatchEvent(event);
     console.log('[App] Dispatched sse-message event');
+    
+    // ===== ДОПОЛНИТЕЛЬНАЯ ОБРАБОТКА =====
+    if (data.type === 'task_created' || data.type === 'task_updated' || data.type === 'task_deleted') {
+      console.log('[App] Обновление списка задач');
+    }
+    if (data.type === 'notification_created') {
+      console.log('[App] 🔔 Новое уведомление для:', data.data?.user_name);
+    }
+    if (data.type === 'notification_count_updated') {
+      console.log('[App] 📊 Обновление счётчика уведомлений:', data.data?.count);
+    }
   }, []);
 
   const sse = useSSE(userName, handleSSEMessage);

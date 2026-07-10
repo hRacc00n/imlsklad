@@ -29,6 +29,9 @@ function BurgerMenu({ user, onLogout, isOpen, onClose, roles = [] }) {
           <Link to="/" className="burger-link" onClick={onClose}>
             🏠 Главная
           </Link>
+          <Link to="/settings" className="burger-link" onClick={onClose}>
+            ⚙️ Настройки
+          </Link>
           <button className="burger-logout-btn" onClick={() => { onClose(); onLogout(); }}>
             🚪 Выйти
           </button>

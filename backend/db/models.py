@@ -1,6 +1,6 @@
 from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Text, Float, Boolean
 from sqlalchemy.orm import relationship
-from datetime import datetime
+from datetime import datetime, timedelta
 from db.database import Base
 
 class Order(Base):
@@ -107,4 +107,46 @@ class Comment(Base):
             'created_at': self.created_at.isoformat() if self.created_at else None,
             'updated_at': self.updated_at.isoformat() if self.updated_at else None,
             'is_edited': is_edited
+        }
+
+class Notification(Base):
+    """Модель уведомления"""
+    __tablename__ = 'notifications'
+    
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(String(100), nullable=False, index=True)
+    type = Column(String(50), nullable=False)                  # task_created
+    title = Column(String(200), nullable=False)
+    text = Column(Text, nullable=False)
+    link = Column(String(500), nullable=True)                  # /hub/arrivals
+    is_read = Column(Boolean, default=False)
+    task_id = Column(Integer, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    
+    def to_dict(self):
+        diff = datetime.utcnow() - self.created_at
+        seconds = diff.total_seconds()
+        if seconds < 60:
+            time_ago = 'только что'
+        elif seconds < 3600:
+            minutes = int(seconds // 60)
+            time_ago = f'{minutes} мин назад'
+        elif seconds < 86400:
+            hours = int(seconds // 3600)
+            time_ago = f'{hours} ч назад'
+        else:
+            days = int(seconds // 86400)
+            time_ago = f'{days} д назад'
+        
+        return {
+            'id': self.id,
+            'user_id': self.user_id,
+            'type': self.type,
+            'title': self.title,
+            'text': self.text,
+            'link': self.link,
+            'is_read': self.is_read,
+            'task_id': self.task_id,
+            'created_at': (self.created_at + timedelta(hours=3)).strftime('%Y-%m-%d %H:%M') if self.created_at else '',
+            'time_ago': time_ago
         }

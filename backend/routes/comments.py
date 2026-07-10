@@ -3,6 +3,7 @@ from db.database import get_db
 from db.models import Comment, Order
 from routes.sse import sse_publisher
 from datetime import datetime
+import json
 
 def register_comments_routes(app):
     
@@ -27,7 +28,6 @@ def register_comments_routes(app):
             return jsonify({'success': False, 'message': 'Заполните все поля'}), 400
         
         with get_db() as db:
-            # Проверяем, что задача существует
             task = db.query(Order).filter(Order.id == task_id).first()
             if not task:
                 return jsonify({'success': False, 'message': 'Задача не найдена'}), 404
@@ -41,13 +41,83 @@ def register_comments_routes(app):
             db.commit()
             db.refresh(comment)
             
-            # Отправляем SSE событие
+            # ===== УВЕДОМЛЕНИЯ =====
+            from services.notification_service import NotificationService
+            
+            # 1. Добавляем автора в подписчики задачи
+            email_data = {}
+            if task.email_data:
+                try:
+                    email_data = json.loads(task.email_data)
+                except:
+                    pass
+            
+            if 'comment_subscribers' not in email_data:
+                email_data['comment_subscribers'] = []
+            
+            if author not in email_data['comment_subscribers']:
+                email_data['comment_subscribers'].append(author)
+                task.email_data = json.dumps(email_data, ensure_ascii=False)
+                db.commit()
+            
+            # 2. Определяем получателей уведомлений
+            # Получаем всех пользователей с доступом к хабу
+            from utils.file_loader import load_json
+            users = load_json('users.json')
+            roles = load_json('roles.json')
+            hubs = load_json('hubs.json')
+            
+            hub_type = task.type
+            hub = None
+            for h in hubs:
+                if h['key'] == hub_type:
+                    hub = h
+                    break
+            
+            hub_id = hub['id'] if hub else None
+            
+            # Роли с доступом к хабу
+            roles_with_access = []
+            if hub_id:
+                for role in roles:
+                    if 'hub_access' in role and hub_id in role.get('hub_access', []):
+                        roles_with_access.append(role['role_key'])
+            
+            # Получатели: все с доступом к хабу + подписчики на задачу
+            subscribers = set(email_data.get('comment_subscribers', []))
+            
+            for user in users:
+                user_name = user['name']
+                
+                # Пропускаем автора комментария
+                if user_name == author:
+                    continue
+                
+                # Проверяем доступ к хабу
+                has_access = user.get('role') in roles_with_access
+                
+                # Проверяем подписку на задачу
+                is_subscriber = user_name in subscribers
+                
+                if has_access or is_subscriber:
+                    # Проверяем настройки пользователя
+                    settings = user.get('settings', {})
+                    if settings.get('notifications_enabled') != False:
+                        NotificationService.send(
+                            user_name=user_name,
+                            notification_type='comment_added',
+                            title='Новый комментарий',
+                            text=f'{author} оставил комментарий: "{text[:100]}{"..." if len(text) > 100 else ""}"',
+                            link=f'/hub/{hub_type}',
+                            task_id=task_id
+                        )
+            
+            # ===== SSE события =====
             sse_publisher.publish('comment_created', {
                 'task_id': task_id,
                 'comment': comment.to_dict()
             })
             
-            # Также отправляем обновление счётчика комментариев
             sse_publisher.publish('comment_count_updated', {
                 'task_id': task_id,
                 'action': 'created'

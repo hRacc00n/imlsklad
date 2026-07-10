@@ -111,3 +111,46 @@ def register_users_routes(app):
             'success': False,
             'message': 'Пользователь не найден'
         }, ensure_ascii=False), 404, {'Content-Type': 'application/json; charset=utf-8'}
+
+    # ===== GET: Получить настройки пользователя =====
+    @app.route('/api/users/settings', methods=['GET'])
+    def get_user_settings():
+        user_name = request.args.get('user_name', '')
+        
+        if not user_name:
+            return jsonify({'error': 'user_name required'}), 400
+        
+        # Загружаем пользователей
+        from utils.file_loader import load_json, save_json
+        users = load_json('users.json')
+        
+        for user in users:
+            if user.get('name') == user_name:
+                settings = user.get('settings', {})
+                # Убеждаемся, что есть поле notifications_enabled
+                if 'notifications_enabled' not in settings:
+                    settings['notifications_enabled'] = True
+                return jsonify(settings), 200
+        
+        return jsonify({'error': 'User not found'}), 404
+
+    # ===== PUT: Сохранить настройки пользователя =====
+    @app.route('/api/users/settings', methods=['PUT'])
+    def save_user_settings():
+        data = request.get_json()
+        user_name = data.get('user_name')
+        settings = data.get('settings', {})
+        
+        if not user_name:
+            return jsonify({'error': 'user_name required'}), 400
+        
+        from utils.file_loader import load_json, save_json
+        users = load_json('users.json')
+        
+        for i, user in enumerate(users):
+            if user.get('name') == user_name:
+                users[i]['settings'] = settings
+                save_json('users.json', users)
+                return jsonify({'success': True}), 200
+        
+        return jsonify({'error': 'User not found'}), 404
