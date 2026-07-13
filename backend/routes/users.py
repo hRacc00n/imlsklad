@@ -77,6 +77,13 @@ def register_users_routes(app):
                 
                 save_users(users)
                 
+                # Отправляем SSE событие о смене роли
+                from routes.sse import sse_publisher
+                sse_publisher.publish('user_role_updated', {
+                    'user_name': users[i]['name'],
+                    'new_role': users[i]['role']
+                })
+                
                 response_user = users[i].copy()
                 response_user.pop('password', None)
                 

@@ -1,15 +1,17 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { useAppContext } from '../contexts/AppContext';
 import { getRoleLabel } from '../utils/roleUtils';
 import BurgerMenu from './BurgerMenu';
 import './Header.css';
 import NotificationsBell from './common/NotificationsBell';
+import { useAppContext } from '../contexts/AppContext';
+import { useAuth } from '../contexts/AuthContext';
 import axios from 'axios';
 
 function Header({ user, onLogout }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const { sse } = useAppContext();
+  const { updateUserRole } = useAuth();
   const [roles, setRoles] = useState([]);
 
   // Загружаем роли при монтировании
@@ -24,6 +26,61 @@ function Header({ user, onLogout }) {
     };
     loadRoles();
   }, []);
+
+  // Подписка на SSE события для обновления роли
+  useEffect(() => {
+    const handleSSEEvent = (event) => {
+      const data = event.detail;
+      console.log('[Header] SSE Event received:', data);
+      
+      // Если пришло событие обновления роли для текущего пользователя
+      if (data.type === 'user_role_updated') {
+        const { user_name, new_role } = data.data;
+        
+        // Проверяем, относится ли событие к текущему пользователю
+        if (user?.name === user_name) {
+          console.log(`[Header] Роль пользователя ${user_name} обновлена на: ${new_role}`);
+          
+          // Обновляем роли в состоянии
+          const loadRoles = async () => {
+            try {
+              const response = await axios.get('/api/roles');
+              setRoles(response.data);
+            } catch (err) {
+              console.error('Ошибка загрузки ролей:', err);
+            }
+          };
+          loadRoles();
+          
+          // Обновляем роль через контекст
+          updateUserRole(new_role);
+          
+          // Диспатчим событие для обновления задач в Dashboard
+          window.dispatchEvent(new CustomEvent('user-role-updated', { 
+            detail: { user_name, new_role } 
+          }));
+        }
+      }
+    };
+
+    window.addEventListener('sse-message', handleSSEEvent);
+    return () => window.removeEventListener('sse-message', handleSSEEvent);
+  }, [user, updateUserRole]);
+
+  // Подписка на событие обновления роли из других компонентов
+  useEffect(() => {
+    const handleRoleUpdate = (event) => {
+      const { new_role } = event.detail;
+      if (user) {
+        // Обновляем роль в отображении
+        // Компонент перерендерится автоматически, так как user изменился
+        console.log('[Header] Роль обновлена через событие:', new_role);
+      }
+    };
+
+    window.addEventListener('user-role-updated', handleRoleUpdate);
+    return () => window.removeEventListener('user-role-updated', handleRoleUpdate);
+  }, [user]);
 
   const toggleMenu = () => setMenuOpen(!menuOpen);
   const closeMenu = () => setMenuOpen(false);

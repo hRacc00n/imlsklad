@@ -27,6 +27,25 @@ function UsersPage({ user, onLogout }) {
   useEffect(() => {
     loadUsers();
     loadRoles();
+
+    // Подписка на SSE события для обновления списка пользователей
+    const handleSSEEvent = (event) => {
+      const data = event.detail;
+      console.log('[UsersPage] SSE Event received:', data);
+      
+      // При смене роли пользователя - обновляем список
+      if (data.type === 'user_role_updated') {
+        console.log('[UsersPage] Смена роли пользователя, обновляем список');
+        loadUsers();
+        loadRoles();
+      }
+    };
+
+    window.addEventListener('sse-message', handleSSEEvent);
+
+    return () => {
+      window.removeEventListener('sse-message', handleSSEEvent);
+    };
   }, []);
 
   const loadRoles = async () => {

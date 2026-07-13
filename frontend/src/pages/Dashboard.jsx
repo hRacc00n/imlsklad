@@ -226,6 +226,14 @@ function Dashboard({ user, onLogout }) {
       const data = event.detail;
       console.log('[Dashboard] SSE Event received:', data);
       
+      // При смене роли - обновляем задачи
+      if (data.type === 'user_role_updated') {
+        console.log('[Dashboard] Смена роли пользователя, обновляем задачи');
+        loadActiveTasks();
+        loadStats();
+        return;
+      }
+      
       // Проверяем обновление статистики для хабов
       if (data.type === 'hub_stats_updated' && data.data?.hub_type) {
         console.log(`[Dashboard] Обновление счетчика для хаба: ${data.data.hub_type}`);
@@ -239,11 +247,20 @@ function Dashboard({ user, onLogout }) {
       }
     };
 
+    // Подписка на кастомное событие обновления роли
+    const handleRoleUpdate = () => {
+      console.log('[Dashboard] Получено событие обновления роли, обновляем задачи');
+      loadActiveTasks();
+      loadStats();
+    };
+
     window.addEventListener('sse-message', handleSSEEvent);
+    window.addEventListener('user-role-updated', handleRoleUpdate);
     console.log('[Dashboard] Подписка на SSE события');
 
     return () => {
       window.removeEventListener('sse-message', handleSSEEvent);
+      window.removeEventListener('user-role-updated', handleRoleUpdate);
       console.log('[Dashboard] Отписка от SSE');
     };
   }, []);
