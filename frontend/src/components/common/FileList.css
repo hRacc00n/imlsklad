@@ -1,0 +1,99 @@
+.file-list {
+  background: var(--color-bg-secondary, #f8f9fa);
+  border-radius: 8px;
+  overflow: hidden;
+  margin-top: 8px;
+}
+
+.file-list-header {
+  padding: 8px 12px;
+  background: var(--color-bg-tertiary, #e9ecef);
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--color-text-secondary, #495057);
+}
+
+.file-list-items {
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.file-list-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--color-border, #dee2e6);
+  transition: background 0.15s;
+}
+
+.file-list-item:hover {
+  background: var(--color-bg-hover, #f1f3f5);
+}
+
+.file-list-item:last-child {
+  border-bottom: none;
+}
+
+.file-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  min-width: 0;
+}
+
+.file-icon {
+  font-size: 18px;
+  flex-shrink: 0;
+}
+
+.file-name {
+  font-size: 13px;
+  color: var(--color-text-primary, #212529);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.file-actions {
+  display: flex;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.file-action-btn {
+  padding: 4px 10px;
+  border: none;
+  border-radius: 4px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.file-action-btn.view {
+  background: var(--color-primary-light, #e3f0ff);
+  color: var(--color-primary, #0d6efd);
+}
+
+.file-action-btn.view:hover {
+  background: var(--color-primary, #0d6efd);
+  color: white;
+}
+
+.file-action-btn.download {
+  background: var(--color-success-light, #d4edda);
+  color: var(--color-success, #28a745);
+}
+
+.file-action-btn.download:hover {
+  background: var(--color-success, #28a745);
+  color: white;
+}
+
+.file-list-empty {
+  padding: 16px;
+  text-align: center;
+  color: var(--color-text-muted, #6c757d);
+  font-size: 14px;
+}

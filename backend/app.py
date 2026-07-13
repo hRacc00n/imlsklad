@@ -1,8 +1,6 @@
 import sys
 import io
 import os
-sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
-sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8')
 
 from flask import Flask
 from flask_cors import CORS
@@ -17,6 +15,11 @@ from routes.tasks import register_tasks_routes
 from routes.comments import register_comments_routes
 from flask import send_from_directory
 from routes.notifications import register_notifications_routes
+from mail_parsers.scheduler import MailScheduler
+
+# Переопределяем stdout ПОСЛЕ всех импортов
+sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
+sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8')
 
 app = Flask(__name__)
 app.config['JSON_AS_ASCII'] = False
@@ -42,6 +45,15 @@ def uploaded_file(filename):
 def uploaded_photo(filename):
     upload_dir = os.path.join(os.path.dirname(__file__), 'data', 'uploads', 'photos')
     return send_from_directory(upload_dir, filename)
+
+@app.route('/uploads/invoices/<filename>')
+def uploaded_invoice(filename):
+    upload_dir = os.path.join(os.path.dirname(__file__), 'data', 'uploads', 'invoices')
+    return send_from_directory(upload_dir, filename)
+
+# Запуск планировщика почты
+mail_scheduler = MailScheduler()
+mail_scheduler.start()
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)

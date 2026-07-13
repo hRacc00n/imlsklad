@@ -160,7 +160,9 @@ function Dashboard({ user, onLogout }) {
     try {
       console.log('[Dashboard] Загрузка статистики...');
       const timestamp = Date.now();
-      const response = await fetch(`/api/tasks/arrivals/stats?_=${timestamp}`, {
+      
+      // Загружаем статистику для Поступлений
+      const arrivalsResponse = await fetch(`/api/tasks/arrivals/stats?_=${timestamp}`, {
         cache: 'no-store',
         headers: {
           'Cache-Control': 'no-cache, no-store, must-revalidate',
@@ -168,19 +170,32 @@ function Dashboard({ user, onLogout }) {
           'Expires': '0'
         }
       });
-      const data = await response.json();
-      console.log('[Dashboard] Статистика получена:', data);
+      const arrivalsData = await arrivalsResponse.json();
+      console.log('[Dashboard] Статистика Поступлений:', arrivalsData);
       
-      // Принудительно обновляем состояние
-      setStats({ ...data });
+      // Загружаем статистику для Счетов
+      const invoicesResponse = await fetch(`/api/tasks/invoices/stats?_=${timestamp}`, {
+        cache: 'no-store',
+        headers: {
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache',
+          'Expires': '0'
+        }
+      });
+      const invoicesData = await invoicesResponse.json();
+      console.log('[Dashboard] Статистика Счетов:', invoicesData);
       
-      // Обновляем хабы с новым значением
+      // Обновляем хабы с новыми значениями
       setHubs(prevHubs => {
         console.log('[Dashboard] prevHubs:', prevHubs);
         const updated = prevHubs.map(hub => {
           if (hub.name === 'Поступления') {
-            console.log(`[Dashboard] Обновляем Поступления с ${hub.count} на ${data.active_count}`);
-            return { ...hub, count: data.active_count || 0 };
+            console.log(`[Dashboard] Обновляем Поступления с ${hub.count} на ${arrivalsData.active_count}`);
+            return { ...hub, count: arrivalsData.active_count || 0 };
+          }
+          if (hub.name === 'Счета') {
+            console.log(`[Dashboard] Обновляем Счета с ${hub.count} на ${invoicesData.active_count}`);
+            return { ...hub, count: invoicesData.active_count || 0 };
           }
           return { ...hub };
         });
@@ -211,9 +226,9 @@ function Dashboard({ user, onLogout }) {
       const data = event.detail;
       console.log('[Dashboard] SSE Event received:', data);
       
-      // Проверяем правильный путь к hub_type
-      if (data.type === 'hub_stats_updated' && data.data?.hub_type === 'arrival') {
-        console.log('[Dashboard] Обновление счетчика Поступления');
+      // Проверяем обновление статистики для хабов
+      if (data.type === 'hub_stats_updated' && data.data?.hub_type) {
+        console.log(`[Dashboard] Обновление счетчика для хаба: ${data.data.hub_type}`);
         loadStats();
       }
       if (data.type === 'task_created' || 

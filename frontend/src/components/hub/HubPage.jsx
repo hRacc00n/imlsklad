@@ -13,7 +13,7 @@ import useTaskActions from '../../hooks/useTaskActions';
 import HubTaskEditModal from './HubTaskEditModal';
 import './HubPage.css';
 
-function HubPage({ config }) {
+function HubPage({ config, hideCreateButton = false }) {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { sse } = useAppContext();
@@ -153,7 +153,7 @@ function HubPage({ config }) {
           title={config.title}
           hideCompleted={hideCompleted}
           onHideCompletedChange={toggleHideCompleted}
-          onCreate={() => setShowCreateModal(true)}
+          onCreate={hideCreateButton ? null : () => setShowCreateModal(true)}
           onBack={handleBack}
           isConnected={sse?.isConnected}
           onSearch={handleSearch}

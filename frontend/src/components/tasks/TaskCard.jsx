@@ -16,6 +16,7 @@ function TaskCard({
   onEdit,
   onDelete,
   currentUser,
+  type, 
 }) {
   const {
     id,
@@ -107,21 +108,46 @@ function TaskCard({
 
       <div className="task-card-body">
         <div className="task-card-header">
-          <span className="task-author">
-            <span className="task-author-label">Автор:</span> {author}
-          </span>
-          <span className="task-date">🕐 {created_at}</span>
-        </div>
+        <span className="task-author">
+          {task.type === 'invoices' ? (
+            <span className="task-invoice-title">📊 {task.title || 'Без номера'}</span>
+          ) : (
+            <>
+              <span className="task-author-label">Автор:</span> {author}
+            </>
+          )}
+        </span>
+        <span className="task-date">🕐 {created_at}</span>
+      </div>
 
-        <div className="task-supplier">
-          <strong>Кто привез:</strong> {supplier}
-        </div>
-
-        <div className="task-comment-box">
-          {truncateComment(comment)}
-        </div>
-
-        <PhotoViewer photos={photos} onPhotoClick={onPhotoClick} />
+        {task.type === 'invoices' ? (
+          // Отображение для счетов
+          <>
+            <div className="task-invoice-field">
+              <strong>Контрагент:</strong> {task.supplier || 'Неизвестно'}
+            </div>
+            <div className="task-invoice-field">
+              <strong>Город:</strong> {task.city || '—'}
+            </div>
+            <div className="task-invoice-field">
+              <strong>Сумма:</strong> {task.amount || '—'}
+            </div>
+            <div className="task-comment-box">
+              {truncateComment(task.comment)}
+            </div>
+          </>
+        ) : (
+          // Отображение для обычных задач
+          <>
+            <div className="task-supplier">
+              <strong>Кто привез:</strong> {supplier}
+            </div>
+            <div className="task-comment-box">
+              {truncateComment(comment)}
+            </div>
+            <PhotoViewer photos={photos} onPhotoClick={onPhotoClick} />
+          </>
+        )}
 
         <div className="task-card-footer">
           <div className="task-footer-row">

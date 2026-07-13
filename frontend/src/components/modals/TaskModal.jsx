@@ -8,6 +8,7 @@ import PhotoUploader from '../common/PhotoUploader';
 import { getAvailableActions } from '../../utils/taskActions';
 import CommentList from '../comments/CommentList';
 import './TaskModal.css';
+import FileList from '../common/FileList';
 
 function TaskModal({ onPhotoUploadStart, onPhotoUploadComplete }) {
   const { isOpen, task, taskType, actions, closeModal, updateTask } = useModal();
@@ -62,6 +63,13 @@ function TaskModal({ onPhotoUploadStart, onPhotoUploadComplete }) {
   const availableActions = getAvailableActions(user, task);
 
   const getTitle = () => {
+    // Проверяем, является ли задача счетом
+    const isInvoice = taskType === 'invoice' || task?.type === 'invoices';
+    
+    if (isInvoice) {
+      return `📊 Счет № ${task?.title || 'Без номера'}`;
+    }
+    
     switch (taskType) {
       case 'arrival':
         return `📦 Поступление от ${task?.supplier || 'Неизвестно'}`;
@@ -208,6 +216,51 @@ function TaskModal({ onPhotoUploadStart, onPhotoUploadComplete }) {
   if (!isOpen || !task) return null;
 
   const renderTypeSpecificFields = () => {
+    // Проверяем, является ли задача счетом
+    const isInvoice = taskType === 'invoice' || task?.type === 'invoices';
+    
+    if (isInvoice) {
+      return (
+        <>
+          <div className="modal-field">
+            <label>Счет №</label>
+            <span>{task.title || '—'}</span>
+          </div>
+          <div className="modal-field">
+            <label>Контрагент</label>
+            <span>{task.supplier || '—'}</span>
+          </div>
+          <div className="modal-field">
+            <label>Город</label>
+            <span>{task.city || '—'}</span>
+          </div>
+          <div className="modal-field">
+            <label>Сумма</label>
+            <span>{task.amount || '—'}</span>
+          </div>
+          <div className="modal-field">
+            <label>Инициатор</label>
+            <span>{task.initiator || '—'}</span>
+          </div>
+          <div className="modal-field">
+            <label>Комментарий</label>
+            <div className="modal-comment-box">{task.comment || '—'}</div>
+          </div>
+          <div className="modal-field">
+            <label>Вложения</label>
+            <FileList
+              files={task.files || []}
+              onView={(file) => {
+                const url = file.path.startsWith('/') ? file.path : `/${file.path}`;
+                window.open(url, '_blank');
+              }}
+            />
+          </div>
+        </>
+      );
+    }
+
+    // Обычные задачи (arrival и др.)
     switch (taskType) {
       case 'arrival':
         return (
@@ -284,7 +337,9 @@ function TaskModal({ onPhotoUploadStart, onPhotoUploadComplete }) {
 
         <div className="modal-body">
           <div className="modal-meta">
-            <span className="modal-author">✍️ {task.author || '—'}</span>
+            {task.type !== 'invoices' && task.author && (
+              <span className="modal-author">✍️ {task.author}</span>
+            )}
             <span className="modal-date">🕐 {task.created_at || '—'}</span>
           </div>
 

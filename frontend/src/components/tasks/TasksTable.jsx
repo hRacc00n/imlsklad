@@ -51,6 +51,10 @@ function TasksTable({ tasks, loading, onRowClick }) {
         <tbody>
           {tasks.map((task) => {
             const icon = HUB_ICONS[task.type] || '📋';
+            
+            // Для счетов: в колонке "Заказ" показываем номер счета, в "Контрагент" - контрагента
+            const isInvoice = task.type === 'invoices';
+            
             return (
               <tr 
                 key={task.id} 
@@ -59,13 +63,13 @@ function TasksTable({ tasks, loading, onRowClick }) {
               >
                 <td>
                   <span className="task-tracking">
-                    {icon} {task.supplier || '—'}
+                    {icon} {isInvoice ? (task.title || 'Без номера') : (task.supplier || '—')}
                   </span>
                   {task.comments_count > 0 && (
                     <span className="task-comments-badge">💬 {task.comments_count}</span>
                   )}
                 </td>
-                <td>{task.author || '—'}</td>
+                <td>{isInvoice ? (task.supplier || '—') : (task.author || '—')}</td>
                 <td className="task-description">{task.comment || '—'}</td>
                 <td>{task.assigned_to || '—'}</td>
               </tr>

@@ -28,9 +28,11 @@ function HubHeader({
           <span>Скрыть выполненные</span>
           {isConnected && <span className="hub-sse-status">🟢</span>}
         </label>
-        <button className="hub-btn-create" onClick={onCreate}>
-          ➕ Создать
-        </button>
+        {onCreate && (
+          <button className="hub-btn-create" onClick={onCreate}>
+            ➕ Создать
+          </button>
+        )}
         <button className="hub-btn-back" onClick={onBack}>
           ← Назад
         </button>

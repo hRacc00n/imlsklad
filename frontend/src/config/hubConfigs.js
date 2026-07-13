@@ -116,30 +116,8 @@ export const HUB_CONFIGS = {
     modalType: 'invoice',
     perPage: 10,
     hideCompletedByDefault: true,
-    formFields: [
-      {
-        name: 'client',
-        label: 'Клиент',
-        type: 'text',
-        placeholder: 'Введите клиента',
-        required: true,
-      },
-      {
-        name: 'amount',
-        label: 'Сумма',
-        type: 'text',
-        placeholder: 'Введите сумму',
-        required: false,
-      },
-      {
-        name: 'comment',
-        label: 'Комментарий',
-        type: 'textarea',
-        placeholder: 'Введите комментарий',
-        required: false,
-        rows: 4,
-      },
-    ],
+    showCreateButton: false,
+    formFields: [],
   },
 
   [HUB_TYPES.AIR_TRAFFIC]: {

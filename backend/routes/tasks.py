@@ -216,6 +216,11 @@ def register_tasks_routes(app):
                     'author': email_data.get('author', 'Неизвестно'),
                     'created_at': (task.created_at + timedelta(hours=3)).strftime('%Y-%m-%d %H:%M') if task.created_at else '',
                     'supplier': email_data.get('supplier', task.client or 'Неизвестно'),
+                    'title': email_data.get('title', ''),
+                    'city': email_data.get('city', ''),
+                    'amount': email_data.get('amount', ''),
+                    'initiator': email_data.get('initiator', ''),
+                    'files': email_data.get('files', []),
                     'comment': task.description or '',
                     'assigned_to': task.assigned_to,
                     'status': status,
@@ -703,3 +708,111 @@ def register_tasks_routes(app):
                     Comment.is_deleted == False
                 ).count(),
             }), 200
+
+    # ===== GET: Получить все задачи типа "invoices" =====
+    @app.route('/api/tasks/invoices', methods=['GET'])
+    def get_invoices():
+        page = request.args.get('page', 1, type=int)
+        per_page = request.args.get('per_page', 10, type=int)
+        hide_completed = request.args.get('hide_completed', 'false').lower() == 'true'
+        search = request.args.get('search', '')
+        offset = (page - 1) * per_page
+        
+        with get_db() as db:
+            query = db.query(Order).filter(Order.type == 'invoices')
+            
+            # Поиск по полям (контрагент, номер счета, комментарий)
+            if search:
+                search_terms = search.strip().split()
+                all_tasks = query.all()
+                
+                filtered_tasks = []
+                for task in all_tasks:
+                    # Получаем email_data
+                    email_data = {}
+                    if task.email_data:
+                        try:
+                            email_data = json.loads(task.email_data)
+                        except:
+                            pass
+                    
+                    # Собираем текст для поиска
+                    text = f"{email_data.get('supplier', '')} {email_data.get('title', '')} {task.description or ''}".lower()
+                    match = all(term.lower() in text for term in search_terms)
+                    if match:
+                        filtered_tasks.append(task)
+                
+                total_count = len(filtered_tasks)
+                tasks = filtered_tasks[offset:offset + per_page]
+            else:
+                if hide_completed:
+                    query = query.filter(Order.status != 'completed')
+                total_count = query.count()
+                tasks = query.order_by(Order.created_at.desc()).offset(offset).limit(per_page).all()
+            
+            # Формируем результат
+            result = []
+            for task in tasks:
+                email_data = {}
+                if task.email_data:
+                    try:
+                        email_data = json.loads(task.email_data)
+                    except:
+                        pass
+                
+                status = task.status
+                if status == 'Новая':
+                    status = 'new'
+                elif status == 'В работе':
+                    status = 'in_progress'
+                elif status == 'Завершена':
+                    status = 'completed'
+                
+                result.append({
+                    'id': task.id,
+                    'title': email_data.get('title', 'Счет'),
+                    'supplier': email_data.get('supplier', 'Неизвестно'),
+                    'city': email_data.get('city', ''),
+                    'amount': email_data.get('amount', ''),
+                    'initiator': email_data.get('initiator', ''),
+                    'comment': task.description or email_data.get('comment', ''),
+                    'files': email_data.get('files', []),
+                    'assigned_to': task.assigned_to,
+                    'status': status,
+                    'created_at': (task.created_at + timedelta(hours=3)).strftime('%Y-%m-%d %H:%M') if task.created_at else '',
+                    'comments_count': db.query(Comment).filter(
+                        Comment.task_id == task.id,
+                        Comment.is_deleted == False
+                    ).count(),
+                    'type': task.type,  # ← ДОБАВИТЬ
+                })
+            
+            return jsonify({
+                'data': result,
+                'pagination': {
+                    'page': page,
+                    'per_page': per_page,
+                    'total': total_count,
+                    'total_pages': (total_count + per_page - 1) // per_page,
+                    'has_next': page * per_page < total_count,
+                    'has_previous': page > 1
+                }
+            }), 200
+
+    # ===== GET: Статистика по хабу "Счета" =====
+    @app.route('/api/tasks/invoices/stats', methods=['GET'])
+    def get_invoices_stats():
+        with get_db() as db:
+            active_count = db.query(Order).filter(
+                Order.type == 'invoices',
+                Order.status != 'completed'
+            ).count()
+            
+            total_count = db.query(Order).filter(Order.type == 'invoices').count()
+            
+            response = jsonify({
+                'active_count': active_count,
+                'total_count': total_count
+            })
+            response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+            return response, 200

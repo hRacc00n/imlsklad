@@ -2,6 +2,8 @@ from db.database import get_db
 from db.models import Notification
 from routes.sse import sse_publisher
 from datetime import datetime
+import sys
+import traceback
 
 class NotificationService:
     
@@ -48,78 +50,89 @@ class NotificationService:
         """Отправить уведомления всем, у кого есть доступ к хабу"""
         from utils.file_loader import load_json
         
-        print(f"[Notification] 🔔 send_to_hub: hub_type={hub_type}, supplier={supplier}, task_id={task_id}, author={author}")
+        print(f"[Notification] 🔔=== START send_to_hub ===")
+        print(f"[Notification] hub_type={hub_type}, supplier={supplier}, task_id={task_id}, author={author}")
+        sys.stdout.flush()
         
-        users = load_json('users.json')
-        roles = load_json('roles.json')
-        hubs = load_json('hubs.json')
-        
-        # Находим хаб по типу
-        hub = None
-        for h in hubs:
-            if h['key'] == hub_type:
-                hub = h
-                break
-        
-        if not hub:
-            print(f"[Notification] ❌ Хаб с типом {hub_type} не найден")
-            return
-        
-        hub_id = hub['id']
-        print(f"[Notification] 📍 Найден хаб: {hub['name']} (id: {hub_id})")
-        
-        # Находим все роли с доступом к этому хабу
-        roles_with_access = []
-        for role in roles:
-            if 'hub_access' in role and hub_id in role.get('hub_access', []):
-                roles_with_access.append(role['role_key'])
-        
-        if not roles_with_access:
-            print(f"[Notification] ❌ Нет ролей с доступом к хабу {hub['name']}")
-            return
-        
-        print(f"[Notification] 🎯 Роли с доступом: {roles_with_access}")
-        
-        # Формируем текст уведомления
-        if hub_type == 'arrival':
-            title = 'Новое поступление'
-            text = f'Новое поступление от {supplier}'
-        else:
-            title = f'Новая задача в {hub["name"]}'
-            text = f'Новая задача в {hub["name"]} от {supplier}'
-        
-        sent_count = 0
-        
-        # Отправляем уведомления
-        for user in users:
-            # Пропускаем автора
-            if author and user['name'] == author:
-                print(f"[Notification] ⏭️ Пропускаем автора: {user['name']}")
-                continue
+        try:
+            users = load_json('users.json')
+            roles = load_json('roles.json')
+            hubs = load_json('hubs.json')
             
-            # Проверяем, что у пользователя есть доступ к хабу
-            if user.get('role') not in roles_with_access:
-                continue
+            print(f"[Notification] Загружено: {len(users)} пользователей, {len(roles)} ролей, {len(hubs)} хабов")
             
-            # Всегда сохраняем уведомление в БД
-            print(f"[Notification] 📨 Отправка уведомления пользователю: {user['name']}")
-            NotificationService.send(
-                user_name=user['name'],
-                notification_type='task_created',
-                title=title,
-                text=text,
-                link=f'/hub/{hub_type}',
-                task_id=task_id
-            )
-            sent_count += 1
+            # Находим хаб по типу
+            hub = None
+            for h in hubs:
+                if h['key'] == hub_type:
+                    hub = h
+                    break
             
-            # Проверяем настройки пользователя для Push-уведомлений
-            settings = user.get('settings', {})
-            if settings.get('notifications_enabled') != False:
-                # TODO: Отправить Push-уведомление через браузер
-                print(f"[Notification] 📱 Push-уведомление для {user['name']} (в разработке)")
+            if not hub:
+                print(f"[Notification] ❌ Хаб с типом {hub_type} не найден")
+                return
+            
+            hub_id = hub['id']
+            print(f"[Notification] 📍 Найден хаб: {hub['name']} (id: {hub_id})")
+            
+            # Находим все роли с доступом к этому хабу
+            roles_with_access = []
+            for role in roles:
+                if 'hub_access' in role and hub_id in role.get('hub_access', []):
+                    roles_with_access.append(role['role_key'])
+                    print(f"[Notification] Роль {role['name']} ({role['role_key']}) имеет доступ")
+            
+            if not roles_with_access:
+                print(f"[Notification] ❌ Нет ролей с доступом к хабу {hub['name']}")
+                return
+            
+            print(f"[Notification] 🎯 Роли с доступом: {roles_with_access}")
+            
+            # Формируем текст уведомления
+            if hub_type == 'arrival':
+                title = 'Новое поступление'
+                text = f'Новое поступление от {supplier}'
+            else:
+                title = f'Новая задача в {hub["name"]}'
+                text = f'Новая задача в {hub["name"]} от {supplier}'
+            
+            print(f"[Notification] Title: {title}, Text: {text}")
+            
+            sent_count = 0
+            
+            # Отправляем уведомления
+            for user in users:
+                user_name = user['name']
+                
+                # Пропускаем автора
+                if author and user_name == author:
+                    print(f"[Notification] ⏭️ Пропускаем автора: {user_name}")
+                    continue
+                
+                # Проверяем, что у пользователя есть доступ к хабу
+                if user.get('role') not in roles_with_access:
+                    print(f"[Notification] ⏭️ Пользователь {user_name} (роль {user.get('role')}) не имеет доступа")
+                    continue
+                
+                print(f"[Notification] 📨 Отправка уведомления пользователю: {user_name}")
+                NotificationService.send(
+                    user_name=user_name,
+                    notification_type='task_created',
+                    title=title,
+                    text=text,
+                    link=f'/hub/{hub_type}',
+                    task_id=task_id
+                )
+                sent_count += 1
+            
+            print(f"[Notification] ✅ Отправлено уведомлений: {sent_count}")
+            
+        except Exception as e:
+            print(f"[Notification] ❌ Ошибка в send_to_hub: {e}")
+            traceback.print_exc()
         
-        print(f"[Notification] ✅ Отправлено уведомлений: {sent_count}")
+        print(f"[Notification] 🔔=== END send_to_hub ===")
+        sys.stdout.flush()
 
     @staticmethod
     def send_comment_notification(task_id, author, task_type, comment_text):
