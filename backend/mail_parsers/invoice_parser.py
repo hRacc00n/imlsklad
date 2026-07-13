@@ -1,6 +1,7 @@
 from .base_parser import BaseMailParser
 import os
 import email
+from utils.text_normalizer import normalize_commen
 
 
 class InvoiceParser(BaseMailParser):
@@ -48,6 +49,10 @@ class InvoiceParser(BaseMailParser):
                     extracted_data[field] = cells[cell_index - 1]
                 else:
                     extracted_data[field] = ''
+
+            # Нормализуем комментарий (ячейка 15)
+            if 'comment' in extracted_data and extracted_data['comment']:
+                extracted_data['comment'] = normalize_comment(extracted_data['comment'])
             
             # Дополнительные поля
             extracted_data['subject'] = subject
