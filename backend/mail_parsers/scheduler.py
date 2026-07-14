@@ -175,7 +175,15 @@ class MailScheduler:
         try:
             log(f"[DEBUG] create_invoice_task called for email: {email_id}")
             
-            tracking = f"INV-{datetime.now().strftime('%Y%m%d%H%M%S')}"
+            # Генерируем уникальный tracking: номер счета + ID письма
+            title = data.get('title', '')
+            if title:
+                # Заменяем / и пробелы на _ для безопасного имени
+                clean_title = title.replace('/', '-').replace(' ', '_')
+                tracking = f"INV-{clean_title}-{email_id}"
+            else:
+                # Запасной вариант: время + ID письма
+                tracking = f"INV-{datetime.now().strftime('%Y%m%d%H%M%S')}-{email_id}"
             log(f"[DEBUG] Tracking: {tracking}")
             
             saved_files = []
@@ -333,16 +341,23 @@ class MailScheduler:
         try:
             log(f"[DEBUG] create_otgruzka_task called for email: {email_id}")
             
-            # Определяем тип хаба
+            # Определяем тип хаба и префикс
             hub_type = data.get('hub_type', 'spb')
             log(f"[DEBUG] Hub type: {hub_type}")
             
-            # Генерируем трек-номер
+            # Определяем префикс ДО использования
             if hub_type == 'regions':
                 prefix = 'REG'
             else:
                 prefix = 'SPB'
-            tracking = f"{prefix}-{datetime.now().strftime('%Y%m%d%H%M%S')}"
+            
+            # Генерируем уникальный tracking: номер заказа + ID письма
+            order_number = data.get('order_number', '')
+            if order_number:
+                clean_order = order_number.replace('/', '-').replace(' ', '_')
+                tracking = f"{prefix}-{clean_order}-{email_id}"
+            else:
+                tracking = f"{prefix}-{datetime.now().strftime('%Y%m%d%H%M%S')}-{email_id}"
             log(f"[DEBUG] Tracking: {tracking}")
             
             # Формируем email_data

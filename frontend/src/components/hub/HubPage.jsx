@@ -92,11 +92,15 @@ function HubPage({ config, hideCreateButton = false }) {
   useEffect(() => {
     const handleSSEEvent = (event) => {
       const data = event.detail;
+      console.log('[HubPage] ===== SSE EVENT =====');
+      console.log('[HubPage] Type:', data.type);
+      console.log('[HubPage] Full data:', data);
+      
       if (data.type === 'task_created' || 
           data.type === 'task_updated' || 
           data.type === 'task_deleted' ||
-          data.type === 'comment_count_updated') {  // ← ДОБАВИТЬ
-        console.log('[HubPage] Обновление списка задач');
+          data.type === 'comment_count_updated') {
+        console.log('[HubPage] Обновление списка задач, тип задачи:', data.type);
         refresh();
       }
     };

@@ -43,9 +43,10 @@ export function useSSE(userName, onMessage) {
     es.onmessage = (event) => {
       try {
         const data = JSON.parse(event.data);
-        console.log('[SSE] Received:', data);
+        console.log('[SSE] ===== RECEIVED =====');
+        console.log('[SSE] Type:', data.type);
+        console.log('[SSE] Full data:', data);
         
-        // Вызываем колбэк для любого сообщения
         if (onMessage) {
           onMessage(data);
         }

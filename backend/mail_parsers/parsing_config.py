@@ -19,11 +19,11 @@ PARSING_INVOICES = 'false'      # Счета НЕ парсятся нигде
 
 # Парсинг счетов (invoices)
 # Варианты: 'local', 'production', 'false'
-PARSING_INVOICES = 'local'
+PARSING_INVOICES = 'production'
 
 # Парсинг отгрузок (regions и spb)
 # Варианты: 'local', 'production', 'false'
-PARSING_OTGRUZKAS = 'local'
+PARSING_OTGRUZKAS = 'production'
 
 # ============================================================
 # ДОПОЛНИТЕЛЬНЫЕ НАСТРОЙКИ

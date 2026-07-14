@@ -256,7 +256,9 @@ function Dashboard({ user, onLogout }) {
 
     const handleSSEEvent = (event) => {
       const data = event.detail;
-      console.log('[Dashboard] SSE Event received:', data);
+      console.log('[Dashboard] ===== SSE EVENT =====');
+      console.log('[Dashboard] Type:', data.type);
+      console.log('[Dashboard] Full data:', data);
       
       // При смене роли - обновляем задачи
       if (data.type === 'user_role_updated') {
@@ -275,6 +277,7 @@ function Dashboard({ user, onLogout }) {
           data.type === 'task_updated' || 
           data.type === 'task_deleted' ||
           data.type === 'comment_count_updated') {
+        console.log('[Dashboard] Обновление активных задач, тип задачи:', data.type);
         loadActiveTasks();
       }
     };

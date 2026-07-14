@@ -698,7 +698,8 @@ def register_tasks_routes(app):
             elif status == 'Завершена':
                 status = 'completed'
             
-            return jsonify({
+            # Базовые поля для всех типов
+            result = {
                 'id': task.id,
                 'author': email_data.get('author', 'Неизвестно'),
                 'created_at': (task.created_at + timedelta(hours=3)).strftime('%Y-%m-%d %H:%M') if task.created_at else '',
@@ -712,7 +713,25 @@ def register_tasks_routes(app):
                     Comment.task_id == task.id,
                     Comment.is_deleted == False
                 ).count(),
-            }), 200
+            }
+            
+            # Добавляем поля для счетов
+            if task.type == 'invoices':
+                result['title'] = email_data.get('title', '')
+                result['city'] = email_data.get('city', '')
+                result['amount'] = email_data.get('amount', '')
+                result['initiator'] = email_data.get('initiator', '')
+                result['files'] = email_data.get('files', [])
+            
+            # Добавляем поля для отгрузок (регионы и СПб)
+            if task.type in ['regions', 'spb']:
+                result['order_number'] = email_data.get('order_number', '')
+                result['subdivision'] = email_data.get('subdivision', '')
+                result['contractor'] = email_data.get('contractor', '')
+                result['initiator'] = email_data.get('initiator', '')
+                result['items'] = email_data.get('items', [])
+            
+            return jsonify(result), 200
 
     # ===== GET: Получить все задачи типа "invoices" =====
     @app.route('/api/tasks/invoices', methods=['GET'])
