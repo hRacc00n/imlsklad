@@ -54,29 +54,34 @@ class MailScheduler:
             return
         
         try:
+            # Получаем ВСЕ непрочитанные письма
             invoices = parser.get_unread_invoices()
-            log(f"[DEBUG] get_unread_invoices returned: {invoices}")
+            log(f"[DEBUG] get_unread_invoices returned: {len(invoices) if invoices else 0} emails")
             
             if invoices:
                 log(f"[INVOICES] Found {len(invoices)} invoices to process")
                 
+                # Обрабатываем КАЖДОЕ письмо
                 for invoice in invoices:
                     try:
-                        log(f"[DEBUG] Processing invoice: {invoice}")
+                        log(f"[DEBUG] Processing invoice: {invoice['email_id']}")
                         log(f"[DEBUG] Invoice data: {invoice['data']}")
                         
                         task_id = self.create_invoice_task(invoice['data'], invoice['email_id'], parser.connection)
                         
                         if task_id:
+                            # Помечаем как прочитанное ТОЛЬКО после успешного создания
                             parser.mark_as_read(invoice['email_id'])
-                            log(f"[OK] Created task #{task_id} for invoice")
+                            log(f"[OK] Created task #{task_id} for invoice {invoice['email_id']}")
                         else:
-                            log(f"[WARN] Failed to create task for invoice, NOT marking as read")
+                            # НЕ помечаем как прочитанное - повторим попытку в следующий раз
+                            log(f"[WARN] Failed to create task for invoice {invoice['email_id']}, NOT marking as read")
                             
                     except Exception as e:
-                        log(f"[ERROR] Processing invoice: {e}")
+                        log(f"[ERROR] Processing invoice {invoice.get('email_id', 'unknown')}: {e}")
                         import traceback
                         log(traceback.format_exc())
+                        # НЕ помечаем как прочитанное при ошибке
             else:
                 log("[INVOICES] No new invoices found")
                 
@@ -103,29 +108,34 @@ class MailScheduler:
             return
         
         try:
+            # Получаем ВСЕ непрочитанные письма
             otgruzkas = parser.get_unread_otgruzkas()
-            log(f"[DEBUG] get_unread_otgruzkas returned: {otgruzkas}")
+            log(f"[DEBUG] get_unread_otgruzkas returned: {len(otgruzkas) if otgruzkas else 0} emails")
             
             if otgruzkas:
                 log(f"[OTGRUZKAS] Found {len(otgruzkas)} otgruzkas to process")
                 
+                # Обрабатываем КАЖДОЕ письмо
                 for otgruzka in otgruzkas:
                     try:
-                        log(f"[DEBUG] Processing otgruzka: {otgruzka}")
+                        log(f"[DEBUG] Processing otgruzka: {otgruzka['email_id']}")
                         log(f"[DEBUG] Otgruzka data: {otgruzka['data']}")
                         
                         task_id = self.create_otgruzka_task(otgruzka['data'], otgruzka['email_id'], parser.connection)
                         
                         if task_id:
+                            # Помечаем как прочитанное ТОЛЬКО после успешного создания
                             parser.mark_as_read(otgruzka['email_id'])
-                            log(f"[OK] Created task #{task_id} for otgruzka")
+                            log(f"[OK] Created task #{task_id} for otgruzka {otgruzka['email_id']}")
                         else:
-                            log(f"[WARN] Failed to create task for otgruzka, NOT marking as read")
+                            # НЕ помечаем как прочитанное - повторим попытку в следующий раз
+                            log(f"[WARN] Failed to create task for otgruzka {otgruzka['email_id']}, NOT marking as read")
                             
                     except Exception as e:
-                        log(f"[ERROR] Processing otgruzka: {e}")
+                        log(f"[ERROR] Processing otgruzka {otgruzka.get('email_id', 'unknown')}: {e}")
                         import traceback
                         log(traceback.format_exc())
+                        # НЕ помечаем как прочитанное при ошибке
             else:
                 log("[OTGRUZKAS] No new otgruzkas found")
                 
@@ -145,7 +155,7 @@ class MailScheduler:
         from datetime import datetime, timedelta
         
         try:
-            log(f"[DEBUG] create_invoice_task called with data: {data}")
+            log(f"[DEBUG] create_invoice_task called for email: {email_id}")
             
             tracking = f"INV-{datetime.now().strftime('%Y%m%d%H%M%S')}"
             log(f"[DEBUG] Tracking: {tracking}")
@@ -244,9 +254,6 @@ class MailScheduler:
                 db.refresh(new_task)
                 log(f"[DEBUG] Refreshed, task ID: {new_task.id}")
 
-                db.refresh(new_task)
-                log(f"[DEBUG] Refreshed, task ID: {new_task.id}")
-                
                 try:
                     log(f"[DEBUG] === START sending notifications for invoice task #{new_task.id} ===")
                     log(f"[DEBUG] supplier: {data.get('supplier', 'Неизвестно')}")
@@ -306,7 +313,7 @@ class MailScheduler:
         from datetime import datetime, timedelta
         
         try:
-            log(f"[DEBUG] create_otgruzka_task called with data: {data}")
+            log(f"[DEBUG] create_otgruzka_task called for email: {email_id}")
             
             # Определяем тип хаба
             hub_type = data.get('hub_type', 'spb')
@@ -415,6 +422,7 @@ class MailScheduler:
     def run_once(self):
         """Запуск одного цикла проверки"""
         self.process_invoices()
+        self.process_otgruzkas()
     
     def start(self):
         """Запуск планировщика в отдельном потоке"""
@@ -436,7 +444,7 @@ class MailScheduler:
                 log(f"[SCHEDULER] Error in invoices: {e}")
             
             try:
-                # Обрабатываем отгрузки (везде, включая локальную машину)
+                # Обрабатываем отгрузки (только на сервере)
                 self.process_otgruzkas()
             except Exception as e:
                 log(f"[SCHEDULER] Error in otgruzkas: {e}")
