@@ -2,6 +2,7 @@ import time
 import threading
 from datetime import datetime
 from .invoice_parser import InvoiceParser
+from .otgruzka_parser import OtgruzkaParser
 import sys
 import os
 import email
@@ -86,6 +87,55 @@ class MailScheduler:
         finally:
             parser.close()
     
+    def process_otgruzkas(self):
+        """Обработка писем с отгрузками"""
+        # Проверяем окружение: отгрузки работают ТОЛЬКО на сервере
+        if self.environment == 'local':
+            log(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] ⏭️ Пропускаем парсинг отгрузок (локальное окружение)")
+            return
+        
+        log(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] Checking otgruzkas...")
+        
+        parser = OtgruzkaParser()
+        
+        if not parser.connect():
+            log("[ERROR] Failed to connect to mail server")
+            return
+        
+        try:
+            otgruzkas = parser.get_unread_otgruzkas()
+            log(f"[DEBUG] get_unread_otgruzkas returned: {otgruzkas}")
+            
+            if otgruzkas:
+                log(f"[OTGRUZKAS] Found {len(otgruzkas)} otgruzkas to process")
+                
+                for otgruzka in otgruzkas:
+                    try:
+                        log(f"[DEBUG] Processing otgruzka: {otgruzka}")
+                        log(f"[DEBUG] Otgruzka data: {otgruzka['data']}")
+                        
+                        task_id = self.create_otgruzka_task(otgruzka['data'], otgruzka['email_id'], parser.connection)
+                        
+                        if task_id:
+                            parser.mark_as_read(otgruzka['email_id'])
+                            log(f"[OK] Created task #{task_id} for otgruzka")
+                        else:
+                            log(f"[WARN] Failed to create task for otgruzka, NOT marking as read")
+                            
+                    except Exception as e:
+                        log(f"[ERROR] Processing otgruzka: {e}")
+                        import traceback
+                        log(traceback.format_exc())
+            else:
+                log("[OTGRUZKAS] No new otgruzkas found")
+                
+        except Exception as e:
+            log(f"[ERROR] Process otgruzkas error: {e}")
+            import traceback
+            log(traceback.format_exc())
+        finally:
+            parser.close()
+
     def create_invoice_task(self, data, email_id=None, connection=None):
         """Создание задачи из данных письма и сохранение вложений"""
         from db.database import get_db
@@ -247,6 +297,121 @@ class MailScheduler:
             log(traceback.format_exc())
             return None
     
+    def create_otgruzka_task(self, data, email_id=None, connection=None):
+        """Создание задачи из данных письма с отгрузкой"""
+        from db.database import get_db
+        from db.models import Order
+        from routes.sse import sse_publisher
+        import json
+        from datetime import datetime, timedelta
+        
+        try:
+            log(f"[DEBUG] create_otgruzka_task called with data: {data}")
+            
+            # Определяем тип хаба
+            hub_type = data.get('hub_type', 'spb')
+            log(f"[DEBUG] Hub type: {hub_type}")
+            
+            # Генерируем трек-номер
+            if hub_type == 'regions':
+                prefix = 'REG'
+            else:
+                prefix = 'SPB'
+            tracking = f"{prefix}-{datetime.now().strftime('%Y%m%d%H%M%S')}"
+            log(f"[DEBUG] Tracking: {tracking}")
+            
+            # Формируем email_data
+            email_data = {
+                'order_full': data.get('order_full', ''),
+                'order_number': data.get('order_number', ''),
+                'subdivision': data.get('subdivision', ''),
+                'contractor': data.get('contractor', ''),
+                'initiator': data.get('initiator', ''),
+                'comment': data.get('comment', ''),
+                'items': data.get('items', []),
+                'from_email': data.get('from', ''),
+            }
+            log(f"[DEBUG] email_data: {email_data}")
+            
+            # Название задачи - номер заказа
+            title = data.get('order_number', 'Без номера')
+            
+            with get_db() as db:
+                log(f"[DEBUG] DB connection acquired")
+                
+                new_task = Order(
+                    tracking=tracking,
+                    client=data.get('contractor', 'Неизвестно'),
+                    type=hub_type,  # 'regions' или 'spb'
+                    status='new',
+                    description=data.get('comment', ''),
+                    assigned_to=None,
+                    created_at=datetime.utcnow(),
+                    email_data=json.dumps(email_data, ensure_ascii=False)
+                )
+                log(f"[DEBUG] Order object created")
+                
+                db.add(new_task)
+                log(f"[DEBUG] Added to session")
+                
+                db.commit()
+                log(f"[DEBUG] Committed")
+                
+                db.refresh(new_task)
+                log(f"[DEBUG] Refreshed, task ID: {new_task.id}")
+                
+                # ===== УВЕДОМЛЕНИЯ ПОЛЬЗОВАТЕЛЯМ С ДОСТУПОМ К ХАБУ =====
+                try:
+                    log(f"[DEBUG] === START sending notifications for {hub_type} task #{new_task.id} ===")
+                    log(f"[DEBUG] supplier: {data.get('contractor', 'Неизвестно')}")
+                    log(f"[DEBUG] task_id: {new_task.id}")
+                    
+                    NotificationService.send_to_hub(
+                        hub_type=hub_type,  # 'regions' или 'spb'
+                        supplier=data.get('contractor', 'Неизвестно'),
+                        task_id=new_task.id,
+                        author=None  # Автоматическая задача
+                    )
+                    log(f"[DEBUG] === FINISH notifications for {hub_type} task #{new_task.id} ===")
+                except Exception as e:
+                    log(f"[ERROR] Notification error: {e}")
+                    import traceback
+                    log(traceback.format_exc())
+                
+                # Отправляем SSE событие
+                sse_publisher.publish('task_created', {
+                    'task_id': new_task.id,
+                    'type': hub_type,
+                    'task': {
+                        'id': new_task.id,
+                        'title': title,
+                        'order_number': data.get('order_number', ''),
+                        'subdivision': data.get('subdivision', ''),
+                        'contractor': data.get('contractor', ''),
+                        'initiator': data.get('initiator', ''),
+                        'comment': data.get('comment', ''),
+                        'created_at': (new_task.created_at + timedelta(hours=3)).strftime('%Y-%m-%d %H:%M') if new_task.created_at else '',
+                        'status': 'new',
+                        'comments_count': 0
+                    }
+                })
+                log(f"[DEBUG] SSE event published")
+                
+                # Отправляем обновление статистики
+                sse_publisher.publish('hub_stats_updated', {
+                    'hub_type': hub_type,
+                    'action': 'created'
+                })
+                log(f"[DEBUG] Stats SSE event published")
+                
+                return new_task.id
+                
+        except Exception as e:
+            log(f"[ERROR] Creating otgruzka task: {e}")
+            import traceback
+            log(traceback.format_exc())
+            return None
+
     def run_once(self):
         """Запуск одного цикла проверки"""
         self.process_invoices()
@@ -265,9 +430,16 @@ class MailScheduler:
         """Основной цикл планировщика"""
         while self.running:
             try:
+                # Обрабатываем счета (только на сервере)
                 self.process_invoices()
             except Exception as e:
-                log(f"[SCHEDULER] Error: {e}")
+                log(f"[SCHEDULER] Error in invoices: {e}")
+            
+            try:
+                # Обрабатываем отгрузки (везде, включая локальную машину)
+                self.process_otgruzkas()
+            except Exception as e:
+                log(f"[SCHEDULER] Error in otgruzkas: {e}")
             
             for _ in range(self.interval):
                 if not self.running:

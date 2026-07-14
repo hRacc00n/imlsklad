@@ -1,0 +1,86 @@
+.items-table-wrap {
+  margin-top: 8px;
+  overflow-x: auto;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+}
+
+.items-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  background: white;
+}
+
+.items-table th {
+  text-align: left;
+  padding: 8px 12px;
+  background: #f8fafc;
+  color: #64748b;
+  font-weight: 600;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  border-bottom: 2px solid #e2e8f0;
+  white-space: nowrap;
+}
+
+.items-table td {
+  padding: 6px 12px;
+  border-bottom: 1px solid #f1f5f9;
+  color: #1e293b;
+  vertical-align: middle;
+  font-size: 13px;
+}
+
+.items-table tr:last-child td {
+  border-bottom: none;
+}
+
+.items-table .item-main {
+  background: #ffffff;
+}
+
+.items-table .item-main td:first-child {
+  font-weight: 600;
+  color: #0f172a;
+}
+
+.items-table .item-storage {
+  background: #fafbfc;
+}
+
+.items-table .item-storage td {
+  color: #64748b;
+  font-size: 12px;
+}
+
+.items-table .item-storage td:first-child,
+.items-table .item-storage td:nth-child(2),
+.items-table .item-storage td:nth-child(3),
+.items-table .item-storage td:nth-child(4),
+.items-table .item-storage td:nth-child(5) {
+  color: #94a3b8;
+}
+
+.items-table-empty {
+  padding: 16px;
+  text-align: center;
+  color: #94a3b8;
+  font-size: 14px;
+  background: #f8fafc;
+  border-radius: 8px;
+  border: 1px dashed #e2e8f0;
+}
+
+/* Для мобильных устройств */
+@media (max-width: 768px) {
+  .items-table {
+    font-size: 12px;
+  }
+  
+  .items-table th,
+  .items-table td {
+    padding: 4px 8px;
+  }
+}

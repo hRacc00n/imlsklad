@@ -16,6 +16,7 @@ from routes.comments import register_comments_routes
 from flask import send_from_directory
 from routes.notifications import register_notifications_routes
 from mail_parsers.scheduler import MailScheduler
+from routes.regional_contractors import register_regional_contractors_routes
 
 # Переопределяем stdout ПОСЛЕ всех импортов
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
@@ -35,6 +36,7 @@ register_sse_routes(app)
 register_tasks_routes(app)
 register_comments_routes(app)
 register_notifications_routes(app)
+register_regional_contractors_routes(app)
 
 @app.route('/uploads/<filename>')
 def uploaded_file(filename):

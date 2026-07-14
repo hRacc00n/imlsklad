@@ -54,6 +54,19 @@ function TasksTable({ tasks, loading, onRowClick }) {
             
             // Для счетов: в колонке "Заказ" показываем номер счета, в "Контрагент" - контрагента
             const isInvoice = task.type === 'invoices';
+            // Для отгрузок (Регионы и СПб): в колонке "Заказ" показываем номер заказа, в "Контрагент" - контрагента
+            const isOrder = task.type === 'regions' || task.type === 'spb';
+            
+            let orderColumn = task.supplier || '—';
+            let contractorColumn = task.author || '—';
+            
+            if (isInvoice) {
+              orderColumn = task.title || 'Без номера';
+              contractorColumn = task.supplier || '—';
+            } else if (isOrder) {
+              orderColumn = task.order_number || task.title || 'Без номера';
+              contractorColumn = task.contractor || task.supplier || 'Неизвестно';
+            }
             
             return (
               <tr 
@@ -63,13 +76,13 @@ function TasksTable({ tasks, loading, onRowClick }) {
               >
                 <td>
                   <span className="task-tracking">
-                    {icon} {isInvoice ? (task.title || 'Без номера') : (task.supplier || '—')}
+                    {icon} {orderColumn}
                   </span>
                   {task.comments_count > 0 && (
                     <span className="task-comments-badge">💬 {task.comments_count}</span>
                   )}
                 </td>
-                <td>{isInvoice ? (task.supplier || '—') : (task.author || '—')}</td>
+                <td>{contractorColumn}</td>
                 <td className="task-description">{task.comment || '—'}</td>
                 <td>{task.assigned_to || '—'}</td>
               </tr>

@@ -312,3 +312,23 @@
   font-weight: 600;
   margin-right: 4px;
 }
+
+/* Стили для полей отгрузок */
+.task-order-field {
+  padding: 4px 0;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--color-text-primary, #212529);
+}
+
+.task-order-field strong {
+  color: var(--color-text-secondary, #495057);
+  font-weight: 600;
+  margin-right: 4px;
+}
+
+.task-order-title {
+  font-weight: 600;
+  font-size: 15px;
+  color: var(--color-primary, #0d6efd);
+}

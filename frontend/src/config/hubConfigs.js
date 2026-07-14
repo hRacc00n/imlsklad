@@ -55,30 +55,8 @@ export const HUB_CONFIGS = {
     modalType: 'region',
     perPage: 10,
     hideCompletedByDefault: true,
-    formFields: [
-      {
-        name: 'region',
-        label: 'Регион',
-        type: 'text',
-        placeholder: 'Введите регион',
-        required: true,
-      },
-      {
-        name: 'coordinator',
-        label: 'Координатор',
-        type: 'text',
-        placeholder: 'Введите координатора',
-        required: false,
-      },
-      {
-        name: 'comment',
-        label: 'Комментарий',
-        type: 'textarea',
-        placeholder: 'Введите комментарий',
-        required: false,
-        rows: 4,
-      },
-    ],
+    showCreateButton: false,  
+    formFields: [],           
   },
 
   [HUB_TYPES.SPB]: {
@@ -89,23 +67,8 @@ export const HUB_CONFIGS = {
     modalType: 'spb',
     perPage: 10,
     hideCompletedByDefault: true,
-    formFields: [
-      {
-        name: 'terminal',
-        label: 'Терминал',
-        type: 'text',
-        placeholder: 'Введите терминал',
-        required: true,
-      },
-      {
-        name: 'comment',
-        label: 'Комментарий',
-        type: 'textarea',
-        placeholder: 'Введите комментарий',
-        required: false,
-        rows: 4,
-      },
-    ],
+    showCreateButton: false,  
+    formFields: [],           
   },
 
   [HUB_TYPES.INVOICES]: {

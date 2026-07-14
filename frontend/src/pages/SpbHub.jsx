@@ -3,7 +3,7 @@ import { HUB_TYPES, getHubConfig } from '../config/hubConfigs';
 
 function SpbHub() {
   const config = getHubConfig(HUB_TYPES.SPB);
-  return <HubPage config={config} />;
+  return <HubPage config={config} hideCreateButton={true} />;
 }
 
 export default SpbHub;

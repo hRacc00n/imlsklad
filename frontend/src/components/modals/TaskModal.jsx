@@ -9,6 +9,7 @@ import { getAvailableActions } from '../../utils/taskActions';
 import CommentList from '../comments/CommentList';
 import './TaskModal.css';
 import FileList from '../common/FileList';
+import ItemsTable from '../common/ItemsTable';
 
 function TaskModal({ onPhotoUploadStart, onPhotoUploadComplete }) {
   const { isOpen, task, taskType, actions, closeModal, updateTask } = useModal();
@@ -70,13 +71,19 @@ function TaskModal({ onPhotoUploadStart, onPhotoUploadComplete }) {
       return `📊 Счет № ${task?.title || 'Без номера'}`;
     }
     
+    // Проверяем, является ли задача отгрузкой (Регионы или СПб)
+    const isOrder = taskType === 'region' || taskType === 'spb' || 
+                    task?.type === 'regions' || task?.type === 'spb';
+    
+    if (isOrder) {
+      const orderNumber = task?.order_number || task?.title || 'Без номера';
+      const hubIcon = task?.type === 'regions' ? '🌍' : '🏙️';
+      return `${hubIcon} Заказ № ${orderNumber}`;
+    }
+    
     switch (taskType) {
       case 'arrival':
         return `📦 Поступление от ${task?.supplier || 'Неизвестно'}`;
-      case 'region':
-        return `🌍 Регион: ${task?.region || 'Неизвестно'}`;
-      case 'spb':
-        return `🏙️ СПб: ${task?.terminal || 'Неизвестно'}`;
       default:
         return `📋 Задача #${task?.id}`;
     }
@@ -216,6 +223,43 @@ function TaskModal({ onPhotoUploadStart, onPhotoUploadComplete }) {
   if (!isOpen || !task) return null;
 
   const renderTypeSpecificFields = () => {
+    // Проверяем, является ли задача отгрузкой (Регионы или СПб)
+    const isOrder = taskType === 'region' || taskType === 'spb' || 
+                    task?.type === 'regions' || task?.type === 'spb';
+    
+    if (isOrder) {
+      return (
+        <>
+          <div className="modal-field">
+            <label>Заказ</label>
+            <span>{task?.order_number || task?.title || '—'}</span>
+          </div>
+          <div className="modal-field">
+            <label>Подразделение</label>
+            <span>{task?.subdivision || '—'}</span>
+          </div>
+          <div className="modal-field">
+            <label>Контрагент</label>
+            <span>{task?.contractor || 'Неизвестно'}</span>
+          </div>
+          {task?.initiator && (
+            <div className="modal-field">
+              <label>Инициатор</label>
+              <span>{task.initiator}</span>
+            </div>
+          )}
+          <div className="modal-field">
+            <label>Комментарий</label>
+            <div className="modal-comment-box">{task?.comment || '—'}</div>
+          </div>
+          <div className="modal-field">
+            <label>Товары</label>
+            <ItemsTable items={task?.items || []} />
+          </div>
+        </>
+      );
+    }
+    
     // Проверяем, является ли задача счетом
     const isInvoice = taskType === 'invoice' || task?.type === 'invoices';
     

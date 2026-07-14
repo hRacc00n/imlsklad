@@ -17,6 +17,7 @@ import {
 } from './pages';
 import Layout from './components/Layout';
 import AdminLayout from './components/AdminLayout';
+import { RegionalContractorsPage } from './pages';
 import TaskModal from './components/modals/TaskModal';
 import './App.css';
 
@@ -49,6 +50,7 @@ function App() {
             <Route path="users" element={<UsersPage user={user} onLogout={logout} />} />
             <Route path="roles" element={<RolesPage />} />
             <Route path="system" element={<SystemPage />} />
+            <Route path="regional-contractors" element={<RegionalContractorsPage />} />
             <Route path="settings" element={<SettingsPage />} />
             <Route index element={<Navigate to="/admin/users" replace />} />
           </Route>

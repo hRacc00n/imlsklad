@@ -1,7 +1,7 @@
 from .base_parser import BaseMailParser
 import os
 import email
-from utils.text_normalizer import normalize_commen
+from utils.text_normalizer import normalize_comment
 
 
 class InvoiceParser(BaseMailParser):

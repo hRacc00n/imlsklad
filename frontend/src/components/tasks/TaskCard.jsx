@@ -108,17 +108,19 @@ function TaskCard({
 
       <div className="task-card-body">
         <div className="task-card-header">
-        <span className="task-author">
-          {task.type === 'invoices' ? (
-            <span className="task-invoice-title">📊 {task.title || 'Без номера'}</span>
-          ) : (
-            <>
-              <span className="task-author-label">Автор:</span> {author}
-            </>
-          )}
-        </span>
-        <span className="task-date">🕐 {created_at}</span>
-      </div>
+          <span className="task-author">
+            {task.type === 'invoices' ? (
+              <span className="task-invoice-title">📊 {task.title || 'Без номера'}</span>
+            ) : task.type === 'regions' || task.type === 'spb' ? (
+              <span className="task-order-title">📦 {task.title || 'Без номера'}</span>
+            ) : (
+              <>
+                <span className="task-author-label">Автор:</span> {author}
+              </>
+            )}
+          </span>
+          <span className="task-date">🕐 {created_at}</span>
+        </div>
 
         {task.type === 'invoices' ? (
           // Отображение для счетов
@@ -136,8 +138,24 @@ function TaskCard({
               {truncateComment(task.comment)}
             </div>
           </>
+        ) : task.type === 'regions' || task.type === 'spb' ? (
+          // Отображение для отгрузок (Регионы и СПб)
+          <>
+            <div className="task-order-field">
+              <strong>Заказ:</strong> {task.title || 'Без номера'}
+            </div>
+            <div className="task-order-field">
+              <strong>Подразделение:</strong> {task.subdivision || '—'}
+            </div>
+            <div className="task-order-field">
+              <strong>Контрагент:</strong> {task.contractor || 'Неизвестно'}
+            </div>
+            <div className="task-comment-box">
+              {truncateComment(task.comment)}
+            </div>
+          </>
         ) : (
-          // Отображение для обычных задач
+          // Отображение для обычных задач (arrival и др.)
           <>
             <div className="task-supplier">
               <strong>Кто привез:</strong> {supplier}

@@ -185,6 +185,30 @@ function Dashboard({ user, onLogout }) {
       const invoicesData = await invoicesResponse.json();
       console.log('[Dashboard] Статистика Счетов:', invoicesData);
       
+      // Загружаем статистику для Регионов
+      const regionsResponse = await fetch(`/api/tasks/regions/stats?_=${timestamp}`, {
+        cache: 'no-store',
+        headers: {
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache',
+          'Expires': '0'
+        }
+      });
+      const regionsData = await regionsResponse.json();
+      console.log('[Dashboard] Статистика Регионов:', regionsData);
+      
+      // Загружаем статистику для СПб
+      const spbResponse = await fetch(`/api/tasks/spb/stats?_=${timestamp}`, {
+        cache: 'no-store',
+        headers: {
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache',
+          'Expires': '0'
+        }
+      });
+      const spbData = await spbResponse.json();
+      console.log('[Dashboard] Статистика СПб:', spbData);
+      
       // Обновляем хабы с новыми значениями
       setHubs(prevHubs => {
         console.log('[Dashboard] prevHubs:', prevHubs);
@@ -196,6 +220,14 @@ function Dashboard({ user, onLogout }) {
           if (hub.name === 'Счета') {
             console.log(`[Dashboard] Обновляем Счета с ${hub.count} на ${invoicesData.active_count}`);
             return { ...hub, count: invoicesData.active_count || 0 };
+          }
+          if (hub.name === 'Регионы') {
+            console.log(`[Dashboard] Обновляем Регионы с ${hub.count} на ${regionsData.active_count}`);
+            return { ...hub, count: regionsData.active_count || 0 };
+          }
+          if (hub.name === 'СПб') {
+            console.log(`[Dashboard] Обновляем СПб с ${hub.count} на ${spbData.active_count}`);
+            return { ...hub, count: spbData.active_count || 0 };
           }
           return { ...hub };
         });
