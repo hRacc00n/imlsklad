@@ -25,6 +25,10 @@ PARSING_INVOICES = 'production'
 # Варианты: 'local', 'production', 'false'
 PARSING_OTGRUZKAS = 'production'
 
+# Парсинг ЭйрТрафик (air_traffic)
+# Варианты: 'local', 'production', 'false'
+PARSING_AIRTRAFFIC = 'production'  # Пока на локальной машине
+
 # ============================================================
 # ДОПОЛНИТЕЛЬНЫЕ НАСТРОЙКИ
 # ============================================================

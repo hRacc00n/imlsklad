@@ -235,6 +235,10 @@ def register_tasks_routes(app):
                     'subdivision': email_data.get('subdivision', ''),
                     'contractor': email_data.get('contractor', ''),
                     'items': email_data.get('items', []),
+                    # ===== ПОЛЯ ДЛЯ AIRTRAFFIC =====
+                    'awb_number': email_data.get('awb_number', ''),
+                    'image': email_data.get('image', ''),
+                    'file': email_data.get('file', {}),
                 })
             
             return jsonify({
@@ -730,6 +734,13 @@ def register_tasks_routes(app):
                 result['contractor'] = email_data.get('contractor', '')
                 result['initiator'] = email_data.get('initiator', '')
                 result['items'] = email_data.get('items', [])
+
+            # Добавляем поля для AirTraffic
+            if task.type == 'air_traffic':
+                result['awb_number'] = email_data.get('awb_number', '')
+                result['city'] = email_data.get('city', '')
+                result['image'] = email_data.get('image', '')
+                result['file'] = email_data.get('file', {})
             
             return jsonify(result), 200
 
@@ -1049,6 +1060,113 @@ def register_tasks_routes(app):
             ).count()
             
             total_count = db.query(Order).filter(Order.type == 'spb').count()
+            
+            response = jsonify({
+                'active_count': active_count,
+                'total_count': total_count
+            })
+            response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+            return response, 200
+
+    # ===== GET: Получить все задачи типа "air_traffic" =====
+    @app.route('/api/tasks/air_traffic', methods=['GET'])
+    def get_air_traffic():
+        page = request.args.get('page', 1, type=int)
+        per_page = request.args.get('per_page', 10, type=int)
+        hide_completed = request.args.get('hide_completed', 'false').lower() == 'true'
+        search = request.args.get('search', '')
+        offset = (page - 1) * per_page
+        
+        with get_db() as db:
+            query = db.query(Order).filter(Order.type == 'air_traffic')
+            
+            # Поиск по полям (AWB номер, город)
+            if search:
+                search_terms = search.strip().split()
+                all_tasks = query.all()
+                
+                filtered_tasks = []
+                for task in all_tasks:
+                    email_data = {}
+                    if task.email_data:
+                        try:
+                            email_data = json.loads(task.email_data)
+                        except:
+                            pass
+                    
+                    text = f"{email_data.get('awb_number', '')} {email_data.get('city', '')}".lower()
+                    match = all(term.lower() in text for term in search_terms)
+                    if match:
+                        filtered_tasks.append(task)
+                
+                total_count = len(filtered_tasks)
+                tasks = filtered_tasks[offset:offset + per_page]
+            else:
+                if hide_completed:
+                    query = query.filter(Order.status != 'completed')
+                total_count = query.count()
+                tasks = query.order_by(Order.created_at.desc()).offset(offset).limit(per_page).all()
+            
+            result = []
+            for task in tasks:
+                email_data = {}
+                if task.email_data:
+                    try:
+                        email_data = json.loads(task.email_data)
+                    except:
+                        pass
+                
+                status = task.status
+                if status == 'Новая':
+                    status = 'new'
+                elif status == 'В работе':
+                    status = 'in_progress'
+                elif status == 'Завершена':
+                    status = 'completed'
+                
+                awb_number = email_data.get('awb_number', '')
+                title = awb_number if awb_number else 'Без номера'
+                
+                result.append({
+                    'id': task.id,
+                    'title': title,
+                    'awb_number': awb_number,
+                    'city': email_data.get('city', 'Не указан'),
+                    'image': email_data.get('image', ''),
+                    'file': email_data.get('file', {}),
+                    'comment': task.description or '',
+                    'assigned_to': task.assigned_to,
+                    'status': status,
+                    'created_at': (task.created_at + timedelta(hours=3)).strftime('%Y-%m-%d %H:%M') if task.created_at else '',
+                    'comments_count': db.query(Comment).filter(
+                        Comment.task_id == task.id,
+                        Comment.is_deleted == False
+                    ).count(),
+                    'type': task.type,
+                })
+            
+            return jsonify({
+                'data': result,
+                'pagination': {
+                    'page': page,
+                    'per_page': per_page,
+                    'total': total_count,
+                    'total_pages': (total_count + per_page - 1) // per_page,
+                    'has_next': page * per_page < total_count,
+                    'has_previous': page > 1
+                }
+            }), 200
+
+    # ===== GET: Статистика по хабу "ЭйрТрафик" =====
+    @app.route('/api/tasks/air_traffic/stats', methods=['GET'])
+    def get_air_traffic_stats():
+        with get_db() as db:
+            active_count = db.query(Order).filter(
+                Order.type == 'air_traffic',
+                Order.status != 'completed'
+            ).count()
+            
+            total_count = db.query(Order).filter(Order.type == 'air_traffic').count()
             
             response = jsonify({
                 'active_count': active_count,

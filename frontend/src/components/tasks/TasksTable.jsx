@@ -56,6 +56,8 @@ function TasksTable({ tasks, loading, onRowClick }) {
             const isInvoice = task.type === 'invoices';
             // Для отгрузок (Регионы и СПб): в колонке "Заказ" показываем номер заказа, в "Контрагент" - контрагента
             const isOrder = task.type === 'regions' || task.type === 'spb';
+            // Для ЭйрТрафик: в колонке "Заказ" показываем AWB номер, в "Контрагент" - город
+            const isAirTraffic = task.type === 'air_traffic';
             
             let orderColumn = task.supplier || '—';
             let contractorColumn = task.author || '—';
@@ -66,6 +68,9 @@ function TasksTable({ tasks, loading, onRowClick }) {
             } else if (isOrder) {
               orderColumn = task.order_number || task.title || 'Без номера';
               contractorColumn = task.contractor || task.supplier || 'Неизвестно';
+            } else if (isAirTraffic) {
+              orderColumn = task.awb_number || task.title || 'Без номера';
+              contractorColumn = task.city || 'Не указан';
             }
             
             return (

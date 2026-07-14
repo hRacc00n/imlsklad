@@ -53,6 +53,11 @@ def uploaded_invoice(filename):
     upload_dir = os.path.join(os.path.dirname(__file__), 'data', 'uploads', 'invoices')
     return send_from_directory(upload_dir, filename)
 
+@app.route('/uploads/airtraffic/<filename>')
+def uploaded_airtraffic(filename):
+    upload_dir = os.path.join(os.path.dirname(__file__), 'data', 'uploads', 'airtraffic')
+    return send_from_directory(upload_dir, filename)
+
 # Запуск планировщика почты
 mail_scheduler = MailScheduler()
 mail_scheduler.start()

@@ -91,31 +91,9 @@ export const HUB_CONFIGS = {
     modalType: 'air_traffic',
     perPage: 10,
     hideCompletedByDefault: true,
-    formFields: [
-      {
-        name: 'flight',
-        label: 'Рейс',
-        type: 'text',
-        placeholder: 'Введите номер рейса',
-        required: true,
-      },
-      {
-        name: 'cargo',
-        label: 'Груз',
-        type: 'text',
-        placeholder: 'Введите описание груза',
-        required: false,
-      },
-      {
-        name: 'comment',
-        label: 'Комментарий',
-        type: 'textarea',
-        placeholder: 'Введите комментарий',
-        required: false,
-        rows: 4,
-      },
-    ],
-  },
+    showCreateButton: false, 
+    formFields: [],          
+},
 
   [HUB_TYPES.TASKS]: {
     id: HUB_TYPES.TASKS,

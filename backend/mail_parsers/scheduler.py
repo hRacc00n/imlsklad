@@ -3,9 +3,11 @@ import threading
 from datetime import datetime
 from .invoice_parser import InvoiceParser
 from .otgruzka_parser import OtgruzkaParser
+from .airtraffic_parser import AirTrafficParser
 from .parsing_config import (
     PARSING_INVOICES,
     PARSING_OTGRUZKAS,
+    PARSING_AIRTRAFFIC,
     CHECK_INTERVAL,
     EMAIL_LIMIT
 )
@@ -163,6 +165,161 @@ class MailScheduler:
             log(traceback.format_exc())
         finally:
             parser.close()
+
+    def process_airtraffic(self):
+        """Обработка писем из AirTraffic"""
+        if not self._is_parsing_enabled_for_type(PARSING_AIRTRAFFIC):
+            log(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] ⏭️ Парсинг AirTraffic ОТКЛЮЧЕН (PARSING_AIRTRAFFIC={PARSING_AIRTRAFFIC})")
+            return
+        
+        log(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] Checking airtraffic...")
+        
+        parser = AirTrafficParser()
+        
+        if not parser.connect():
+            log("[ERROR] Failed to connect to mail server")
+            return
+        
+        try:
+            airtraffic_emails = parser.get_unread_airtraffic(limit=self.email_limit)
+            log(f"[DEBUG] get_unread_airtraffic returned: {len(airtraffic_emails) if airtraffic_emails else 0} emails")
+            
+            if airtraffic_emails:
+                log(f"[AIRTRAFFIC] Found {len(airtraffic_emails)} airtraffic emails to process")
+                
+                for email_data in airtraffic_emails:
+                    try:
+                        log(f"[DEBUG] Processing airtraffic: {email_data['email_id']}")
+                        log(f"[DEBUG] Airtraffic data: {email_data['data']}")
+                        
+                        task_id = self.create_airtraffic_task(email_data['data'], email_data['email_id'], parser.connection)
+                        
+                        if task_id:
+                            parser.mark_as_read(email_data['email_id'])
+                            log(f"[OK] Created task #{task_id} for airtraffic {email_data['email_id']}")
+                        else:
+                            log(f"[WARN] Failed to create task for airtraffic {email_data['email_id']}, NOT marking as read")
+                            
+                    except Exception as e:
+                        log(f"[ERROR] Processing airtraffic {email_data.get('email_id', 'unknown')}: {e}")
+                        import traceback
+                        log(traceback.format_exc())
+            else:
+                log("[AIRTRAFFIC] No new airtraffic emails found")
+                
+        except Exception as e:
+            log(f"[ERROR] Process airtraffic error: {e}")
+            import traceback
+            log(traceback.format_exc())
+        finally:
+            parser.close()
+
+    def create_airtraffic_task(self, data, email_id=None, connection=None):
+        """Создание задачи из данных письма AirTraffic"""
+        from db.database import get_db
+        from db.models import Order
+        from routes.sse import sse_publisher
+        import json
+        from datetime import datetime, timedelta
+        
+        try:
+            log(f"[DEBUG] create_airtraffic_task called for email: {email_id}")
+            
+            tracking = data.get('tracking', f"AT-{datetime.now().strftime('%Y%m%d%H%M%S')}-{email_id}")
+            log(f"[DEBUG] Tracking: {tracking}")
+            
+            awb_number = data.get('awb_number', '')
+            city = data.get('city', 'Не указан')
+            image_path = data.get('image_path', '')
+            file_data = data.get('file', {})
+            
+            title = awb_number if awb_number else 'Без номера'
+            
+            # Формируем email_data
+            email_data = {
+                'awb_number': awb_number,
+                'city': city,
+                'image': image_path,
+                'file': file_data,
+                'from_email': data.get('from', ''),
+                'date': data.get('date', ''),
+            }
+            log(f"[DEBUG] email_data: {email_data}")
+            
+            with get_db() as db:
+                log(f"[DEBUG] DB connection acquired")
+                
+                new_task = Order(
+                    tracking=tracking,
+                    client=city,
+                    type='air_traffic',
+                    status='new',
+                    description=awb_number,
+                    assigned_to=None,
+                    created_at=datetime.utcnow(),
+                    email_data=json.dumps(email_data, ensure_ascii=False)
+                )
+                log(f"[DEBUG] Order object created")
+                
+                db.add(new_task)
+                log(f"[DEBUG] Added to session")
+                
+                db.commit()
+                log(f"[DEBUG] Committed")
+                
+                db.refresh(new_task)
+                log(f"[DEBUG] Refreshed, task ID: {new_task.id}")
+                
+                # ===== УВЕДОМЛЕНИЯ ПОЛЬЗОВАТЕЛЯМ С ДОСТУПОМ К ХАБУ =====
+                try:
+                    log(f"[DEBUG] === START sending notifications for air_traffic task #{new_task.id} ===")
+                    log(f"[DEBUG] awb: {awb_number}")
+                    log(f"[DEBUG] task_id: {new_task.id}")
+                    
+                    NotificationService.send_to_hub(
+                        hub_type='air_traffic',
+                        supplier=city,
+                        task_id=new_task.id,
+                        author=None
+                    )
+                    log(f"[DEBUG] === FINISH notifications for air_traffic task #{new_task.id} ===")
+                except Exception as e:
+                    log(f"[ERROR] Notification error: {e}")
+                    import traceback
+                    log(traceback.format_exc())
+                
+                # Отправляем SSE событие
+                sse_publisher.publish('task_created', {
+                    'task_id': new_task.id,
+                    'type': 'air_traffic',
+                    'task': {
+                        'id': new_task.id,
+                        'title': title,
+                        'awb_number': awb_number,
+                        'city': city,
+                        'image': image_path,
+                        'file': file_data,
+                        'created_at': (new_task.created_at + timedelta(hours=3)).strftime('%Y-%m-%d %H:%M') if new_task.created_at else '',
+                        'status': 'new',
+                        'comments_count': 0
+                    }
+                })
+                log(f"[DEBUG] SSE event published")
+                
+                # Отправляем обновление статистики
+                sse_publisher.publish('hub_stats_updated', {
+                    'hub_type': 'air_traffic',
+                    'action': 'created'
+                })
+                log(f"[DEBUG] Stats SSE event published")
+                
+                return new_task.id
+                
+        except Exception as e:
+            log(f"[ERROR] Creating airtraffic task: {e}")
+            import traceback
+            log(traceback.format_exc())
+            return None
 
     def create_invoice_task(self, data, email_id=None, connection=None):
         """Создание задачи из данных письма и сохранение вложений"""
@@ -479,6 +636,11 @@ class MailScheduler:
                 self.process_otgruzkas()
             except Exception as e:
                 log(f"[SCHEDULER] Error in otgruzkas: {e}")
+            
+            try:
+                self.process_airtraffic()
+            except Exception as e:
+                log(f"[SCHEDULER] Error in airtraffic: {e}")
             
             for _ in range(self.interval):
                 if not self.running:

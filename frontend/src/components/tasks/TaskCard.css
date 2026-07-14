@@ -332,3 +332,43 @@
   font-size: 15px;
   color: var(--color-primary, #0d6efd);
 }
+
+/* Стили для ЭйрТрафик */
+.task-airtraffic-title {
+  font-weight: 600;
+  font-size: 15px;
+  color: var(--color-primary, #0d6efd);
+}
+
+.task-airtraffic-field {
+  padding: 4px 0;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--color-text-primary, #212529);
+}
+
+.task-airtraffic-field strong {
+  color: var(--color-text-secondary, #495057);
+  font-weight: 600;
+  margin-right: 4px;
+}
+
+.task-airtraffic-image {
+  margin: 8px 0;
+  cursor: pointer;
+  border-radius: 6px;
+  overflow: hidden;
+  border: 1px solid #e2e8f0;
+  max-width: 200px;
+}
+
+.task-airtraffic-img {
+  width: 100%;
+  height: auto;
+  display: block;
+  transition: transform 0.2s;
+}
+
+.task-airtraffic-img:hover {
+  transform: scale(1.02);
+}

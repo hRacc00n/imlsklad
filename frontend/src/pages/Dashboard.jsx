@@ -208,6 +208,18 @@ function Dashboard({ user, onLogout }) {
       });
       const spbData = await spbResponse.json();
       console.log('[Dashboard] Статистика СПб:', spbData);
+
+      // Загружаем статистику для ЭйрТрафик
+      const airTrafficResponse = await fetch(`/api/tasks/air_traffic/stats?_=${timestamp}`, {
+        cache: 'no-store',
+        headers: {
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache',
+          'Expires': '0'
+        }
+      });
+      const airTrafficData = await airTrafficResponse.json();
+      console.log('[Dashboard] Статистика ЭйрТрафик:', airTrafficData);
       
       // Обновляем хабы с новыми значениями
       setHubs(prevHubs => {
@@ -228,6 +240,10 @@ function Dashboard({ user, onLogout }) {
           if (hub.name === 'СПб') {
             console.log(`[Dashboard] Обновляем СПб с ${hub.count} на ${spbData.active_count}`);
             return { ...hub, count: spbData.active_count || 0 };
+          }
+          if (hub.name === 'ЭйрТрафик') {
+            console.log(`[Dashboard] Обновляем ЭйрТрафик с ${hub.count} на ${airTrafficData.active_count}`);
+            return { ...hub, count: airTrafficData.active_count || 0 };
           }
           return { ...hub };
         });

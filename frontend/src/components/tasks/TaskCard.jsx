@@ -113,6 +113,8 @@ function TaskCard({
               <span className="task-invoice-title">📊 {task.title || 'Без номера'}</span>
             ) : task.type === 'regions' || task.type === 'spb' ? (
               <span className="task-order-title">📦 {task.title || 'Без номера'}</span>
+            ) : task.type === 'air_traffic' ? (
+              <span className="task-airtraffic-title">✈️ {task.title || 'Без номера'}</span>
             ) : (
               <>
                 <span className="task-author-label">Автор:</span> {author}
@@ -153,6 +155,26 @@ function TaskCard({
             <div className="task-comment-box">
               {truncateComment(task.comment)}
             </div>
+          </>
+        ) : task.type === 'air_traffic' ? (
+          // Отображение для ЭйрТрафик
+          <>
+            <div className="task-airtraffic-field">
+              <strong>AWB:</strong> {task.awb_number || '—'}
+            </div>
+            <div className="task-airtraffic-field">
+              <strong>Город:</strong> {task.city || 'Не указан'}
+            </div>
+            {task.image && (
+              <div className="task-airtraffic-image">
+                <img 
+                  src={task.image} 
+                  alt="AWB" 
+                  className="task-airtraffic-img"
+                  onClick={() => onPhotoClick && onPhotoClick(0)}
+                />
+              </div>
+            )}
           </>
         ) : (
           // Отображение для обычных задач (arrival и др.)

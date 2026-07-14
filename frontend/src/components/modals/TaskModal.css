@@ -386,3 +386,24 @@
   resize: vertical;
   min-height: 80px;
 }
+
+/* Стили для изображения AirTraffic в модалке */
+.modal-airtraffic-image {
+  margin-top: 4px;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid #e2e8f0;
+  max-width: 300px;
+  cursor: pointer;
+}
+
+.modal-airtraffic-img {
+  width: 100%;
+  height: auto;
+  display: block;
+  transition: transform 0.2s;
+}
+
+.modal-airtraffic-img:hover {
+  transform: scale(1.02);
+}

@@ -81,6 +81,13 @@ function TaskModal({ onPhotoUploadStart, onPhotoUploadComplete }) {
       return `${hubIcon} Заказ № ${orderNumber}`;
     }
     
+    // Проверяем, является ли задача ЭйрТрафик
+    const isAirTraffic = taskType === 'air_traffic' || task?.type === 'air_traffic';
+    
+    if (isAirTraffic) {
+      return `✈️ AWB ${task?.awb_number || task?.title || 'Без номера'}`;
+    }
+    
     switch (taskType) {
       case 'arrival':
         return `📦 Поступление от ${task?.supplier || 'Неизвестно'}`;
@@ -256,6 +263,49 @@ function TaskModal({ onPhotoUploadStart, onPhotoUploadComplete }) {
             <label>Товары</label>
             <ItemsTable items={task?.items || []} />
           </div>
+        </>
+      );
+    }
+
+    // Проверяем, является ли задача ЭйрТрафик
+    const isAirTraffic = taskType === 'air_traffic' || task?.type === 'air_traffic';
+    
+    if (isAirTraffic) {
+      return (
+        <>
+          <div className="modal-field">
+            <label>AWB №</label>
+            <span>{task?.awb_number || task?.title || '—'}</span>
+          </div>
+          <div className="modal-field">
+            <label>Город</label>
+            <span>{task?.city || 'Не указан'}</span>
+          </div>
+          {task?.image && (
+            <div className="modal-field">
+              <label>Изображение</label>
+              <div className="modal-airtraffic-image">
+                <img 
+                  src={task.image} 
+                  alt="AWB" 
+                  className="modal-airtraffic-img"
+                  onClick={() => handlePhotoClick(0)}
+                />
+              </div>
+            </div>
+          )}
+          {task?.file && task.file.name && (
+            <div className="modal-field">
+              <label>Файл</label>
+              <FileList
+                files={[task.file]}
+                onView={(file) => {
+                  const url = file.path.startsWith('/') ? file.path : `/${file.path}`;
+                  window.open(url, '_blank');
+                }}
+              />
+            </div>
+          )}
         </>
       );
     }
