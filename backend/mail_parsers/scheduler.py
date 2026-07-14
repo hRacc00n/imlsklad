@@ -176,7 +176,7 @@ class MailScheduler:
             log(f"[DEBUG] create_invoice_task called for email: {email_id}")
             
             tracking = f"INV-{datetime.now().strftime('%Y%m%d%H%M%S')}"
-            log(f("[DEBUG] Tracking: {tracking}")
+            log(f"[DEBUG] Tracking: {tracking}")
             
             saved_files = []
             attachments = data.get('attachments', [])
