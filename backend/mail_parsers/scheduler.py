@@ -3,6 +3,12 @@ import threading
 from datetime import datetime
 from .invoice_parser import InvoiceParser
 from .otgruzka_parser import OtgruzkaParser
+from .parsing_config import (
+    PARSING_INVOICES,
+    PARSING_OTGRUZKAS,
+    CHECK_INTERVAL,
+    EMAIL_LIMIT
+)
 import sys
 import os
 import email
@@ -34,15 +40,38 @@ class MailScheduler:
     def __init__(self):
         self.running = False
         self.thread = None
-        self.interval = 60  # секунд (1 минута)
+        self.interval = CHECK_INTERVAL
+        self.email_limit = EMAIL_LIMIT
         self.environment = os.getenv('ENVIRONMENT', 'local')
-        log(f"[SCHEDULER] Окружение: {self.environment}")
         
+        log(f"[SCHEDULER] Окружение: {self.environment}")
+        log(f"[SCHEDULER] PARSING_INVOICES: {PARSING_INVOICES}")
+        log(f"[SCHEDULER] PARSING_OTGRUZKAS: {PARSING_OTGRUZKAS}")
+        log(f"[SCHEDULER] Интервал: {self.interval} сек")
+        log(f"[SCHEDULER] Лимит писем: {self.email_limit}")
+        
+    def _is_parsing_enabled_for_type(self, config_value):
+        """
+        Проверяет, включен ли парсинг для данного типа в текущем окружении
+        
+        config_value может быть:
+        - 'local'      → работает только на локальной машине
+        - 'production' → работает только на сервере
+        - 'false'      → выключен везде
+        """
+        if config_value == 'false':
+            return False
+        if config_value == 'local':
+            return self.environment == 'local'
+        if config_value == 'production':
+            return self.environment == 'production'
+        # На всякий случай, если значение неизвестно
+        return False
+    
     def process_invoices(self):
         """Обработка писем со счетами"""
-        # Проверяем окружение
-        if self.environment == 'local':
-            log(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] ⏭️ Пропускаем парсинг счетов (локальное окружение)")
+        if not self._is_parsing_enabled_for_type(PARSING_INVOICES):
+            log(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] ⏭️ Парсинг счетов ОТКЛЮЧЕН (PARSING_INVOICES={PARSING_INVOICES})")
             return
         
         log(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] Checking invoices...")
@@ -54,14 +83,12 @@ class MailScheduler:
             return
         
         try:
-            # Получаем ВСЕ непрочитанные письма
-            invoices = parser.get_unread_invoices()
+            invoices = parser.get_unread_invoices(limit=self.email_limit)
             log(f"[DEBUG] get_unread_invoices returned: {len(invoices) if invoices else 0} emails")
             
             if invoices:
                 log(f"[INVOICES] Found {len(invoices)} invoices to process")
                 
-                # Обрабатываем КАЖДОЕ письмо
                 for invoice in invoices:
                     try:
                         log(f"[DEBUG] Processing invoice: {invoice['email_id']}")
@@ -70,18 +97,15 @@ class MailScheduler:
                         task_id = self.create_invoice_task(invoice['data'], invoice['email_id'], parser.connection)
                         
                         if task_id:
-                            # Помечаем как прочитанное ТОЛЬКО после успешного создания
                             parser.mark_as_read(invoice['email_id'])
                             log(f"[OK] Created task #{task_id} for invoice {invoice['email_id']}")
                         else:
-                            # НЕ помечаем как прочитанное - повторим попытку в следующий раз
                             log(f"[WARN] Failed to create task for invoice {invoice['email_id']}, NOT marking as read")
                             
                     except Exception as e:
                         log(f"[ERROR] Processing invoice {invoice.get('email_id', 'unknown')}: {e}")
                         import traceback
                         log(traceback.format_exc())
-                        # НЕ помечаем как прочитанное при ошибке
             else:
                 log("[INVOICES] No new invoices found")
                 
@@ -94,9 +118,8 @@ class MailScheduler:
     
     def process_otgruzkas(self):
         """Обработка писем с отгрузками"""
-        # Проверяем окружение: отгрузки работают ТОЛЬКО на сервере
-        if self.environment == 'local':
-            log(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] ⏭️ Пропускаем парсинг отгрузок (локальное окружение)")
+        if not self._is_parsing_enabled_for_type(PARSING_OTGRUZKAS):
+            log(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] ⏭️ Парсинг отгрузок ОТКЛЮЧЕН (PARSING_OTGRUZKAS={PARSING_OTGRUZKAS})")
             return
         
         log(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] Checking otgruzkas...")
@@ -108,14 +131,12 @@ class MailScheduler:
             return
         
         try:
-            # Получаем ВСЕ непрочитанные письма
-            otgruzkas = parser.get_unread_otgruzkas()
+            otgruzkas = parser.get_unread_otgruzkas(limit=self.email_limit)
             log(f"[DEBUG] get_unread_otgruzkas returned: {len(otgruzkas) if otgruzkas else 0} emails")
             
             if otgruzkas:
                 log(f"[OTGRUZKAS] Found {len(otgruzkas)} otgruzkas to process")
                 
-                # Обрабатываем КАЖДОЕ письмо
                 for otgruzka in otgruzkas:
                     try:
                         log(f"[DEBUG] Processing otgruzka: {otgruzka['email_id']}")
@@ -124,18 +145,15 @@ class MailScheduler:
                         task_id = self.create_otgruzka_task(otgruzka['data'], otgruzka['email_id'], parser.connection)
                         
                         if task_id:
-                            # Помечаем как прочитанное ТОЛЬКО после успешного создания
                             parser.mark_as_read(otgruzka['email_id'])
                             log(f"[OK] Created task #{task_id} for otgruzka {otgruzka['email_id']}")
                         else:
-                            # НЕ помечаем как прочитанное - повторим попытку в следующий раз
                             log(f"[WARN] Failed to create task for otgruzka {otgruzka['email_id']}, NOT marking as read")
                             
                     except Exception as e:
                         log(f"[ERROR] Processing otgruzka {otgruzka.get('email_id', 'unknown')}: {e}")
                         import traceback
                         log(traceback.format_exc())
-                        # НЕ помечаем как прочитанное при ошибке
             else:
                 log("[OTGRUZKAS] No new otgruzkas found")
                 
@@ -158,7 +176,7 @@ class MailScheduler:
             log(f"[DEBUG] create_invoice_task called for email: {email_id}")
             
             tracking = f"INV-{datetime.now().strftime('%Y%m%d%H%M%S')}"
-            log(f"[DEBUG] Tracking: {tracking}")
+            log(f("[DEBUG] Tracking: {tracking}")
             
             saved_files = []
             attachments = data.get('attachments', [])
@@ -438,13 +456,11 @@ class MailScheduler:
         """Основной цикл планировщика"""
         while self.running:
             try:
-                # Обрабатываем счета (только на сервере)
                 self.process_invoices()
             except Exception as e:
                 log(f"[SCHEDULER] Error in invoices: {e}")
             
             try:
-                # Обрабатываем отгрузки (только на сервере)
                 self.process_otgruzkas()
             except Exception as e:
                 log(f"[SCHEDULER] Error in otgruzkas: {e}")
