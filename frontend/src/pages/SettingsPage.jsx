@@ -1,5 +1,11 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
+import { 
+  isPushSupported, 
+  subscribeToPush, 
+  unsubscribeFromPush, 
+  requestNotificationPermission 
+} from '../utils/pushNotifications';
 import './SettingsPage.css';
 
 function SettingsPage() {
@@ -10,6 +16,12 @@ function SettingsPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [activeTab, setActiveTab] = useState('notifications');
+
+  const [pushStatus, setPushStatus] = useState({
+    supported: false,
+    subscribed: false,
+    loading: false,
+  });
 
   useEffect(() => {
     const loadSettings = async () => {
@@ -25,6 +37,26 @@ function SettingsPage() {
     };
     loadSettings();
   }, [user]);
+
+  // Проверка статуса push-уведомлений
+  useEffect(() => {
+    const checkPushStatus = async () => {
+      const supported = isPushSupported();
+      setPushStatus(prev => ({ ...prev, supported }));
+      
+      if (supported) {
+        try {
+          const registration = await navigator.serviceWorker.ready;
+          const subscription = await registration.pushManager.getSubscription();
+          setPushStatus(prev => ({ ...prev, subscribed: !!subscription }));
+        } catch (err) {
+          console.error('Ошибка проверки подписки:', err);
+        }
+      }
+    };
+    
+    checkPushStatus();
+  }, []);
 
   const saveSettings = async () => {
     setSaving(true);
@@ -42,6 +74,54 @@ function SettingsPage() {
       alert('Ошибка сохранения настроек');
     } finally {
       setSaving(false);
+    }
+  };
+
+  const togglePush = async () => {
+    if (!pushStatus.supported) {
+      alert('Push-уведомления не поддерживаются в вашем браузере');
+      return;
+    }
+    
+    setPushStatus(prev => ({ ...prev, loading: true }));
+    
+    try {
+      if (pushStatus.subscribed) {
+        // Отписываемся
+        const success = await unsubscribeFromPush(user?.name);
+        if (success) {
+          setPushStatus(prev => ({ ...prev, subscribed: false }));
+          // Обновляем настройки
+          setSettings(prev => ({ ...prev, push_enabled: false }));
+          await saveSettings();
+          alert('Push-уведомления отключены');
+        } else {
+          alert('Ошибка отключения push-уведомлений');
+        }
+      } else {
+        // Подписываемся
+        const permission = await requestNotificationPermission();
+        if (permission === 'denied') {
+          alert('Разрешение на уведомления отклонено. Включите его в настройках браузера.');
+          setPushStatus(prev => ({ ...prev, loading: false }));
+          return;
+        }
+        
+        const subscription = await subscribeToPush(user?.name);
+        if (subscription) {
+          setPushStatus(prev => ({ ...prev, subscribed: true }));
+          setSettings(prev => ({ ...prev, push_enabled: true }));
+          await saveSettings();
+          alert('Push-уведомления включены');
+        } else {
+          alert('Ошибка включения push-уведомлений');
+        }
+      }
+    } catch (err) {
+      console.error('Ошибка переключения push:', err);
+      alert('Ошибка при переключении push-уведомлений');
+    } finally {
+      setPushStatus(prev => ({ ...prev, loading: false }));
     }
   };
 
@@ -88,9 +168,9 @@ function SettingsPage() {
 
               <div className="settings-item">
                 <div className="settings-item-info">
-                  <span className="settings-item-label">Push-уведомления</span>
+                  <span className="settings-item-label">🔔 Уведомления в браузере</span>
                   <span className="settings-item-description">
-                    Включите, чтобы получать push-уведомления в браузере о новых задачах
+                    Включите, чтобы получать всплывающие уведомления на сайте
                   </span>
                 </div>
                 <label className="settings-toggle">
@@ -98,6 +178,28 @@ function SettingsPage() {
                     type="checkbox"
                     checked={settings.notifications_enabled !== false}
                     onChange={(e) => setSettings({ ...settings, notifications_enabled: e.target.checked })}
+                  />
+                  <span className="settings-toggle-slider"></span>
+                </label>
+              </div>
+
+              <div className="settings-item">
+                <div className="settings-item-info">
+                  <span className="settings-item-label">📱 Push-уведомления</span>
+                  <span className="settings-item-description">
+                    {pushStatus.supported 
+                      ? (pushStatus.subscribed 
+                        ? '✅ Push-уведомления включены' 
+                        : 'Включите для получения уведомлений даже когда сайт закрыт')
+                      : '❌ Браузер не поддерживает push-уведомления'}
+                  </span>
+                </div>
+                <label className="settings-toggle">
+                  <input
+                    type="checkbox"
+                    checked={pushStatus.subscribed}
+                    onChange={togglePush}
+                    disabled={!pushStatus.supported || pushStatus.loading}
                   />
                   <span className="settings-toggle-slider"></span>
                 </label>

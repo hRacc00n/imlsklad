@@ -43,6 +43,19 @@ class NotificationService:
                 'count': count
             })
             
+            # Отправляем push-уведомление
+            try:
+                from services.push_service import send_push_to_user
+                send_push_to_user(
+                    user_name=user_name,
+                    title=title,
+                    body=text,
+                    url=link or '/',
+                    task_id=task_id
+                )
+            except Exception as e:
+                print(f"[Notification] ❌ Ошибка отправки push: {e}")
+            
             return notification
     
     @staticmethod
@@ -124,6 +137,14 @@ class NotificationService:
                     task_id=task_id
                 )
                 sent_count += 1
+            
+            # Отправляем push-уведомления
+            try:
+                from services.push_service import send_push_to_hub as send_push_hub
+                push_sent = send_push_hub(hub_type, supplier, task_id, title, text)
+                print(f"[Notification] 📱 Отправлено push-уведомлений: {push_sent}")
+            except Exception as e:
+                print(f"[Notification] ❌ Ошибка отправки push для хаба: {e}")
             
             print(f"[Notification] ✅ Отправлено уведомлений: {sent_count}")
             
