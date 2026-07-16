@@ -112,3 +112,8 @@
   font-size: 14px;
   color: #64748b;
 }
+
+/* Пагинация сверху */
+.pagination-top {
+  margin-bottom: 16px;
+}

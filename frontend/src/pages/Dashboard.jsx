@@ -339,10 +339,10 @@ function Dashboard({ user, onLogout }) {
 
         <section className="tasks-section">
           <h2 className="section-title">📋 Актуальные задачи</h2>
-          <TasksTable tasks={tasks} loading={loading} onRowClick={handleTaskClick} />
           
+          {/* Пагинация сверху */}
           {totalPages > 1 && (
-            <div className="pagination">
+            <div className="pagination pagination-top">
               <button onClick={() => goToPage(currentPage - 1)} disabled={!hasPrevious}>
                 ← Назад
               </button>
@@ -352,6 +352,8 @@ function Dashboard({ user, onLogout }) {
               </button>
             </div>
           )}
+          
+          <TasksTable tasks={tasks} loading={loading} onRowClick={handleTaskClick} />
         </section>
       </main>
     </div>
