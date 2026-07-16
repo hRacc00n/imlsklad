@@ -139,12 +139,12 @@ class NotificationService:
                 sent_count += 1
             
             # Отправляем push-уведомления
-            try:
-                from services.push_service import send_push_to_hub as send_push_hub
-                push_sent = send_push_hub(hub_type, supplier, task_id, title, text)
-                print(f"[Notification] 📱 Отправлено push-уведомлений: {push_sent}")
-            except Exception as e:
-                print(f"[Notification] ❌ Ошибка отправки push для хаба: {e}")
+            # try:
+            #     from services.push_service import send_push_to_hub as send_push_hub
+            #     push_sent = send_push_hub(hub_type, supplier, task_id, title, text)
+            #     print(f"[Notification] 📱 Отправлено push-уведомлений: {push_sent}")
+            # except Exception as e:
+            #     print(f"[Notification] ❌ Ошибка отправки push для хаба: {e}")
             
             print(f"[Notification] ✅ Отправлено уведомлений: {sent_count}")
             
