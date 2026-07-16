@@ -13,7 +13,7 @@ import useTaskActions from '../../hooks/useTaskActions';
 import HubTaskEditModal from './HubTaskEditModal';
 import './HubPage.css';
 
-function HubPage({ config, hideCreateButton = false }) {
+function HubPage({ config, hideCreateButton = false, customHeaderButton = null }) {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { sse } = useAppContext();
@@ -162,6 +162,7 @@ function HubPage({ config, hideCreateButton = false }) {
           isConnected={sse?.isConnected}
           onSearch={handleSearch}
           searchPlaceholder={`Поиск по ${config.title.toLowerCase()}...`}
+          customButton={customHeaderButton}
         />
 
         {loading && tasks.length === 0 ? (

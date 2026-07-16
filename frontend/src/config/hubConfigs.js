@@ -8,6 +8,7 @@ export const HUB_TYPES = {
   INVOICES: 'invoices',
   AIR_TRAFFIC: 'air_traffic',
   TASKS: 'tasks',
+  GALLERY: 'gallery',
 };
 
 /**
@@ -118,6 +119,40 @@ export const HUB_CONFIGS = {
         placeholder: 'Введите описание',
         required: false,
         rows: 4,
+      },
+    ],
+  },
+
+  [HUB_TYPES.GALLERY]: {
+    id: HUB_TYPES.GALLERY,
+    title: 'Галерея отгрузок',
+    icon: '🖼️',
+    apiUrl: '/api/gallery',
+    modalType: 'gallery',
+    perPage: 10,
+    hideCompletedByDefault: false,
+    showCreateButton: true,
+    formFields: [
+      {
+        name: 'city',
+        label: 'Город',
+        type: 'text',
+        placeholder: 'Введите город',
+        required: true,
+      },
+      {
+        name: 'description',
+        label: 'Описание',
+        type: 'textarea',
+        placeholder: 'Введите описание (необязательно)',
+        required: false,
+        rows: 3,
+      },
+      {
+        name: 'photos',
+        label: 'Фотографии',
+        type: 'photos',
+        required: false,
       },
     ],
   },

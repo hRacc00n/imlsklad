@@ -22,6 +22,7 @@ import Layout from './components/Layout';
 import AdminLayout from './components/AdminLayout';
 import { RegionalContractorsPage } from './pages';
 import TaskModal from './components/modals/TaskModal';
+import GalleryHub from './pages/GalleryHub';
 import './App.css';
 
 function App() {
@@ -89,6 +90,7 @@ function App() {
           <Route path="/hub/invoices" element={<InvoicesHub />} />
           <Route path="/hub/airtraffic" element={<AirTrafficHub />} />
           <Route path="/hub/tasks" element={<TasksHub />} />
+          <Route path="/hub/gallery" element={<GalleryHub />} />
           
           {/* Админка */}
           <Route path="/admin" element={<AdminLayout />}>

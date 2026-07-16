@@ -154,3 +154,76 @@ class Notification(Base):
             'created_at': (self.created_at + timedelta(hours=3)).strftime('%Y-%m-%d %H:%M') if self.created_at else '',
             'time_ago': time_ago
         }
+
+class GalleryAlbum(Base):
+    """Модель альбома для галереи отгрузок"""
+    __tablename__ = 'gallery_albums'
+    
+    id = Column(Integer, primary_key=True, index=True)
+    city = Column(String(200), nullable=False)          # Город
+    date = Column(DateTime, default=datetime.utcnow)    # Дата создания альбома
+    author = Column(String(100), nullable=False)        # Кто создал
+    description = Column(Text, nullable=True)           # Описание/комментарий
+    photos = Column(Text, nullable=True)                # JSON список путей к фото
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    def to_dict(self):
+        import json
+        photos_list = []
+        if self.photos:
+            try:
+                photos_list = json.loads(self.photos)
+            except:
+                pass
+        
+        # Конвертируем в +3 часовой пояс (Москва)
+        local_tz = timedelta(hours=3)
+        
+        return {
+            'id': self.id,
+            'city': self.city,
+            'date': (self.date + local_tz).strftime('%Y-%m-%d %H:%M') if self.date else '',
+            'author': self.author,
+            'description': self.description,
+            'photos': photos_list,
+            'photos_count': len(photos_list),
+            'created_at': (self.created_at + local_tz).strftime('%Y-%m-%d %H:%M') if self.created_at else '',
+            'updated_at': (self.updated_at + local_tz).strftime('%Y-%m-%d %H:%M') if self.updated_at else '',
+        }
+
+
+class GalleryComment(Base):
+    """Модель комментария к альбому галереи (без уведомлений)"""
+    __tablename__ = 'gallery_comments'
+    
+    id = Column(Integer, primary_key=True, index=True)
+    album_id = Column(Integer, ForeignKey('gallery_albums.id'), index=True, nullable=False)
+    author = Column(String(100), nullable=False)
+    text = Column(Text, nullable=False)
+    is_deleted = Column(Boolean, default=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    def to_dict(self):
+        is_edited = False
+        if self.updated_at and self.created_at:
+            diff = (self.updated_at - self.created_at).total_seconds()
+            is_edited = diff > 1
+        
+        # Конвертируем в +3 часовой пояс (Москва)
+        local_tz = timedelta(hours=3)
+        
+        created_local = (self.created_at + local_tz).strftime('%Y-%m-%d %H:%M') if self.created_at else None
+        updated_local = (self.updated_at + local_tz).strftime('%Y-%m-%d %H:%M') if self.updated_at else None
+        
+        return {
+            'id': self.id,
+            'album_id': self.album_id,
+            'author': self.author,
+            'text': self.text if not self.is_deleted else None,
+            'is_deleted': self.is_deleted,
+            'created_at': created_local,
+            'updated_at': updated_local,
+            'is_edited': is_edited
+        }

@@ -10,6 +10,7 @@ function HubHeader({
   isConnected,
   onSearch,
   searchPlaceholder = 'Поиск...',
+  customButton = null,
 }) {
   return (
     <div className="hub-header">
@@ -33,6 +34,7 @@ function HubHeader({
             ➕ Создать
           </button>
         )}
+        {customButton && customButton}
         <button className="hub-btn-back" onClick={onBack}>
           ← Назад
         </button>
