@@ -220,6 +220,18 @@ function Dashboard({ user, onLogout }) {
       });
       const airTrafficData = await airTrafficResponse.json();
       console.log('[Dashboard] Статистика ЭйрТрафик:', airTrafficData);
+
+      // Загружаем статистику для Задач (личные задачи)
+      const tasksResponse = await fetch(`/api/personal-tasks/stats?user_name=${encodeURIComponent(user?.name || '')}&_=${timestamp}`, {
+        cache: 'no-store',
+        headers: {
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache',
+          'Expires': '0'
+        }
+      });
+      const tasksData = await tasksResponse.json();
+      console.log('[Dashboard] Статистика Задач:', tasksData);
       
       // Обновляем хабы с новыми значениями
       setHubs(prevHubs => {
@@ -244,6 +256,10 @@ function Dashboard({ user, onLogout }) {
           if (hub.name === 'ЭйрТрафик') {
             console.log(`[Dashboard] Обновляем ЭйрТрафик с ${hub.count} на ${airTrafficData.active_count}`);
             return { ...hub, count: airTrafficData.active_count || 0 };
+          }
+          if (hub.name === 'Задачи') {
+            console.log(`[Dashboard] Обновляем Задачи с ${hub.count} на ${tasksData.active_count}`);
+            return { ...hub, count: tasksData.active_count || 0 };
           }
           return { ...hub };
         });

@@ -1,0 +1,252 @@
+.personal-task-form-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  animation: personalTaskFormFadeIn 0.25s ease;
+}
+
+@keyframes personalTaskFormFadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.personal-task-form-content {
+  background: #ffffff;
+  border-radius: 16px;
+  max-width: 600px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  padding: 28px 32px;
+  position: relative;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+}
+
+.personal-task-form-close {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  background: none;
+  border: none;
+  font-size: 24px;
+  cursor: pointer;
+  color: #6b7280;
+  transition: color 0.2s;
+}
+
+.personal-task-form-close:hover {
+  color: #1a2332;
+}
+
+.personal-task-form-content h2 {
+  margin: 0 0 20px 0;
+  font-size: 22px;
+  color: #1a2332;
+}
+
+.personal-task-form-field {
+  margin-bottom: 18px;
+}
+
+.personal-task-form-field label {
+  display: block;
+  font-size: 14px;
+  font-weight: 600;
+  color: #374151;
+  margin-bottom: 4px;
+}
+
+.personal-task-form-field input[type="text"],
+.personal-task-form-field textarea {
+  width: 100%;
+  padding: 10px 14px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  font-size: 14px;
+  font-family: inherit;
+  transition: border-color 0.2s;
+  box-sizing: border-box;
+}
+
+.personal-task-form-field input[type="text"]:focus,
+.personal-task-form-field textarea:focus {
+  outline: none;
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.personal-task-form-field textarea {
+  resize: vertical;
+  min-height: 60px;
+}
+
+.personal-task-users-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 8px 0;
+}
+
+.personal-task-user-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  cursor: pointer;
+  padding: 4px 12px;
+  background: #f3f4f6;
+  border-radius: 20px;
+  transition: background 0.2s;
+}
+
+.personal-task-user-checkbox:hover {
+  background: #e5e7eb;
+}
+
+.personal-task-user-checkbox input[type="checkbox"] {
+  cursor: pointer;
+}
+
+.personal-task-form-hint {
+  display: block;
+  font-size: 12px;
+  color: #9ca3af;
+  margin-top: 4px;
+}
+
+.personal-task-items-input {
+  display: flex;
+  gap: 8px;
+}
+
+.personal-task-items-input input {
+  flex: 1;
+  padding: 8px 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 14px;
+}
+
+.personal-task-items-input input:focus {
+  outline: none;
+  border-color: #667eea;
+}
+
+.personal-task-items-input button {
+  padding: 8px 16px;
+  background: #667eea;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: background 0.2s;
+}
+
+.personal-task-items-input button:hover {
+  background: #5a6fd6;
+}
+
+.personal-task-items-input button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.personal-task-items-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.personal-task-item-tag {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: #f3f4f6;
+  padding: 4px 10px;
+  border-radius: 16px;
+  font-size: 13px;
+}
+
+.personal-task-item-tag button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #6b7280;
+  font-size: 12px;
+  padding: 0 2px;
+}
+
+.personal-task-item-tag button:hover {
+  color: #dc2626;
+}
+
+.personal-task-form-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 20px;
+}
+
+.personal-task-form-cancel {
+  padding: 10px 24px;
+  background: #f3f4f6;
+  color: #4b5563;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.personal-task-form-cancel:hover {
+  background: #e5e7eb;
+}
+
+.personal-task-form-submit {
+  flex: 1;
+  padding: 10px 24px;
+  background: #667eea;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.personal-task-form-submit:hover {
+  background: #5a6fd6;
+}
+
+.personal-task-form-submit:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+@media (max-width: 640px) {
+  .personal-task-form-content {
+    padding: 20px 16px;
+  }
+  
+  .personal-task-items-input {
+    flex-direction: column;
+  }
+}

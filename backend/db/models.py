@@ -227,3 +227,107 @@ class GalleryComment(Base):
             'updated_at': updated_local,
             'is_edited': is_edited
         }
+
+class PersonalTask(Base):
+    """Модель личной задачи"""
+    __tablename__ = 'personal_tasks'
+    
+    id = Column(Integer, primary_key=True, index=True)
+    title = Column(String(200), nullable=False)          # Заголовок задачи
+    description = Column(Text, nullable=True)            # Описание
+    author = Column(String(100), nullable=False)         # Кто создал
+    assigned_to = Column(Text, nullable=True)            # JSON список исполнителей
+    status = Column(String(50), default='active')        # active, completed
+    files = Column(Text, nullable=True)                  # JSON список файлов
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    def to_dict(self):
+        import json
+        assigned_list = []
+        if self.assigned_to:
+            try:
+                assigned_list = json.loads(self.assigned_to)
+            except:
+                pass
+        
+        files_list = []
+        if self.files:
+            try:
+                files_list = json.loads(self.files)
+            except:
+                pass
+        
+        local_tz = timedelta(hours=3)
+        
+        return {
+            'id': self.id,
+            'title': self.title,
+            'description': self.description,
+            'author': self.author,
+            'assigned_to': assigned_list,
+            'status': self.status,
+            'files': files_list,
+            'created_at': (self.created_at + local_tz).strftime('%Y-%m-%d %H:%M') if self.created_at else '',
+            'updated_at': (self.updated_at + local_tz).strftime('%Y-%m-%d %H:%M') if self.updated_at else '',
+        }
+
+
+class TaskItem(Base):
+    """Модель подпункта личной задачи (чекбокс)"""
+    __tablename__ = 'task_items'
+    
+    id = Column(Integer, primary_key=True, index=True)
+    task_id = Column(Integer, ForeignKey('personal_tasks.id'), index=True, nullable=False)
+    text = Column(String(500), nullable=False)           # Текст подпункта
+    is_completed = Column(Boolean, default=False)       # Выполнен ли
+    completed_by = Column(String(100), nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    def to_dict(self):
+        local_tz = timedelta(hours=3)
+        return {
+            'id': self.id,
+            'task_id': self.task_id,
+            'text': self.text,
+            'is_completed': self.is_completed,
+            'completed_by': self.completed_by,
+            'created_at': (self.created_at + local_tz).strftime('%Y-%m-%d %H:%M') if self.created_at else '',
+            'updated_at': (self.updated_at + local_tz).strftime('%Y-%m-%d %H:%M') if self.updated_at else '',
+        }
+
+
+class PersonalTaskComment(Base):
+    """Модель комментария к личной задаче"""
+    __tablename__ = 'personal_task_comments'
+    
+    id = Column(Integer, primary_key=True, index=True)
+    task_id = Column(Integer, ForeignKey('personal_tasks.id'), index=True, nullable=False)
+    author = Column(String(100), nullable=False)
+    text = Column(Text, nullable=False)
+    is_deleted = Column(Boolean, default=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    def to_dict(self):
+        is_edited = False
+        if self.updated_at and self.created_at:
+            diff = (self.updated_at - self.created_at).total_seconds()
+            is_edited = diff > 1
+        
+        local_tz = timedelta(hours=3)
+        
+        created_local = (self.created_at + local_tz).strftime('%Y-%m-%d %H:%M') if self.created_at else None
+        updated_local = (self.updated_at + local_tz).strftime('%Y-%m-%d %H:%M') if self.updated_at else None
+        
+        return {
+            'id': self.id,
+            'task_id': self.task_id,
+            'author': self.author,
+            'text': self.text if not self.is_deleted else None,
+            'is_deleted': self.is_deleted,
+            'created_at': created_local,
+            'updated_at': updated_local,
+            'is_edited': is_edited
+        }

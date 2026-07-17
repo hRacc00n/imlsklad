@@ -90,14 +90,28 @@ function NotificationsBell({ userName }) {
     
     // Если есть task_id — открываем модальное окно
     if (notification.task_id) {
-      fetch(`/api/tasks/${notification.task_id}`)
-        .then(r => r.json())
-        .then(task => {
-          // Определяем тип задачи для модалки
-          const taskType = task.type || 'arrival';
-          openModal(task, taskType);
-        })
-        .catch(err => console.error('Ошибка загрузки задачи:', err));
+      // Определяем тип уведомления
+      if (notification.type === 'personal_task') {
+        // Личная задача - используем отдельный API
+        fetch(`/api/personal-tasks/${notification.task_id}`)
+          .then(r => r.json())
+          .then(task => {
+            // Для личных задач используем тип 'personal_task'
+            // Но нам нужно открыть PersonalTaskModal
+            // Для этого передаём специальный тип
+            openModal(task, 'personal_task');
+          })
+          .catch(err => console.error('Ошибка загрузки личной задачи:', err));
+      } else {
+        // Обычная задача из хаба
+        fetch(`/api/tasks/${notification.task_id}`)
+          .then(r => r.json())
+          .then(task => {
+            const taskType = task.type || 'arrival';
+            openModal(task, taskType);
+          })
+          .catch(err => console.error('Ошибка загрузки задачи:', err));
+      }
     } else if (notification.link) {
       window.location.href = notification.link;
     }

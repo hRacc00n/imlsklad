@@ -22,29 +22,36 @@ import Layout from './components/Layout';
 import AdminLayout from './components/AdminLayout';
 import { RegionalContractorsPage } from './pages';
 import TaskModal from './components/modals/TaskModal';
+import PersonalTaskModal from './components/personal-tasks/PersonalTaskModal';
 import GalleryHub from './pages/GalleryHub';
 import './App.css';
 
 function App() {
   const { user, login, logout } = useAuth();
   const location = useLocation();
-  const { openModal } = useModal();
+  const { openModal, taskType } = useModal();
 
   // Обработка task_id из URL (при клике на push-уведомление)
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const taskId = params.get('task_id');
+    const taskType = params.get('type') || 'task'; // personal_task или task
     
     if (taskId) {
       // Очищаем URL от параметра
       window.history.replaceState({}, '', window.location.pathname);
       
+      // Определяем API в зависимости от типа
+      const apiUrl = taskType === 'personal_task' 
+        ? `/api/personal-tasks/${taskId}`
+        : `/api/tasks/${taskId}`;
+      
       // Загружаем задачу и открываем модалку
-      fetch(`/api/tasks/${taskId}`)
+      fetch(apiUrl)
         .then(r => r.json())
         .then(task => {
-          const taskType = task.type || 'arrival';
-          openModal(task, taskType);
+          const modalType = taskType === 'personal_task' ? 'personal_task' : (task.type || 'arrival');
+          openModal(task, modalType);
         })
         .catch(err => console.error('Ошибка загрузки задачи из push:', err));
     }
@@ -53,13 +60,18 @@ function App() {
   // Обработка события открытия задачи из push-уведомления (из sw.js)
   useEffect(() => {
     const handleOpenTask = async (event) => {
-      const { task_id } = event.detail;
+      const { task_id, task_type } = event.detail;
       if (task_id) {
         try {
-          const response = await fetch(`/api/tasks/${task_id}`);
+          // Определяем API в зависимости от типа
+          const apiUrl = task_type === 'personal_task' 
+            ? `/api/personal-tasks/${task_id}`
+            : `/api/tasks/${task_id}`;
+          
+          const response = await fetch(apiUrl);
           const task = await response.json();
-          const taskType = task.type || 'arrival';
-          openModal(task, taskType);
+          const modalType = task_type === 'personal_task' ? 'personal_task' : (task.type || 'arrival');
+          openModal(task, modalType);
         } catch (err) {
           console.error('Ошибка открытия задачи из push:', err);
         }
@@ -105,7 +117,7 @@ function App() {
           <Route path="*" element={<Navigate to="/" replace />} />
         </Route>
       </Routes>
-      <TaskModal />
+      {taskType === 'personal_task' ? <PersonalTaskModal /> : <TaskModal />}
     </AppProvider>
   );
 }

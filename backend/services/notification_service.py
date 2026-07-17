@@ -235,3 +235,123 @@ class NotificationService:
             sent_count += 1
         
         print(f"[Notification] ✅ Отправлено уведомлений о комментарии: {sent_count}")
+
+    @staticmethod
+    def send_personal_task_notification(task_id, title, author, assigned_to, action='created', comment_text=None, actor=None):
+        """
+        Отправить уведомления о личной задаче
+        
+        Логика:
+        - Создание задачи: уведомляются только исполнители (НЕ автор)
+        - Выполнение задачи: если выполнил НЕ автор → уведомляется автор
+        - Выполнение подпункта: если выполнил НЕ автор → уведомляется автор
+        - Комментарий: уведомляются автор задачи и все исполнители (кроме автора комментария)
+        
+        Args:
+            task_id: ID задачи
+            title: заголовок задачи
+            author: автор задачи
+            assigned_to: список исполнителей
+            action: 'created', 'completed', 'completed_by_items', 'comment'
+            comment_text: текст комментария (для action='comment')
+            actor: кто выполнил действие (для проверки, кто выполнил задачу/подпункт)
+        """
+        from utils.file_loader import load_json
+        
+        print(f"[Notification] 🔔=== START send_personal_task_notification ===")
+        print(f"[Notification] task_id={task_id}, title={title}, author={author}, action={action}, actor={actor}")
+        sys.stdout.flush()
+        
+        try:
+            users = load_json('users.json')
+            
+            # Определяем получателей в зависимости от действия
+            recipients = set()
+            
+            if action == 'created':
+                # Создание задачи: уведомляем ТОЛЬКО исполнителей, НЕ автора
+                if assigned_to:
+                    recipients.update(assigned_to)
+                # Исключаем автора
+                recipients.discard(author)
+                
+                notification_title = f'📋 Новая личная задача'
+                notification_text = f'{author} создал(а) задачу: "{title}"'
+                link = f'/hub/tasks'
+                
+            elif action == 'completed':
+                # Выполнение задачи (без подпунктов)
+                # Если выполнил НЕ автор → уведомляем автора
+                if actor and actor != author:
+                    recipients.add(author)
+                
+                notification_title = f'✅ Задача выполнена'
+                notification_text = f'{actor} выполнил(а) задачу: "{title}"'
+                link = f'/hub/tasks'
+                
+            elif action == 'completed_by_items':
+                # Все подпункты выполнены → задача автоматически завершена
+                # Уведомляем автора, если подпункты выполнил НЕ автор
+                if actor and actor != author:
+                    recipients.add(author)
+                
+                notification_title = f'✅ Все подпункты выполнены'
+                notification_text = f'{actor} выполнил(а) все подпункты в задаче "{title}"'
+                link = f'/hub/tasks'
+                
+            elif action == 'comment':
+                # Комментарий: уведомляем автора задачи и всех исполнителей (кроме автора комментария)
+                recipients.add(author)
+                if assigned_to:
+                    recipients.update(assigned_to)
+                # Исключаем автора комментария
+                if actor:
+                    recipients.discard(actor)
+                
+                notification_title = f'💬 Новый комментарий'
+                notification_text = f'{actor} оставил(а) комментарий в задаче "{title}": "{comment_text[:50]}..."'
+                link = f'/hub/tasks'
+            else:
+                notification_title = f'📋 Обновление задачи'
+                notification_text = f'Обновление в задаче "{title}"'
+                link = f'/hub/tasks'
+            
+            # Если получателей нет — выходим
+            if not recipients:
+                print(f"[Notification] ⏭️ Нет получателей для уведомления")
+                return
+            
+            print(f"[Notification] 📨 Получатели: {recipients}")
+            
+            sent_count = 0
+            for user in users:
+                user_name = user['name']
+                
+                # Проверяем, должен ли пользователь получить уведомление
+                if user_name not in recipients:
+                    continue
+                
+                # Проверяем настройки пользователя
+                settings = user.get('settings', {})
+                if settings.get('notifications_enabled') == False:
+                    continue
+                
+                print(f"[Notification] 📨 Отправка уведомления пользователю: {user_name}")
+                NotificationService.send(
+                    user_name=user_name,
+                    notification_type='personal_task',
+                    title=notification_title,
+                    text=notification_text,
+                    link=link,
+                    task_id=task_id
+                )
+                sent_count += 1
+            
+            print(f"[Notification] ✅ Отправлено уведомлений о личной задаче: {sent_count}")
+            
+        except Exception as e:
+            print(f"[Notification] ❌ Ошибка в send_personal_task_notification: {e}")
+            traceback.print_exc()
+        
+        print(f"[Notification] 🔔=== END send_personal_task_notification ===")
+        sys.stdout.flush()

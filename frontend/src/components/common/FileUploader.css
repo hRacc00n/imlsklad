@@ -1,0 +1,105 @@
+.file-uploader {
+  margin: 4px 0;
+}
+
+.file-uploader-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.file-upload-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  background: #f3f4f6;
+  border: 1px dashed #d1d5db;
+  border-radius: 8px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+  color: #4b5563;
+}
+
+.file-upload-btn:hover {
+  background: #e5e7eb;
+  border-color: #9ca3af;
+}
+
+.file-upload-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.file-upload-btn .btn-icon {
+  font-size: 16px;
+}
+
+.file-upload-hint {
+  font-size: 12px;
+  color: #9ca3af;
+}
+
+.file-uploading-status {
+  font-size: 13px;
+  color: #6b7280;
+  padding: 8px 0;
+}
+
+.file-uploader-preview {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 8px;
+  max-height: 150px;
+  overflow-y: auto;
+}
+
+.file-uploader-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 10px;
+  background: #f9fafb;
+  border-radius: 6px;
+  border: 1px solid #f3f4f6;
+}
+
+.file-uploader-item .file-icon {
+  font-size: 20px;
+}
+
+.file-uploader-item .file-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.file-uploader-item .file-name {
+  font-size: 13px;
+  font-weight: 500;
+  color: #1a2332;
+}
+
+.file-uploader-item .file-size {
+  font-size: 11px;
+  color: #9ca3af;
+}
+
+.file-remove-btn {
+  background: none;
+  border: none;
+  font-size: 14px;
+  cursor: pointer;
+  color: #9ca3af;
+  padding: 2px 6px;
+  border-radius: 4px;
+  transition: all 0.2s;
+}
+
+.file-remove-btn:hover {
+  background: #fee2e2;
+  color: #dc2626;
+}

@@ -19,6 +19,7 @@ from mail_parsers.scheduler import MailScheduler
 from routes.regional_contractors import register_regional_contractors_routes
 from routes.gallery import register_gallery_routes
 from routes.push import register_push_routes
+from routes.personal_tasks import register_personal_tasks_routes
 
 # Переопределяем stdout ПОСЛЕ всех импортов
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
@@ -41,6 +42,7 @@ register_notifications_routes(app)
 register_regional_contractors_routes(app)
 register_push_routes(app)
 register_gallery_routes(app)
+register_personal_tasks_routes(app)
 
 @app.route('/uploads/<filename>')
 def uploaded_file(filename):
