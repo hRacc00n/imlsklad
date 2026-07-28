@@ -11,6 +11,7 @@ function FileUploader({ onFilesChange, existingFiles = [], onUploadStart, onUplo
   }, [existingFiles]);
 
   const processFiles = async (fileList) => {
+    console.log('[FileUploader] processFiles получил:', fileList.length, 'файлов');
     if (fileList.length === 0) return;
 
     setIsUploading(true);
@@ -18,15 +19,14 @@ function FileUploader({ onFilesChange, existingFiles = [], onUploadStart, onUplo
 
     try {
       const newFiles = [];
+      const filesArray = Array.from(fileList); // <-- Преобразуем FileList в массив
       
-      for (const file of fileList) {
-        // Проверяем размер файла (максимум 20MB)
+      for (const file of filesArray) {
         if (file.size > 20 * 1024 * 1024) {
           alert(`Файл "${file.name}" слишком большой (${(file.size / 1024 / 1024).toFixed(1)}MB). Максимальный размер - 20MB.`);
           continue;
         }
 
-        // Читаем файл как base64
         const base64 = await new Promise((resolve) => {
           const reader = new FileReader();
           reader.onload = (event) => resolve(event.target.result);
@@ -41,11 +41,19 @@ function FileUploader({ onFilesChange, existingFiles = [], onUploadStart, onUplo
         });
       }
 
-      const updatedFiles = [...files, ...newFiles];
-      setFiles(updatedFiles);
-      if (onFilesChange) {
-        onFilesChange(updatedFiles);
-      }
+      console.log('[FileUploader] Новых файлов:', newFiles.length);
+      console.log('[FileUploader] Текущий список файлов (до обновления):', files.length);
+
+      // Обновляем состояние с сохранением старых файлов
+      setFiles(prevFiles => {
+        const updatedFiles = [...prevFiles, ...newFiles];
+        console.log('[FileUploader] Итоговый список файлов (после обновления):', updatedFiles.length);
+        if (onFilesChange) {
+          onFilesChange(updatedFiles);
+        }
+        return updatedFiles;
+      });
+      
     } catch (error) {
       console.error('Ошибка обработки файлов:', error);
       alert('Не удалось обработать файлы');
@@ -56,16 +64,23 @@ function FileUploader({ onFilesChange, existingFiles = [], onUploadStart, onUplo
   };
 
   const handleFileSelect = (e) => {
-    processFiles(e.target.files);
+    const selectedFiles = e.target.files;
+    console.log('[FileUploader] Выбрано файлов в input:', selectedFiles.length);
+    console.log('[FileUploader] Имена файлов:', Array.from(selectedFiles).map(f => f.name));
+    if (selectedFiles.length > 0) {
+      processFiles(selectedFiles);
+    }
     e.target.value = '';
   };
 
   const handleRemoveFile = (index) => {
-    const updatedFiles = files.filter((_, i) => i !== index);
-    setFiles(updatedFiles);
-    if (onFilesChange) {
-      onFilesChange(updatedFiles);
-    }
+    setFiles(prevFiles => {
+      const updated = prevFiles.filter((_, i) => i !== index);
+      if (onFilesChange) {
+        onFilesChange(updated);
+      }
+      return updated;
+    });
   };
 
   const formatFileSize = (bytes) => {

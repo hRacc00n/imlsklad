@@ -20,6 +20,8 @@ def register_personal_tasks_routes(app):
         search = request.args.get('search', '')
         user_name = request.args.get('user_name', '')
         offset = (page - 1) * per_page
+        filter_overdue = request.args.get('filter_overdue', 'false').lower() == 'true'
+        priority_filter = request.args.get('priority', '')
         
         if not user_name:
             return jsonify({'error': 'user_name required'}), 400
@@ -63,6 +65,14 @@ def register_personal_tasks_routes(app):
             # Фильтр по статусу
             if hide_completed:
                 filtered_tasks = [t for t in filtered_tasks if t.status != 'completed']
+            
+            # Фильтр по просроченным
+            if filter_overdue:
+                filtered_tasks = [t for t in filtered_tasks if t.to_dict().get('is_overdue', False)]
+            
+            # Фильтр по приоритету
+            if priority_filter:
+                filtered_tasks = [t for t in filtered_tasks if t.priority == priority_filter]
             
             # Сортировка по дате (новые сверху)
             filtered_tasks.sort(key=lambda x: x.created_at, reverse=True)
@@ -147,6 +157,9 @@ def register_personal_tasks_routes(app):
         assigned_to = data.get('assigned_to', [])
         items = data.get('items', [])
         files = data.get('files', [])
+        due_date = data.get('due_date')  # строка с датой
+        show_only_on_day = data.get('show_only_on_day', False)
+        priority = data.get('priority', 'medium')
         
         if not title:
             return jsonify({'success': False, 'message': 'Укажите заголовок задачи'}), 400
@@ -201,6 +214,18 @@ def register_personal_tasks_routes(app):
                     continue
         
         with get_db() as db:
+            # Парсим due_date
+            due_date_parsed = None
+            if due_date:
+                try:
+                    # Поддерживаем формат "YYYY-MM-DDTHH:MM" или "YYYY-MM-DD HH:MM"
+                    due_date_parsed = datetime.fromisoformat(due_date.replace('T', ' '))
+                except:
+                    try:
+                        due_date_parsed = datetime.strptime(due_date, '%Y-%m-%d %H:%M')
+                    except:
+                        pass
+            
             new_task = PersonalTask(
                 title=title,
                 description=description,
@@ -208,6 +233,9 @@ def register_personal_tasks_routes(app):
                 assigned_to=json.dumps(assigned_to, ensure_ascii=False),
                 status='active',
                 files=json.dumps(saved_files, ensure_ascii=False) if saved_files else None,
+                due_date=due_date_parsed,
+                show_only_on_day=show_only_on_day,
+                priority=priority,
                 created_at=datetime.utcnow()
             )
             db.add(new_task)
@@ -297,6 +325,9 @@ def register_personal_tasks_routes(app):
         assigned_to = data.get('assigned_to')
         files = data.get('files')
         author = data.get('author', '')
+        due_date = data.get('due_date')
+        show_only_on_day = data.get('show_only_on_day')
+        priority = data.get('priority')
         
         with get_db() as db:
             task = db.query(PersonalTask).filter(PersonalTask.id == task_id).first()
@@ -315,6 +346,23 @@ def register_personal_tasks_routes(app):
                 if not assigned_to:
                     assigned_to = [author]
                 task.assigned_to = json.dumps(assigned_to, ensure_ascii=False)
+            if due_date is not None:
+                due_date_parsed = None
+                if due_date:
+                    try:
+                        due_date_parsed = datetime.fromisoformat(due_date.replace('T', ' '))
+                    except:
+                        try:
+                            due_date_parsed = datetime.strptime(due_date, '%Y-%m-%d %H:%M')
+                        except:
+                            pass
+                task.due_date = due_date_parsed
+            
+            if show_only_on_day is not None:
+                task.show_only_on_day = show_only_on_day
+            
+            if priority is not None:
+                task.priority = priority
             
             task.updated_at = datetime.utcnow()
             db.commit()
@@ -694,6 +742,7 @@ def register_personal_tasks_routes(app):
                 return jsonify({'success': False, 'message': 'Нет прав на выполнение задачи'}), 403
             
             task.status = 'completed'
+            task.completed_at = datetime.utcnow()
             task.updated_at = datetime.utcnow()
             db.commit()
             

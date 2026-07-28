@@ -12,6 +12,9 @@ function PersonalTaskFormModal({ isOpen, onClose, onSubmit, currentUser, isSubmi
   const [files, setFiles] = useState([]);
   const [users, setUsers] = useState([]);
   const [loadingUsers, setLoadingUsers] = useState(false);
+  const [dueDate, setDueDate] = useState('');
+  const [showOnlyOnDay, setShowOnlyOnDay] = useState(false);
+  const [priority, setPriority] = useState('medium');
 
   // Загрузка списка пользователей
   useEffect(() => {
@@ -24,6 +27,9 @@ function PersonalTaskFormModal({ isOpen, onClose, onSubmit, currentUser, isSubmi
       setItems([]);
       setNewItem('');
       setFiles([]);
+      setDueDate('');
+      setShowOnlyOnDay(false);
+      setPriority('medium');
     }
   }, [isOpen]);
 
@@ -70,6 +76,7 @@ function PersonalTaskFormModal({ isOpen, onClose, onSubmit, currentUser, isSubmi
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    console.log('Файлы при отправке:', files);
     if (!title.trim()) {
       alert('Введите название задачи');
       return;
@@ -79,6 +86,9 @@ function PersonalTaskFormModal({ isOpen, onClose, onSubmit, currentUser, isSubmi
       description: description.trim(),
       assigned_to: assignedTo,
       items: items,
+      due_date: dueDate || null,
+      show_only_on_day: showOnlyOnDay,
+      priority: priority,
     }, files);
   };
 
@@ -180,6 +190,78 @@ function PersonalTaskFormModal({ isOpen, onClose, onSubmit, currentUser, isSubmi
               onFilesChange={setFiles}
               existingFiles={[]}
             />
+          </div>
+
+          {/* Отображение выбранных файлов */}
+          {files.length > 0 && (
+            <div className="personal-task-form-files-preview">
+              <label>Выбранные файлы:</label>
+              <div className="personal-task-form-files-list">
+                {files.map((file, index) => (
+                  <div key={index} className="personal-task-form-file-item">
+                    <span className="file-icon">📎</span>
+                    <span className="file-name">{file.name}</span>
+                    <span className="file-size">
+                      {(file.size / 1024).toFixed(1)} KB
+                    </span>
+                    <button
+                      type="button"
+                      className="file-remove-btn"
+                      onClick={() => {
+                        const newFiles = files.filter((_, i) => i !== index);
+                        setFiles(newFiles);
+                      }}
+                    >
+                      ✕
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* НОВЫЕ ПОЛЯ: Срок выполнения */}
+          <div className="personal-task-form-field">
+            <label>Срок выполнения</label>
+            <input
+              type="datetime-local"
+              value={dueDate}
+              onChange={(e) => setDueDate(e.target.value)}
+              disabled={isSubmitting}
+            />
+            <small className="personal-task-form-hint">
+              Если не указано время, срок считается до конца дня
+            </small>
+          </div>
+
+          {/* НОВЫЕ ПОЛЯ: Показывать только в день события */}
+          <div className="personal-task-form-field personal-task-form-checkbox">
+            <label>
+              <input
+                type="checkbox"
+                checked={showOnlyOnDay}
+                onChange={(e) => setShowOnlyOnDay(e.target.checked)}
+                disabled={isSubmitting}
+              />
+              Показывать только в день события
+            </label>
+            <small className="personal-task-form-hint">
+              Если включено, задача появится в календаре только в день срока выполнения
+            </small>
+          </div>
+
+          {/* НОВЫЕ ПОЛЯ: Приоритет */}
+          <div className="personal-task-form-field">
+            <label>Приоритет</label>
+            <select
+              value={priority}
+              onChange={(e) => setPriority(e.target.value)}
+              disabled={isSubmitting}
+            >
+              <option value="low">Низкий</option>
+              <option value="medium">Средний</option>
+              <option value="high">Высокий</option>
+            </select>
           </div>
 
           <div className="personal-task-form-actions">

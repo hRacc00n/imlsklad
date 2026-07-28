@@ -61,6 +61,28 @@ function PersonalTaskModal() {
   const canComplete = !isActuallyCompleted && !hasItems && (isAuthor || isAssigned);
   const canDelete = isAuthor || isAdmin;
 
+  const isOverdue = task.is_overdue || false;
+  const priority = task.priority || 'medium';
+  const dueDate = task.due_date || null;
+
+  const getPriorityColor = () => {
+    switch (priority) {
+      case 'high': return 'priority-high';
+      case 'medium': return 'priority-medium';
+      case 'low': return 'priority-low';
+      default: return 'priority-medium';
+    }
+  };
+
+  const getPriorityLabel = () => {
+    switch (priority) {
+      case 'high': return 'Высокий';
+      case 'medium': return 'Средний';
+      case 'low': return 'Низкий';
+      default: return 'Средний';
+    }
+  };
+
   const formatDate = (dateStr) => {
     if (!dateStr) return '';
     return dateStr;
@@ -233,6 +255,19 @@ function PersonalTaskModal() {
               <strong>Исполнители:</strong> {task.assigned_to.join(', ')}
             </div>
           )}
+
+          {/* Срок выполнения и приоритет */}
+          <div className="personal-task-modal-due">
+            {dueDate && (
+              <div className={`personal-task-modal-due-date ${isOverdue && !isActuallyCompleted ? 'overdue' : ''}`}>
+                <strong>📅 Срок:</strong> {formatDate(dueDate)}
+                {isOverdue && !isActuallyCompleted && ' ⚠️ Просрочена'}
+              </div>
+            )}
+            <div className={`personal-task-modal-priority ${getPriorityColor()}`}>
+              <strong>Приоритет:</strong> {getPriorityLabel()}
+            </div>
+          </div>
 
           {task.description && (
             <div className="personal-task-modal-description">

@@ -149,6 +149,9 @@ function TasksHub() {
           assigned_to: values.assigned_to || [],
           items: values.items || [],
           files: files || [],
+          due_date: values.due_date || null,
+          show_only_on_day: values.show_only_on_day || false,
+          priority: values.priority || 'medium',
         }),
       });
       const data = await response.json();

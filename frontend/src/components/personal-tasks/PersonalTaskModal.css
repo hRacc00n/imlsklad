@@ -394,3 +394,48 @@
     width: 100%;
   }
 }
+
+/* Срок выполнения и приоритет в модалке */
+.personal-task-modal-due {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 14px;
+  color: #4b5563;
+  margin-bottom: 16px;
+  padding: 12px 16px;
+  background: #f9fafb;
+  border-radius: 8px;
+}
+
+.personal-task-modal-due-date {
+  color: #4b5563;
+}
+
+.personal-task-modal-due-date.overdue {
+  color: #dc2626;
+  font-weight: 600;
+}
+
+.personal-task-modal-priority {
+  padding: 4px 12px;
+  border-radius: 12px;
+  display: inline-block;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.personal-task-modal-priority.priority-low {
+  background: rgba(59, 130, 246, 0.15);
+  color: #3b82f6;
+}
+
+.personal-task-modal-priority.priority-medium {
+  background: rgba(234, 179, 8, 0.15);
+  color: #ca8a04;
+}
+
+.personal-task-modal-priority.priority-high {
+  background: rgba(239, 68, 68, 0.15);
+  color: #dc2626;
+}

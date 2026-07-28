@@ -239,6 +239,10 @@ class PersonalTask(Base):
     assigned_to = Column(Text, nullable=True)            # JSON список исполнителей
     status = Column(String(50), default='active')        # active, completed
     files = Column(Text, nullable=True)                  # JSON список файлов
+    due_date = Column(DateTime, nullable=True)           # <--  (срок выполнения)
+    show_only_on_day = Column(Boolean, default=False)    # <-- 
+    completed_at = Column(DateTime, nullable=True)       # <--  (когда выполнена)
+    priority = Column(String(20), default='medium')      # <-- (low, medium, high)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
@@ -260,6 +264,12 @@ class PersonalTask(Base):
         
         local_tz = timedelta(hours=3)
         
+        # Проверяем, просрочена ли задача
+        is_overdue = False
+        if self.due_date and self.status != 'completed':
+            if datetime.utcnow() > self.due_date:
+                is_overdue = True
+        
         return {
             'id': self.id,
             'title': self.title,
@@ -268,6 +278,11 @@ class PersonalTask(Base):
             'assigned_to': assigned_list,
             'status': self.status,
             'files': files_list,
+            'due_date': (self.due_date + local_tz).strftime('%Y-%m-%d %H:%M') if self.due_date else None,  # <-- ДОБАВИТЬ
+            'show_only_on_day': self.show_only_on_day,  # <-- ДОБАВИТЬ
+            'completed_at': (self.completed_at + local_tz).strftime('%Y-%m-%d %H:%M') if self.completed_at else None,  # <-- ДОБАВИТЬ
+            'priority': self.priority,  # <-- ДОБАВИТЬ
+            'is_overdue': is_overdue,  # <-- ДОБАВИТЬ
             'created_at': (self.created_at + local_tz).strftime('%Y-%m-%d %H:%M') if self.created_at else '',
             'updated_at': (self.updated_at + local_tz).strftime('%Y-%m-%d %H:%M') if self.updated_at else '',
         }

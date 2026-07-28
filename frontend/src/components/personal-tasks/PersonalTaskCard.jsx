@@ -12,6 +12,9 @@ function PersonalTaskCard({ task, currentUser, onClick, onComplete, onDelete }) 
     completed_items_count = 0,
     comments_count = 0,
     created_at,
+    due_date,
+    is_overdue = false,
+    priority = 'medium',
   } = task;
 
   const isAuthor = currentUser?.name === author;
@@ -53,6 +56,24 @@ function PersonalTaskCard({ task, currentUser, onClick, onComplete, onDelete }) 
   // Проверяем, может ли пользователь удалить задачу (только автор)
   const canDelete = isAuthor;
 
+  const getPriorityColor = () => {
+    switch (priority) {
+      case 'high': return 'priority-high';
+      case 'medium': return 'priority-medium';
+      case 'low': return 'priority-low';
+      default: return 'priority-medium';
+    }
+  };
+
+  const getPriorityLabel = () => {
+    switch (priority) {
+      case 'high': return 'Высокий';
+      case 'medium': return 'Средний';
+      case 'low': return 'Низкий';
+      default: return 'Средний';
+    }
+  };
+
   return (
     <div className="personal-task-card" onClick={() => onClick && onClick(task)}>
       <div className={`personal-task-status-bar ${statusInfo.class}`}>
@@ -81,6 +102,19 @@ function PersonalTaskCard({ task, currentUser, onClick, onComplete, onDelete }) 
               👥 {assigned_to.join(', ')}
             </span>
           )}
+        </div>
+
+        {/* Срок выполнения и приоритет */}
+        <div className="personal-task-due">
+          {due_date && (
+            <span className={`personal-task-due-date ${is_overdue && !isActuallyCompleted ? 'overdue' : ''}`}>
+              📅 {formatDate(due_date)}
+              {is_overdue && !isActuallyCompleted && ' ⚠️ Просрочена'}
+            </span>
+          )}
+          <span className={`personal-task-priority ${getPriorityColor()}`}>
+            {getPriorityLabel()}
+          </span>
         </div>
 
         {description && (
