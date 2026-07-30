@@ -346,3 +346,73 @@ class PersonalTaskComment(Base):
             'updated_at': updated_local,
             'is_edited': is_edited
         }
+
+class Duty(Base):
+    """Модель дежурства (администрирование)"""
+    __tablename__ = 'duties'
+    
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, nullable=False)              # ID пользователя из users.json
+    date_start = Column(DateTime, nullable=False)          # Дата начала (один день или диапазон)
+    date_end = Column(DateTime, nullable=False)            # Дата окончания
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    def to_dict(self):
+        local_tz = timedelta(hours=3)
+        return {
+            'id': self.id,
+            'user_id': self.user_id,
+            'date_start': (self.date_start + local_tz).strftime('%Y-%m-%d %H:%M') if self.date_start else '',
+            'date_end': (self.date_end + local_tz).strftime('%Y-%m-%d %H:%M') if self.date_end else '',
+            'created_at': (self.created_at + local_tz).strftime('%Y-%m-%d %H:%M') if self.created_at else '',
+            'updated_at': (self.updated_at + local_tz).strftime('%Y-%m-%d %H:%M') if self.updated_at else '',
+        }
+
+
+class Vacation(Base):
+    """Модель отпуска (администрирование)"""
+    __tablename__ = 'vacations'
+    
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, nullable=False)              # ID пользователя из users.json
+    date_start = Column(DateTime, nullable=False)          # Дата начала отпуска
+    date_end = Column(DateTime, nullable=False)            # Дата окончания отпуска
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    def to_dict(self):
+        local_tz = timedelta(hours=3)
+        return {
+            'id': self.id,
+            'user_id': self.user_id,
+            'date_start': (self.date_start + local_tz).strftime('%Y-%m-%d %H:%M') if self.date_start else '',
+            'date_end': (self.date_end + local_tz).strftime('%Y-%m-%d %H:%M') if self.date_end else '',
+            'created_at': (self.created_at + local_tz).strftime('%Y-%m-%d %H:%M') if self.created_at else '',
+            'updated_at': (self.updated_at + local_tz).strftime('%Y-%m-%d %H:%M') if self.updated_at else '',
+        }
+
+
+class News(Base):
+    """Модель новости (отдельный хаб, отображается в календаре)"""
+    __tablename__ = 'news'
+    
+    id = Column(Integer, primary_key=True, index=True)
+    title = Column(String(200), nullable=False)            # Заголовок новости
+    content = Column(Text, nullable=False)                 # Текст новости
+    author = Column(String(100), nullable=False)           # Автор
+    date = Column(DateTime, default=datetime.utcnow)       # Дата публикации (отображается в календаре)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    def to_dict(self):
+        local_tz = timedelta(hours=3)
+        return {
+            'id': self.id,
+            'title': self.title,
+            'content': self.content,
+            'author': self.author,
+            'date': (self.date + local_tz).strftime('%Y-%m-%d %H:%M') if self.date else '',
+            'created_at': (self.created_at + local_tz).strftime('%Y-%m-%d %H:%M') if self.created_at else '',
+            'updated_at': (self.updated_at + local_tz).strftime('%Y-%m-%d %H:%M') if self.updated_at else '',
+        }

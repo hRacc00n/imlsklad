@@ -1,8 +1,10 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import HubCard from '../components/hubs/HubCard';
 import TasksTable from '../components/tasks/TasksTable';
 import { useModal } from '../contexts/ModalContext';
+import Calendar from '../components/calendar/Calendar';
+import CalendarEventList from '../components/calendar/CalendarEventList';
 import './Dashboard.css';
 
 function Dashboard({ user, onLogout }) {
@@ -19,6 +21,13 @@ function Dashboard({ user, onLogout }) {
   const [hasPrevious, setHasPrevious] = useState(false);
 
   const { openModal, updateTask } = useModal();
+
+  // Состояния для календаря
+  const [selectedDate, setSelectedDate] = useState(new Date());
+  const [calendarEvents, setCalendarEvents] = useState([]);
+  const [dayEvents, setDayEvents] = useState([]);
+  const [loadingEvents, setLoadingEvents] = useState(false);
+  const [showTaskDetails, setShowTaskDetails] = useState(false);
 
   const hubConfig = [
     { name: 'Регионы', icon: '🌍', route: '/hub/regions' },
@@ -48,7 +57,22 @@ function Dashboard({ user, onLogout }) {
     loadActiveTasks(page);
   };
 
-  const handleTaskClick = (task) => {
+  const handleTaskClick = (taskOrTaskId) => {
+    // Если передан ID (число или строка с числом) — значит это клик из календаря
+    if (typeof taskOrTaskId === 'number' || (typeof taskOrTaskId === 'string' && !isNaN(taskOrTaskId))) {
+      const taskId = Number(taskOrTaskId);
+      // Загружаем задачу и открываем модалку
+      fetch(`/api/personal-tasks/${taskId}`)
+        .then(r => r.json())
+        .then(task => {
+          openModal(task, 'personal_task');
+        })
+        .catch(err => console.error('Ошибка загрузки задачи:', err));
+      return;
+    }
+    
+    // Иначе это объект задачи из таблицы
+    const task = taskOrTaskId;
     const taskType = task.type || 'arrival';
     
     openModal(task, taskType, {
@@ -271,6 +295,60 @@ function Dashboard({ user, onLogout }) {
     }
   };
 
+  // Загрузка событий календаря
+  const loadCalendarEvents = useCallback(async (year, month) => {
+    if (!user?.name) return;
+    
+    setLoadingEvents(true);
+    try {
+      const response = await fetch(
+        `/api/calendar/events?year=${year}&month=${month}&user_name=${encodeURIComponent(user.name)}`,
+        {
+          cache: 'no-store',
+          headers: {
+            'Cache-Control': 'no-cache, no-store, must-revalidate',
+            'Pragma': 'no-cache',
+            'Expires': '0'
+          }
+        }
+      );
+      const data = await response.json();
+      setCalendarEvents(data.events || []);
+      
+      // Если есть выбранная дата, загружаем события для неё
+      if (selectedDate) {
+        const dateStr = selectedDate.toISOString().split('T')[0];
+        const dayEventsFiltered = (data.events || []).filter(event => {
+          const eventDate = event.date ? event.date.split('T')[0] : '';
+          return eventDate === dateStr && event._is_event === true;
+        });
+        setDayEvents(dayEventsFiltered);
+      }
+    } catch (err) {
+      console.error('Ошибка загрузки событий календаря:', err);
+    } finally {
+      setLoadingEvents(false);
+    }
+  }, [user?.name, selectedDate]);
+
+  // Обработчик выбора дня в календаре
+  const handleDaySelect = (date) => {
+    setSelectedDate(date);
+    // Используем локальное форматирование даты
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const dateStr = `${year}-${month}-${day}`;
+    
+    // Фильтруем ТОЛЬКО события для списка (_is_event)
+    const filtered = calendarEvents.filter(event => {
+      const eventDate = event.date ? event.date.split('T')[0] : '';
+      return eventDate === dateStr && event._is_event === true;
+    });
+    setDayEvents(filtered);
+    setShowTaskDetails(true);
+  };
+
   useEffect(() => {
     // Инициализация хабов
     const hubData = hubConfig.map((h) => ({
@@ -282,9 +360,12 @@ function Dashboard({ user, onLogout }) {
     
     // Загрузка реальных данных
     loadStats();
-
     loadActiveTasks();
     setLoading(false);
+
+    // Загрузка событий календаря для текущего месяца
+    const now = new Date();
+    loadCalendarEvents(now.getFullYear(), now.getMonth() + 1);
 
     const handleSSEEvent = (event) => {
       const data = event.detail;
@@ -343,13 +424,43 @@ function Dashboard({ user, onLogout }) {
           <div className="hubs-grid">
             {hubs.map((hub, index) => (
               <HubCard
-                key={`${hub.name}-${hub.count}`} // ← добавляем count в key
+                key={`${hub.name}-${hub.count}`}
                 name={hub.name}
                 icon={hub.icon}
                 count={hub.count}
                 onClick={() => handleHubClick(hub.name, hub.route)}
               />
             ))}
+          </div>
+        </section>
+
+        {/* Календарь и события */}
+        <section className="calendar-section">
+          <div className="calendar-container">
+            <div className="calendar-wrapper">
+              <Calendar
+                onDaySelect={handleDaySelect}
+                selectedDate={selectedDate}
+                events={calendarEvents}
+                onMonthChange={(year, month) => {
+                  console.log(`[Dashboard] Переключение на ${year}-${month}`);
+                  // Сбрасываем выбранную дату на первый день нового месяца
+                  const newDate = new Date(year, month - 1, 1);
+                  setSelectedDate(newDate);
+                  // Очищаем события для выбранного дня
+                  setDayEvents([]);
+                  setShowTaskDetails(false);
+                  loadCalendarEvents(year, month);
+                }}
+              />
+            </div>
+            <div className="calendar-events-wrapper">
+              <CalendarEventList
+                events={dayEvents}
+                date={selectedDate}
+                onTaskClick={handleTaskClick}
+              />
+            </div>
           </div>
         </section>
 

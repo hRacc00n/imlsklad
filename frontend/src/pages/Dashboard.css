@@ -117,3 +117,63 @@
 .pagination-top {
   margin-bottom: 16px;
 }
+
+/* ===== Календарь ===== */
+.calendar-section {
+  margin-top: 8px;
+  margin-bottom: 24px;
+}
+
+.calendar-container {
+  display: grid;
+  grid-template-columns: 0.42fr 1fr;
+  gap: 20px;
+  background: transparent;
+}
+
+.calendar-wrapper {
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 4px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+}
+
+.calendar-events-wrapper {
+  background: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+  height: 100%;
+  min-height: 320px;
+  max-height: 340px;
+  display: flex;
+  flex-direction: column;
+}
+
+/* === Адаптив для календаря === */
+@media (max-width: 1024px) {
+  .calendar-container {
+    grid-template-columns: 1fr 1.2fr;
+    gap: 16px;
+  }
+}
+
+@media (max-width: 768px) {
+  .calendar-container {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+  
+  .calendar-events-wrapper {
+    min-height: 200px;
+  }
+}
+
+@media (max-width: 480px) {
+  .calendar-container {
+    gap: 12px;
+  }
+  
+  .calendar-wrapper {
+    padding: 2px;
+  }
+}

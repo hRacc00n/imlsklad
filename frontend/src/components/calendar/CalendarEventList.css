@@ -1,0 +1,332 @@
+.calendar-event-list {
+  background: #ffffff;
+  border-radius: 10px;
+  padding: 12px 16px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+  height: 100%;
+  min-height: 0;
+  max-height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* === Заголовок === */
+.calendar-event-list-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #f3f4f6;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.calendar-event-list-header h3 {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+  color: #1a2332;
+}
+
+.calendar-event-list-controls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.calendar-event-list-hide-completed {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  color: #6b7280;
+  cursor: pointer;
+  user-select: none;
+  transition: color 0.2s;
+}
+
+.calendar-event-list-hide-completed:hover {
+  color: #1a2332;
+}
+
+.calendar-event-list-hide-completed input[type="checkbox"] {
+  width: 14px;
+  height: 14px;
+  cursor: pointer;
+  accent-color: #667eea;
+  flex-shrink: 0;
+}
+
+.calendar-event-count {
+  font-size: 12px;
+  color: #6b7280;
+  background: #f3f4f6;
+  padding: 1px 10px;
+  border-radius: 10px;
+  white-space: nowrap;
+}
+
+/* === Пустое состояние === */
+.calendar-event-list-empty {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #9ca3af;
+  font-size: 14px;
+  text-align: center;
+  padding: 20px 10px;
+}
+
+.calendar-event-list-empty p {
+  margin: 0;
+}
+
+/* === Список событий === */
+.calendar-event-list-items {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  overflow-y: auto;
+  padding-right: 4px;
+  min-height: 0;
+}
+
+.calendar-event-list-items::-webkit-scrollbar {
+  width: 3px;
+}
+
+.calendar-event-list-items::-webkit-scrollbar-track {
+  background: #f3f4f6;
+  border-radius: 4px;
+}
+
+.calendar-event-list-items::-webkit-scrollbar-thumb {
+  background: #d1d5db;
+  border-radius: 4px;
+}
+
+/* === Элемент события === */
+.calendar-event-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 8px 12px;
+  border-radius: 6px;
+  border-left: 3px solid #d1d5db;
+  background: #f9fafb;
+  transition: all 0.15s;
+}
+
+.calendar-event-item.clickable {
+  cursor: pointer;
+}
+
+.calendar-event-item.clickable:hover {
+  background: #f3f4f6;
+  transform: translateX(2px);
+}
+
+/* === Цвета событий === */
+.calendar-event-item.event-task {
+  border-left-color: #22c55e;
+}
+
+.calendar-event-item.event-duty {
+  border-left-color: #f59e0b;
+}
+
+.calendar-event-item.event-vacation {
+  border-left-color: #8b5cf6;
+}
+
+.calendar-event-item.event-news {
+  border-left-color: #ef4444;
+}
+
+/* === Иконка === */
+.calendar-event-item-icon {
+  font-size: 16px;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+/* === Контент === */
+.calendar-event-item-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.calendar-event-item-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2px;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.calendar-event-item-type {
+  font-size: 10px;
+  font-weight: 600;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.calendar-event-item-time {
+  font-size: 11px;
+  color: #9ca3af;
+}
+
+.calendar-event-item-title {
+  font-size: 13px;
+  font-weight: 500;
+  color: #1a2332;
+  word-break: break-word;
+  line-height: 1.3;
+}
+
+.calendar-event-item-user {
+  font-size: 12px;
+  color: #6b7280;
+  margin-top: 1px;
+}
+
+.calendar-event-item-description {
+  font-size: 12px;
+  color: #4b5563;
+  margin-top: 2px;
+  line-height: 1.3;
+  word-break: break-word;
+}
+
+/* === Бейджи === */
+.calendar-event-item-badge {
+  display: inline-block;
+  font-size: 10px;
+  font-weight: 600;
+  padding: 1px 8px;
+  border-radius: 10px;
+  margin-top: 2px;
+}
+
+.calendar-event-item-badge.overdue {
+  background: #fee2e2;
+  color: #dc2626;
+}
+
+.calendar-event-item-badge.completed {
+  background: #dcfce7;
+  color: #16a34a;
+}
+
+.calendar-event-item-badge.days-left {
+  background: #e0f2fe;
+  color: #0284c7;
+}
+
+/* === Адаптив === */
+@media (max-width: 768px) {
+  .calendar-event-list {
+    padding: 10px 14px;
+    min-height: 200px;
+    max-height: 350px;
+  }
+
+  .calendar-event-list-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+  }
+
+  .calendar-event-list-header h3 {
+    font-size: 14px;
+  }
+
+  .calendar-event-list-controls {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .calendar-event-list-hide-completed {
+    font-size: 11px;
+  }
+
+  .calendar-event-item {
+    padding: 6px 10px;
+  }
+
+  .calendar-event-item-icon {
+    font-size: 14px;
+  }
+
+  .calendar-event-item-title {
+    font-size: 12px;
+  }
+
+  .calendar-event-list-items {
+    max-height: 280px;
+  }
+}
+
+@media (max-width: 480px) {
+  .calendar-event-list {
+    padding: 8px 10px;
+    min-height: 150px;
+    max-height: 300px;
+  }
+
+  .calendar-event-list-header h3 {
+    font-size: 13px;
+  }
+
+  .calendar-event-list-controls {
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+
+  .calendar-event-list-hide-completed {
+    font-size: 10px;
+  }
+
+  .calendar-event-list-hide-completed input[type="checkbox"] {
+    width: 12px;
+    height: 12px;
+  }
+
+  .calendar-event-count {
+    font-size: 10px;
+    padding: 1px 8px;
+  }
+
+  .calendar-event-item {
+    padding: 5px 8px;
+    gap: 8px;
+  }
+
+  .calendar-event-item-icon {
+    font-size: 13px;
+  }
+
+  .calendar-event-item-title {
+    font-size: 11px;
+  }
+
+  .calendar-event-item-type {
+    font-size: 9px;
+  }
+
+  .calendar-event-item-badge {
+    font-size: 9px;
+    padding: 0px 6px;
+  }
+
+  .calendar-event-list-items {
+    max-height: 220px;
+  }
+}
