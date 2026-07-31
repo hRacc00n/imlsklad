@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import HubCard from '../components/hubs/HubCard';
 import TasksTable from '../components/tasks/TasksTable';
@@ -24,6 +24,7 @@ function Dashboard({ user, onLogout }) {
 
   // Состояния для календаря
   const [selectedDate, setSelectedDate] = useState(new Date());
+  const selectedDateRef = useRef(selectedDate);
   const [calendarEvents, setCalendarEvents] = useState([]);
   const [dayEvents, setDayEvents] = useState([]);
   const [loadingEvents, setLoadingEvents] = useState(false);
@@ -315,9 +316,10 @@ function Dashboard({ user, onLogout }) {
       const data = await response.json();
       setCalendarEvents(data.events || []);
       
-      // Если есть выбранная дата, загружаем события для неё
-      if (selectedDate) {
-        const dateStr = selectedDate.toISOString().split('T')[0];
+      // Используем ref для получения актуальной даты
+      const currentSelectedDate = selectedDateRef.current;
+      if (currentSelectedDate) {
+        const dateStr = currentSelectedDate.toISOString().split('T')[0];
         const dayEventsFiltered = (data.events || []).filter(event => {
           const eventDate = event.date ? event.date.split('T')[0] : '';
           return eventDate === dateStr && event._is_event === true;
@@ -329,11 +331,31 @@ function Dashboard({ user, onLogout }) {
     } finally {
       setLoadingEvents(false);
     }
-  }, [user?.name, selectedDate]);
+  }, [user?.name]);
+
+  // Функция для обновления календаря
+  const refreshCalendar = useCallback(() => {
+    if (!user?.name) return;
+    
+    // Используем ref для получения актуальной даты
+    const currentMonth = selectedDateRef.current || new Date();
+    const year = currentMonth.getFullYear();
+    const month = currentMonth.getMonth() + 1;
+    
+    console.log(`[Dashboard] Обновление календаря для ${year}-${month}`);
+    loadCalendarEvents(year, month);
+  }, [user?.name, loadCalendarEvents]);
+
+  // Синхронизируем ref с состоянием selectedDate
+  useEffect(() => {
+    selectedDateRef.current = selectedDate;
+  }, [selectedDate]);
 
   // Обработчик выбора дня в календаре
   const handleDaySelect = (date) => {
     setSelectedDate(date);
+    selectedDateRef.current = date; // синхронизируем сразу
+    
     // Используем локальное форматирование даты
     const year = date.getFullYear();
     const month = String(date.getMonth() + 1).padStart(2, '0');
@@ -386,12 +408,25 @@ function Dashboard({ user, onLogout }) {
         console.log(`[Dashboard] Обновление счетчика для хаба: ${data.data.hub_type}`);
         loadStats();
       }
+      
+      // Обычные задачи
       if (data.type === 'task_created' || 
           data.type === 'task_updated' || 
           data.type === 'task_deleted' ||
           data.type === 'comment_count_updated') {
         console.log('[Dashboard] Обновление активных задач, тип задачи:', data.type);
         loadActiveTasks();
+        // Обновляем календарь
+        refreshCalendar();
+      }
+      
+      // Личные задачи
+      if (data.type === 'personal_task_created' || 
+          data.type === 'personal_task_updated' || 
+          data.type === 'personal_task_deleted') {
+        console.log('[Dashboard] Обновление личных задач, тип:', data.type);
+        // Обновляем календарь
+        refreshCalendar();
       }
     };
 
@@ -411,7 +446,7 @@ function Dashboard({ user, onLogout }) {
       window.removeEventListener('user-role-updated', handleRoleUpdate);
       console.log('[Dashboard] Отписка от SSE');
     };
-  }, []);
+  }, [refreshCalendar]);
 
   const handleHubClick = (hubName, route) => {
     navigate(route);
@@ -447,6 +482,7 @@ function Dashboard({ user, onLogout }) {
                   // Сбрасываем выбранную дату на первый день нового месяца
                   const newDate = new Date(year, month - 1, 1);
                   setSelectedDate(newDate);
+                  selectedDateRef.current = newDate; // синхронизируем сразу
                   // Очищаем события для выбранного дня
                   setDayEvents([]);
                   setShowTaskDetails(false);

@@ -12,10 +12,18 @@ function CalendarEventList({ events = [], date, onTaskClick }) {
     ? events.filter(e => {
         // Только _is_event
         if (e._is_event !== true) return false;
-        // Если есть days_left, показываем только если >= 0
-        if (e.days_left !== undefined && e.days_left < 0) return false;
+        
         // Если включен hideCompleted, скрываем выполненные задачи
         if (hideCompleted && e.is_completed === true) return false;
+        
+        // Просроченные задачи показываем всегда (is_overdue === true)
+        // или если days_left < 0 (просрочена)
+        if (e.is_overdue === true) return true;
+        if (e.days_left !== undefined && e.days_left < 0) return true;
+        
+        // Если есть days_left, показываем только если >= 0 (не просрочена)
+        if (e.days_left !== undefined && e.days_left < 0) return false;
+        
         return true;
       }) 
     : [];

@@ -130,38 +130,59 @@ def register_calendar_routes(app):
                                 '_is_event': True,
                             })
                     else:
-                        # Активные задачи показываем каждый день от сегодня до дедлайна
-                        current_date = task.created_at.replace(hour=0, minute=0, second=0, microsecond=0)
+                        # Проверяем, просрочена ли задача
+                        is_overdue = due_date_normalized < today
                         
-                        # Если задача создана раньше сегодня — начинаем с сегодня
-                        if current_date < today:
-                            current_date = today
-                        
-                        # Если задача создана в будущем — начинаем с даты создания
-                        if current_date < task.created_at.replace(hour=0, minute=0, second=0, microsecond=0):
+                        if is_overdue:
+                            # Просроченные задачи показываем только сегодня (если сегодня в текущем месяце)
+                            if start_date <= today < end_date:
+                                days_overdue = (today - due_date_normalized).days
+                                events.append({
+                                    'id': task.id,
+                                    'type': 'task',
+                                    'title': task.title,
+                                    'date': today.isoformat(),
+                                    'is_overdue': True,
+                                    'is_completed': False,
+                                    'priority': task.priority,
+                                    'show_only_on_day': False,
+                                    'days_left': -days_overdue,  # отрицательное число = просрочена
+                                    'author': task.author,
+                                    '_is_event': True,
+                                })
+                        else:
+                            # Активные задачи показываем каждый день от сегодня до дедлайна
                             current_date = task.created_at.replace(hour=0, minute=0, second=0, microsecond=0)
-                        
-                        # Не показываем дни до начала месяца (для текущего месяца)
-                        if current_date < start_date:
-                            current_date = start_date
-                        
-                        # Цикл до дедлайна, но только в пределах текущего месяца
-                        while current_date < end_date and current_date <= due_date_normalized:
-                            days_left = (due_date_normalized - current_date).days
-                            events.append({
-                                'id': task.id,
-                                'type': 'task',
-                                'title': task.title,
-                                'date': current_date.isoformat(),
-                                'is_overdue': due_date_normalized < today,
-                                'is_completed': False,
-                                'priority': task.priority,
-                                'show_only_on_day': False,
-                                'days_left': days_left if days_left >= 0 else 0,
-                                'author': task.author,
-                                '_is_event': True,
-                            })
-                            current_date += timedelta(days=1)
+                            
+                            # Если задача создана раньше сегодня — начинаем с сегодня
+                            if current_date < today:
+                                current_date = today
+                            
+                            # Если задача создана в будущем — начинаем с даты создания
+                            if current_date < task.created_at.replace(hour=0, minute=0, second=0, microsecond=0):
+                                current_date = task.created_at.replace(hour=0, minute=0, second=0, microsecond=0)
+                            
+                            # Не показываем дни до начала месяца (для текущего месяца)
+                            if current_date < start_date:
+                                current_date = start_date
+                            
+                            # Цикл до дедлайна, но только в пределах текущего месяца
+                            while current_date < end_date and current_date <= due_date_normalized:
+                                days_left = (due_date_normalized - current_date).days
+                                events.append({
+                                    'id': task.id,
+                                    'type': 'task',
+                                    'title': task.title,
+                                    'date': current_date.isoformat(),
+                                    'is_overdue': False,
+                                    'is_completed': False,
+                                    'priority': task.priority,
+                                    'show_only_on_day': False,
+                                    'days_left': days_left if days_left >= 0 else 0,
+                                    'author': task.author,
+                                    '_is_event': True,
+                                })
+                                current_date += timedelta(days=1)
             
             # ===== 2. Дежурства =====
             duties = db.query(Duty).filter(
