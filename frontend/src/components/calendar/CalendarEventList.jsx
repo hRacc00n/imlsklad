@@ -174,14 +174,24 @@ function CalendarEventList({ events = [], date, onTaskClick }) {
                 <span className="calendar-event-item-type">
                   {getEventLabel(event.type)}
                 </span>
-                {event.date && (
-                  <span className="calendar-event-item-time">
-                    {formatTime(event.date)}
-                  </span>
-                )}
+                {/* Время не показываем для задач */}
               </div>
               <div className="calendar-event-item-title">
                 {event.title || event.user_name || 'Событие'}
+                {event.type === 'task' && event.title && (
+                  <div className="calendar-event-item-description">
+                    {event.description 
+                      ? (event.description.length > 80 
+                          ? event.description.slice(0, 80) + '...' 
+                          : event.description)
+                      : ''}
+                  </div>
+                )}
+                {event.type === 'task' && event.items_count !== undefined && event.items_count > 0 && (
+                  <div className="calendar-event-item-subtasks">
+                    📋 {event.completed_items_count || 0}/{event.items_count} подпунктов выполнено
+                  </div>
+                )}
               </div>
               {event.type === 'task' && event.is_overdue && !event.is_completed && (
                 <div className="calendar-event-item-badge overdue">Просрочена</div>

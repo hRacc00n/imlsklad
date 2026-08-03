@@ -2,7 +2,7 @@ import json
 from flask import request, jsonify
 from datetime import datetime, timedelta
 from db.database import get_db
-from db.models import PersonalTask, Duty, Vacation, News
+from db.models import PersonalTask, TaskItem, Duty, Vacation, News
 from utils.file_loader import load_json
 
 def register_calendar_routes(app):
@@ -73,6 +73,11 @@ def register_calendar_routes(app):
                 
                 # Нормализуем дату дедлайна
                 due_date_normalized = task.due_date.replace(hour=0, minute=0, second=0, microsecond=0)
+
+                # Получаем подпункты задачи
+                items = db.query(TaskItem).filter(TaskItem.task_id == task.id).all()
+                items_count = len(items)
+                completed_items_count = sum(1 for item in items if item.is_completed)
                 
                 # ===== ТОЧКИ В КАЛЕНДАРЕ (всегда только в день дедлайна) =====
                 # Проверяем, попадает ли день дедлайна в текущий месяц
@@ -98,6 +103,7 @@ def register_calendar_routes(app):
                             'id': task.id,
                             'type': 'task',
                             'title': task.title,
+                            'description': task.description or '',
                             'date': due_date_normalized.isoformat(),
                             'is_overdue': due_date_normalized < today,
                             'is_completed': task.status == 'completed',
@@ -105,6 +111,8 @@ def register_calendar_routes(app):
                             'show_only_on_day': True,
                             'days_left': (due_date_normalized - today).days if due_date_normalized >= today else 0,
                             'author': task.author,
+                            'items_count': items_count,
+                            'completed_items_count': completed_items_count,
                             '_is_event': True,
                         })
                 else:
@@ -120,6 +128,7 @@ def register_calendar_routes(app):
                                 'id': task.id,
                                 'type': 'task',
                                 'title': task.title,
+                                'description': task.description or '',
                                 'date': due_date_normalized.isoformat(),
                                 'is_overdue': due_date_normalized < today,
                                 'is_completed': True,
@@ -127,6 +136,8 @@ def register_calendar_routes(app):
                                 'show_only_on_day': False,
                                 'days_left': days_left if days_left >= 0 else 0,
                                 'author': task.author,
+                                'items_count': items_count,
+                                'completed_items_count': completed_items_count,
                                 '_is_event': True,
                             })
                     else:
@@ -141,6 +152,7 @@ def register_calendar_routes(app):
                                     'id': task.id,
                                     'type': 'task',
                                     'title': task.title,
+                                    'description': task.description or '',
                                     'date': today.isoformat(),
                                     'is_overdue': True,
                                     'is_completed': False,
@@ -148,6 +160,8 @@ def register_calendar_routes(app):
                                     'show_only_on_day': False,
                                     'days_left': -days_overdue,  # отрицательное число = просрочена
                                     'author': task.author,
+                                    'items_count': items_count,
+                                    'completed_items_count': completed_items_count,
                                     '_is_event': True,
                                 })
                         else:
@@ -173,6 +187,7 @@ def register_calendar_routes(app):
                                     'id': task.id,
                                     'type': 'task',
                                     'title': task.title,
+                                    'description': task.description or '',
                                     'date': current_date.isoformat(),
                                     'is_overdue': False,
                                     'is_completed': False,
@@ -180,6 +195,8 @@ def register_calendar_routes(app):
                                     'show_only_on_day': False,
                                     'days_left': days_left if days_left >= 0 else 0,
                                     'author': task.author,
+                                    'items_count': items_count,
+                                    'completed_items_count': completed_items_count,
                                     '_is_event': True,
                                 })
                                 current_date += timedelta(days=1)

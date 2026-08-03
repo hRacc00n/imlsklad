@@ -330,3 +330,20 @@
     max-height: 220px;
   }
 }
+
+/* === Подпункты === */
+.calendar-event-item-subtasks {
+  font-size: 11px;
+  color: #6b7280;
+  margin-top: 3px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* Адаптив */
+@media (max-width: 480px) {
+  .calendar-event-item-subtasks {
+    font-size: 10px;
+  }
+}
