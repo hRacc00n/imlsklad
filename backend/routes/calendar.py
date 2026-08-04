@@ -206,47 +206,132 @@ def register_calendar_routes(app):
                 Duty.date_start < end_date,
                 Duty.date_end >= start_date
             ).all()
-            
+
             for duty in duties:
-                # Определяем день начала для отображения (используем date_start)
-                events.append({
-                    'id': duty.id,
-                    'type': 'duty',
-                    'user_id': duty.user_id,
-                    'date': duty.date_start.isoformat(),
-                    'date_end': duty.date_end.isoformat(),
-                })
+                # Нормализуем даты
+                start_normalized = duty.date_start.replace(hour=0, minute=0, second=0, microsecond=0)
+                end_normalized = duty.date_end.replace(hour=0, minute=0, second=0, microsecond=0)
+                
+                # Точки в сетке (каждый день от начала до конца)
+                current_date = start_normalized
+                if current_date < start_date:
+                    current_date = start_date
+                
+                while current_date < end_date and current_date <= end_normalized:
+                    events.append({
+                        'id': duty.id,
+                        'type': 'duty_dot',
+                        'user_id': duty.user_id,
+                        'date': current_date.isoformat(),
+                        'date_end': end_normalized.isoformat(),
+                        '_is_dot': True,
+                    })
+                    current_date += timedelta(days=1)
+                
+                # Событие в списке (каждый день от начала до конца)
+                current_date = start_normalized
+                if current_date < start_date:
+                    current_date = start_date
+                
+                while current_date < end_date and current_date <= end_normalized:
+                    events.append({
+                        'id': duty.id,
+                        'type': 'duty',
+                        'user_id': duty.user_id,
+                        'date': current_date.isoformat(),
+                        'date_end': end_normalized.isoformat(),
+                        '_is_event': True,
+                    })
+                    current_date += timedelta(days=1)
             
             # ===== 3. Отпуска =====
             vacations = db.query(Vacation).filter(
                 Vacation.date_start < end_date,
                 Vacation.date_end >= start_date
             ).all()
-            
+
             for vacation in vacations:
-                events.append({
-                    'id': vacation.id,
-                    'type': 'vacation',
-                    'user_id': vacation.user_id,
-                    'date_start': vacation.date_start.isoformat(),
-                    'date_end': vacation.date_end.isoformat(),
-                })
+                # Нормализуем даты
+                start_normalized = vacation.date_start.replace(hour=0, minute=0, second=0, microsecond=0)
+                end_normalized = vacation.date_end.replace(hour=0, minute=0, second=0, microsecond=0)
+                
+                # Точки в сетке (каждый день от начала до конца)
+                current_date = start_normalized
+                if current_date < start_date:
+                    current_date = start_date
+                
+                while current_date < end_date and current_date <= end_normalized:
+                    events.append({
+                        'id': vacation.id,
+                        'type': 'vacation_dot',
+                        'user_id': vacation.user_id,
+                        'date': current_date.isoformat(),
+                        'date_end': end_normalized.isoformat(),
+                        '_is_dot': True,
+                    })
+                    current_date += timedelta(days=1)
+                
+                # Событие в списке (каждый день от начала до конца)
+                current_date = start_normalized
+                if current_date < start_date:
+                    current_date = start_date
+                
+                while current_date < end_date and current_date <= end_normalized:
+                    events.append({
+                        'id': vacation.id,
+                        'type': 'vacation',
+                        'user_id': vacation.user_id,
+                        'date': current_date.isoformat(),
+                        'date_end': end_normalized.isoformat(),
+                        '_is_event': True,
+                    })
+                    current_date += timedelta(days=1)
             
             # ===== 4. Новости =====
+            # Получаем новости, которые не скрыты и попадают в период показа
             news = db.query(News).filter(
-                News.date >= start_date,
-                News.date < end_date
+                News.is_hidden == False,
+                News.show_from <= end_date,
+                News.show_to >= start_date
             ).all()
             
             for item in news:
-                events.append({
-                    'id': item.id,
-                    'type': 'news',
-                    'title': item.title,
-                    'content': item.content,
-                    'author': item.author,
-                    'date': item.date.isoformat(),
-                })
+                # Нормализуем даты
+                event_date_normalized = item.event_date.replace(hour=0, minute=0, second=0, microsecond=0)
+                show_from_normalized = item.show_from.replace(hour=0, minute=0, second=0, microsecond=0)
+                show_to_normalized = item.show_to.replace(hour=0, minute=0, second=0, microsecond=0)
+                
+                # ===== ТОЧКА В КАЛЕНДАРЕ (только в день события) =====
+                if start_date <= event_date_normalized < end_date:
+                    events.append({
+                        'id': item.id,
+                        'type': 'news_dot',
+                        'title': item.title,
+                        'content': item.content,
+                        'author': item.author,
+                        'date': event_date_normalized.isoformat(),
+                        '_is_dot': True,
+                    })
+                
+                # ===== СПИСОК СОБЫТИЙ (от show_from до show_to) =====
+                # Начинаем с show_from или с начала месяца
+                current_date = show_from_normalized
+                if current_date < start_date:
+                    current_date = start_date
+                
+                while current_date < end_date and current_date <= show_to_normalized:
+                    days_left = (event_date_normalized - current_date).days
+                    events.append({
+                        'id': item.id,
+                        'type': 'news',
+                        'title': item.title,
+                        'content': item.content,
+                        'author': item.author,
+                        'date': current_date.isoformat(),
+                        'days_left': days_left if days_left >= 0 else 0,
+                        '_is_event': True,
+                    })
+                    current_date += timedelta(days=1)
         
         # Загружаем пользователей для отображения имён
         users = load_json('users.json')
@@ -461,3 +546,148 @@ def register_calendar_routes(app):
                 'role': u.get('role')
             })
         return jsonify(result), 200
+
+    # ===== GET: Список всех дежурств =====
+    @app.route('/api/calendar/duties/list', methods=['GET'])
+    def get_duties_list():
+        with get_db() as db:
+            duties = db.query(Duty).all()
+            return jsonify([d.to_dict() for d in duties]), 200
+    
+    # ===== GET: Список всех отпусков =====
+    @app.route('/api/calendar/vacations/list', methods=['GET'])
+    def get_vacations_list():
+        with get_db() as db:
+            vacations = db.query(Vacation).all()
+            return jsonify([v.to_dict() for v in vacations]), 200
+
+    # ===== НОВОСТИ: GET список новостей =====
+    @app.route('/api/calendar/news', methods=['GET'])
+    def get_news():
+        with get_db() as db:
+            all_news = db.query(News).order_by(News.event_date.desc()).all()
+            return jsonify([n.to_dict() for n in all_news]), 200
+    
+    # ===== НОВОСТИ: GET получить одну новость =====
+    @app.route('/api/calendar/news/<int:news_id>', methods=['GET'])
+    def get_news_item(news_id):
+        with get_db() as db:
+            news = db.query(News).filter(News.id == news_id).first()
+            if not news:
+                return jsonify({'error': 'Новость не найдена'}), 404
+            return jsonify(news.to_dict()), 200
+    
+    # ===== НОВОСТИ: POST создать новость =====
+    @app.route('/api/calendar/news', methods=['POST'])
+    def create_news():
+        data = request.get_json()
+        title = data.get('title', '').strip()
+        content = data.get('content', '').strip()
+        author = data.get('author', '')
+        event_date = data.get('event_date')
+        show_from = data.get('show_from')
+        show_to = data.get('show_to')
+        
+        if not title:
+            return jsonify({'success': False, 'message': 'Укажите заголовок новости'}), 400
+        
+        if not content:
+            return jsonify({'success': False, 'message': 'Укажите текст новости'}), 400
+        
+        if not author:
+            return jsonify({'success': False, 'message': 'Автор не указан'}), 400
+        
+        if not event_date:
+            return jsonify({'success': False, 'message': 'Укажите дату события'}), 400
+        
+        if not show_from or not show_to:
+            return jsonify({'success': False, 'message': 'Укажите период показа'}), 400
+        
+        try:
+            event_date_parsed = datetime.fromisoformat(event_date.replace('T', ' '))
+            show_from_parsed = datetime.fromisoformat(show_from.replace('T', ' '))
+            show_to_parsed = datetime.fromisoformat(show_to.replace('T', ' '))
+        except:
+            return jsonify({'success': False, 'message': 'Неверный формат даты'}), 400
+        
+        with get_db() as db:
+            new_news = News(
+                title=title,
+                content=content,
+                author=author,
+                event_date=event_date_parsed,
+                show_from=show_from_parsed,
+                show_to=show_to_parsed,
+                is_hidden=False,
+                created_at=datetime.utcnow()
+            )
+            db.add(new_news)
+            db.commit()
+            db.refresh(new_news)
+            
+            return jsonify({
+                'success': True,
+                'news': new_news.to_dict()
+            }), 201
+    
+    # ===== НОВОСТИ: PUT скрыть/показать новость (только админ) =====
+    @app.route('/api/calendar/news/<int:news_id>/hide', methods=['PUT'])
+    def hide_news(news_id):
+        data = request.get_json()
+        author = data.get('author', '')
+        is_hidden = data.get('is_hidden', False)
+        
+        users = load_json('users.json')
+        is_admin = False
+        for u in users:
+            if u.get('name') == author and u.get('role') == 'admin':
+                is_admin = True
+                break
+        
+        if not is_admin:
+            return jsonify({'success': False, 'message': 'Только администратор может скрывать новости'}), 403
+        
+        with get_db() as db:
+            news = db.query(News).filter(News.id == news_id).first()
+            if not news:
+                return jsonify({'success': False, 'message': 'Новость не найдена'}), 404
+            
+            news.is_hidden = is_hidden
+            news.updated_at = datetime.utcnow()
+            db.commit()
+            db.refresh(news)
+            
+            return jsonify({
+                'success': True,
+                'news': news.to_dict()
+            }), 200
+    
+    # ===== НОВОСТИ: DELETE удалить новость (только автор или админ) =====
+    @app.route('/api/calendar/news/<int:news_id>', methods=['DELETE'])
+    def delete_news(news_id):
+        data = request.get_json()
+        author = data.get('author', '')
+        
+        with get_db() as db:
+            news = db.query(News).filter(News.id == news_id).first()
+            if not news:
+                return jsonify({'success': False, 'message': 'Новость не найдена'}), 404
+            
+            # Проверяем права: автор или админ
+            users = load_json('users.json')
+            is_admin = False
+            for u in users:
+                if u.get('name') == author and u.get('role') == 'admin':
+                    is_admin = True
+                    break
+            
+            if news.author != author and not is_admin:
+                return jsonify({'success': False, 'message': 'Нет прав на удаление'}), 403
+            
+            db.delete(news)
+            db.commit()
+            
+            return jsonify({
+                'success': True,
+                'message': 'Новость удалена'
+            }), 200

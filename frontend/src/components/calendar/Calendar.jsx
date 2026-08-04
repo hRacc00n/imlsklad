@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import './Calendar.css';
 
-function Calendar({ onDaySelect, selectedDate, events = [], onMonthChange }) {
+function Calendar({ onDaySelect, selectedDate, events = [], onMonthChange, eventTypeFilters = { tasks: true, duties: true, vacations: true, news: true } }) {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [days, setDays] = useState([]);
   const [monthName, setMonthName] = useState('');
@@ -74,7 +74,15 @@ function Calendar({ onDaySelect, selectedDate, events = [], onMonthChange }) {
     
     return events.filter(event => {
       const eventDate = event.date ? event.date.split('T')[0] : '';
-      return eventDate === dateStr && event._is_dot === true;
+      if (eventDate !== dateStr || event._is_dot !== true) return false;
+      
+      // Фильтрация по типу события
+      if (event.type === 'task_dot' && !eventTypeFilters.tasks) return false;
+      if (event.type === 'duty_dot' && !eventTypeFilters.duties) return false;
+      if (event.type === 'vacation_dot' && !eventTypeFilters.vacations) return false;
+      if (event.type === 'news_dot' && !eventTypeFilters.news) return false;
+      
+      return true;
     });
   };
 
@@ -147,19 +155,11 @@ function Calendar({ onDaySelect, selectedDate, events = [], onMonthChange }) {
             const isSelectedDay = isSelected(date);
             const isTodayDay = isToday(date);
 
-            // Определяем цвет точки в зависимости от типа события (используем _is_dot)
-            const getEventDotClass = () => {
-              if (dayDots.length === 0) return '';
-              // Если есть задачи — зелёный
-              if (dayDots.some(e => e.type === 'task_dot' || e.type === 'task')) return 'dot-task';
-              // Если есть дежурства — оранжевый
-              if (dayDots.some(e => e.type === 'duty')) return 'dot-duty';
-              // Если есть отпуска — фиолетовый
-              if (dayDots.some(e => e.type === 'vacation')) return 'dot-vacation';
-              // Если есть новости — красный
-              if (dayDots.some(e => e.type === 'news')) return 'dot-news';
-              return '';
-            };
+            // Определяем, какие типы событий есть в этот день
+            const hasTask = dayDots.some(e => e.type === 'task_dot');
+            const hasDuty = dayDots.some(e => e.type === 'duty_dot');
+            const hasVacation = dayDots.some(e => e.type === 'vacation_dot');
+            const hasNews = dayDots.some(e => e.type === 'news_dot');
 
             // Определяем, есть ли просроченные задачи
             const hasOverdueTask = dayDots.some(e => 
@@ -168,6 +168,13 @@ function Calendar({ onDaySelect, selectedDate, events = [], onMonthChange }) {
               !e.is_completed
             );
 
+            // Собираем классы для точек
+            const dotClasses = [];
+            if (hasTask) dotClasses.push('dot-task');
+            if (hasDuty) dotClasses.push('dot-duty');
+            if (hasVacation) dotClasses.push('dot-vacation');
+            if (hasNews) dotClasses.push('dot-news');
+
             return (
               <div
                 key={index}
@@ -175,8 +182,12 @@ function Calendar({ onDaySelect, selectedDate, events = [], onMonthChange }) {
                 onClick={() => handleDayClick(date)}
               >
                 <span className="calendar-day-number">{date.getDate()}</span>
-                {dayDots.length > 0 && (
-                  <div className={`calendar-day-dot ${getEventDotClass()}`}></div>
+                {dotClasses.length > 0 && (
+                  <div className="calendar-day-dots">
+                    {dotClasses.map((cls, idx) => (
+                      <div key={idx} className={`calendar-day-dot ${cls}`}></div>
+                    ))}
+                  </div>
                 )}
               </div>
             );

@@ -24,6 +24,8 @@ import { RegionalContractorsPage } from './pages';
 import TaskModal from './components/modals/TaskModal';
 import PersonalTaskModal from './components/personal-tasks/PersonalTaskModal';
 import GalleryHub from './pages/GalleryHub';
+import DutiesPage from './pages/DutiesPage';
+import VacationsPage from './pages/VacationsPage';
 import './App.css';
 
 function App() {
@@ -111,6 +113,8 @@ function App() {
             <Route path="system" element={<SystemPage />} />
             <Route path="regional-contractors" element={<RegionalContractorsPage />} />
             <Route path="settings" element={<SettingsPage />} />
+            <Route path="/admin/duties" element={<DutiesPage user={user} />} />
+            <Route path="/admin/vacations" element={<VacationsPage user={user} />} />
             <Route index element={<Navigate to="/admin/users" replace />} />
           </Route>
           

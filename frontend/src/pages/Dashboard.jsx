@@ -30,6 +30,19 @@ function Dashboard({ user, onLogout }) {
   const [loadingEvents, setLoadingEvents] = useState(false);
   const [showTaskDetails, setShowTaskDetails] = useState(false);
 
+  // Фильтр типов событий для календаря
+  const [eventTypeFilters, setEventTypeFilters] = useState(() => {
+    const saved = localStorage.getItem('calendar_event_type_filters');
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch {
+        return { tasks: true, duties: true, vacations: true, news: true };
+      }
+    }
+    return { tasks: true, duties: true, vacations: true, news: true };
+  });
+
   const hubConfig = [
     { name: 'Регионы', icon: '🌍', route: '/hub/regions' },
     { name: 'СПб', icon: '🏙️', route: '/hub/spb' },
@@ -477,6 +490,7 @@ function Dashboard({ user, onLogout }) {
                 onDaySelect={handleDaySelect}
                 selectedDate={selectedDate}
                 events={calendarEvents}
+                eventTypeFilters={eventTypeFilters}
                 onMonthChange={(year, month) => {
                   console.log(`[Dashboard] Переключение на ${year}-${month}`);
                   // Сбрасываем выбранную дату на первый день нового месяца
@@ -495,6 +509,8 @@ function Dashboard({ user, onLogout }) {
                 events={dayEvents}
                 date={selectedDate}
                 onTaskClick={handleTaskClick}
+                eventTypeFilters={eventTypeFilters}
+                onEventTypeFiltersChange={setEventTypeFilters}
               />
             </div>
           </div>

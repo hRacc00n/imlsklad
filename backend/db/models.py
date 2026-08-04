@@ -369,7 +369,6 @@ class Duty(Base):
             'updated_at': (self.updated_at + local_tz).strftime('%Y-%m-%d %H:%M') if self.updated_at else '',
         }
 
-
 class Vacation(Base):
     """Модель отпуска (администрирование)"""
     __tablename__ = 'vacations'
@@ -392,16 +391,18 @@ class Vacation(Base):
             'updated_at': (self.updated_at + local_tz).strftime('%Y-%m-%d %H:%M') if self.updated_at else '',
         }
 
-
 class News(Base):
-    """Модель новости (отдельный хаб, отображается в календаре)"""
+    """Модель новости (отображается в календаре и хабе Новости)"""
     __tablename__ = 'news'
     
     id = Column(Integer, primary_key=True, index=True)
     title = Column(String(200), nullable=False)            # Заголовок новости
-    content = Column(Text, nullable=False)                 # Текст новости
+    content = Column(Text, nullable=False)                 # Текст новости (Markdown)
     author = Column(String(100), nullable=False)           # Автор
-    date = Column(DateTime, default=datetime.utcnow)       # Дата публикации (отображается в календаре)
+    event_date = Column(DateTime, nullable=False)          # Дата события (точка в календаре)
+    show_from = Column(DateTime, nullable=False)           # Дата начала показа в списке событий
+    show_to = Column(DateTime, nullable=False)             # Дата окончания показа в списке событий
+    is_hidden = Column(Boolean, default=False)             # Скрыта ли новость (только для админа)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
@@ -412,7 +413,10 @@ class News(Base):
             'title': self.title,
             'content': self.content,
             'author': self.author,
-            'date': (self.date + local_tz).strftime('%Y-%m-%d %H:%M') if self.date else '',
+            'event_date': (self.event_date + local_tz).strftime('%Y-%m-%d %H:%M') if self.event_date else '',
+            'show_from': (self.show_from + local_tz).strftime('%Y-%m-%d %H:%M') if self.show_from else '',
+            'show_to': (self.show_to + local_tz).strftime('%Y-%m-%d %H:%M') if self.show_to else '',
+            'is_hidden': self.is_hidden,
             'created_at': (self.created_at + local_tz).strftime('%Y-%m-%d %H:%M') if self.created_at else '',
             'updated_at': (self.updated_at + local_tz).strftime('%Y-%m-%d %H:%M') if self.updated_at else '',
         }

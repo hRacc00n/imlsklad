@@ -17,6 +17,11 @@ function SettingsPage() {
   const [saving, setSaving] = useState(false);
   const [activeTab, setActiveTab] = useState('notifications');
 
+  // Состояния для дежурств и отпусков пользователя
+  const [userDuties, setUserDuties] = useState([]);
+  const [userVacations, setUserVacations] = useState([]);
+  const [loadingDuties, setLoadingDuties] = useState(false);
+
   const [pushStatus, setPushStatus] = useState({
     supported: false,
     subscribed: false,
@@ -35,7 +40,52 @@ function SettingsPage() {
         setLoading(false);
       }
     };
+
+    // Загрузка дежурств и отпусков пользователя
+    const loadUserDutiesAndVacations = async () => {
+      if (!user?.name) return;
+      
+      setLoadingDuties(true);
+      try {
+        // Получаем всех пользователей
+        const usersResponse = await fetch('/api/users');
+        const users = await usersResponse.json();
+        const currentUser = users.find(u => u.name === user.name);
+        
+        if (!currentUser) {
+          setLoadingDuties(false);
+          return;
+        }
+        
+        const userId = currentUser.id;
+        
+        // Получаем все дежурства
+        const now = new Date();
+        const dutiesResponse = await fetch('/api/calendar/duties/list');
+        const allDuties = await dutiesResponse.json();
+        const filteredDuties = allDuties.filter(d => {
+          const endDate = new Date(d.date_end);
+          return d.user_id === userId && endDate >= now;
+        });
+        setUserDuties(filteredDuties);
+        
+        // Получаем все отпуска
+        const vacationsResponse = await fetch('/api/calendar/vacations/list');
+        const allVacations = await vacationsResponse.json();
+        const filteredVacations = allVacations.filter(v => {
+          const endDate = new Date(v.date_end);
+          return v.user_id === userId && endDate >= now;
+        });
+        setUserVacations(filteredVacations);
+      } catch (err) {
+        console.error('Ошибка загрузки дежурств и отпусков:', err);
+      } finally {
+        setLoadingDuties(false);
+      }
+    };
+
     loadSettings();
+    loadUserDutiesAndVacations();
   }, [user]);
 
   // Проверка статуса push-уведомлений
@@ -75,6 +125,19 @@ function SettingsPage() {
     } finally {
       setSaving(false);
     }
+  };
+
+  // Функция форматирования даты
+  const formatDate = (dateStr) => {
+    if (!dateStr) return '';
+    const date = new Date(dateStr);
+    return date.toLocaleDateString('ru-RU', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
   };
 
   const togglePush = async () => {
@@ -232,6 +295,52 @@ function SettingsPage() {
                   <span className="settings-item-label">Роль</span>
                   <span className="settings-item-description">{user?.role}</span>
                 </div>
+              </div>
+
+              {/* Дежурства пользователя */}
+              <div className="settings-section">
+                <h3 className="settings-section-title">🔄 Мои дежурства</h3>
+                {loadingDuties ? (
+                  <p className="settings-section-loading">Загрузка...</p>
+                ) : userDuties.length === 0 ? (
+                  <p className="settings-section-empty">Нет дежурств</p>
+                ) : (
+                  <div className="settings-section-list">
+                    {userDuties.map(duty => (
+                      <div key={duty.id} className="settings-section-item">
+                        <span className="settings-section-item-date">
+                          {formatDate(duty.date_start)} — {formatDate(duty.date_end)}
+                        </span>
+                        <span className={`settings-section-item-status ${new Date(duty.date_end) < new Date() ? '' : 'active-duty'}`}>
+                          {new Date(duty.date_end) < new Date() ? '✅ Завершено' : '🔄 Активно'}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Отпуска пользователя */}
+              <div className="settings-section">
+                <h3 className="settings-section-title">🏖️ Мои отпуска</h3>
+                {loadingDuties ? (
+                  <p className="settings-section-loading">Загрузка...</p>
+                ) : userVacations.length === 0 ? (
+                  <p className="settings-section-empty">Нет отпусков</p>
+                ) : (
+                  <div className="settings-section-list">
+                    {userVacations.map(vacation => (
+                      <div key={vacation.id} className="settings-section-item">
+                        <span className="settings-section-item-date">
+                          {formatDate(vacation.date_start)} — {formatDate(vacation.date_end)}
+                        </span>
+                        <span className={`settings-section-item-status ${new Date(vacation.date_end) < new Date() ? '' : 'active-vacation'}`}>
+                          {new Date(vacation.date_end) < new Date() ? '✅ Завершено' : '🏖️ Активно'}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
           )}

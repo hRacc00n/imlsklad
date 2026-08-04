@@ -27,6 +27,20 @@ function AdminLayout() {
               Роли
             </NavLink>
             <NavLink 
+              to="/admin/duties" 
+              className={({ isActive }) => isActive ? 'admin-nav-link active' : 'admin-nav-link'}
+            >
+              <span className="nav-icon">🔄</span>
+              Дежурства
+            </NavLink>
+            <NavLink 
+              to="/admin/vacations" 
+              className={({ isActive }) => isActive ? 'admin-nav-link active' : 'admin-nav-link'}
+            >
+              <span className="nav-icon">🏖️</span>
+              Отпуска
+            </NavLink>
+            <NavLink 
               to="/admin/regional-contractors" 
               className={({ isActive }) => isActive ? 'admin-nav-link active' : 'admin-nav-link'}
             >

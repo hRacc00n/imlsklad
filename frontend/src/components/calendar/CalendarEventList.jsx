@@ -1,17 +1,33 @@
 import { useState } from 'react';
 import './CalendarEventList.css';
 
-function CalendarEventList({ events = [], date, onTaskClick }) {
+function CalendarEventList({ events = [], date, onTaskClick, eventTypeFilters: externalFilters, onEventTypeFiltersChange }) {
   // Загружаем состояние из localStorage
   const [hideCompleted, setHideCompleted] = useState(() => {
     const saved = localStorage.getItem('calendar_hide_completed');
     return saved === 'true';
   });
+
+  // Фильтр типов событий
+  const eventTypeFilters = externalFilters || { tasks: true, duties: true, vacations: true, news: true };
+  const setEventTypeFilters = (newFilters) => {
+    if (onEventTypeFiltersChange) {
+      onEventTypeFiltersChange(newFilters);
+    }
+    localStorage.setItem('calendar_event_type_filters', JSON.stringify(newFilters));
+  };
+
   // Фильтруем только события для списка (_is_event)
   const filteredEvents = Array.isArray(events) 
     ? events.filter(e => {
         // Только _is_event
         if (e._is_event !== true) return false;
+        
+        // Фильтр по типу события
+        if (e.type === 'task' && !eventTypeFilters.tasks) return false;
+        if (e.type === 'duty' && !eventTypeFilters.duties) return false;
+        if (e.type === 'vacation' && !eventTypeFilters.vacations) return false;
+        if (e.type === 'news' && !eventTypeFilters.news) return false;
         
         // Если включен hideCompleted, скрываем выполненные задачи
         if (hideCompleted && e.is_completed === true) return false;
@@ -117,6 +133,61 @@ function CalendarEventList({ events = [], date, onTaskClick }) {
         <div className="calendar-event-list-header">
           <h3>📅 {formatDate(date)}</h3>
           <div className="calendar-event-list-controls">
+            {/* Фильтр типов событий */}
+            <div className="calendar-event-type-filters">
+              <label className={`filter-label filter-task ${eventTypeFilters.tasks ? 'active' : ''}`}>
+                <input
+                  type="checkbox"
+                  checked={eventTypeFilters.tasks}
+                  onChange={(e) => {
+                    const newFilters = { ...eventTypeFilters, tasks: e.target.checked };
+                    setEventTypeFilters(newFilters);
+                    localStorage.setItem('calendar_event_type_filters', JSON.stringify(newFilters));
+                  }}
+                />
+                <span className="filter-dot dot-task"></span>
+                <span className="filter-name">Задачи</span>
+              </label>
+              <label className={`filter-label filter-duty ${eventTypeFilters.duties ? 'active' : ''}`}>
+                <input
+                  type="checkbox"
+                  checked={eventTypeFilters.duties}
+                  onChange={(e) => {
+                    const newFilters = { ...eventTypeFilters, duties: e.target.checked };
+                    setEventTypeFilters(newFilters);
+                    localStorage.setItem('calendar_event_type_filters', JSON.stringify(newFilters));
+                  }}
+                />
+                <span className="filter-dot dot-duty"></span>
+                <span className="filter-name">Дежурства</span>
+              </label>
+              <label className={`filter-label filter-vacation ${eventTypeFilters.vacations ? 'active' : ''}`}>
+                <input
+                  type="checkbox"
+                  checked={eventTypeFilters.vacations}
+                  onChange={(e) => {
+                    const newFilters = { ...eventTypeFilters, vacations: e.target.checked };
+                    setEventTypeFilters(newFilters);
+                    localStorage.setItem('calendar_event_type_filters', JSON.stringify(newFilters));
+                  }}
+                />
+                <span className="filter-dot dot-vacation"></span>
+                <span className="filter-name">Отпуска</span>
+              </label>
+              <label className={`filter-label filter-news ${eventTypeFilters.news ? 'active' : ''}`}>
+                <input
+                  type="checkbox"
+                  checked={eventTypeFilters.news}
+                  onChange={(e) => {
+                    const newFilters = { ...eventTypeFilters, news: e.target.checked };
+                    setEventTypeFilters(newFilters);
+                    localStorage.setItem('calendar_event_type_filters', JSON.stringify(newFilters));
+                  }}
+                />
+                <span className="filter-dot dot-news"></span>
+                <span className="filter-name">Новости</span>
+              </label>
+            </div>
             <label className="calendar-event-list-hide-completed">
               <input
                 type="checkbox"
@@ -143,6 +214,61 @@ function CalendarEventList({ events = [], date, onTaskClick }) {
       <div className="calendar-event-list-header">
         <h3>📅 {formatDate(date)}</h3>
         <div className="calendar-event-list-controls">
+          {/* Фильтр типов событий */}
+          <div className="calendar-event-type-filters">
+            <label className={`filter-label filter-task ${eventTypeFilters.tasks ? 'active' : ''}`}>
+              <input
+                type="checkbox"
+                checked={eventTypeFilters.tasks}
+                onChange={(e) => {
+                  const newFilters = { ...eventTypeFilters, tasks: e.target.checked };
+                  setEventTypeFilters(newFilters);
+                  localStorage.setItem('calendar_event_type_filters', JSON.stringify(newFilters));
+                }}
+              />
+              <span className="filter-dot dot-task"></span>
+              <span className="filter-name">Задачи</span>
+            </label>
+            <label className={`filter-label filter-duty ${eventTypeFilters.duties ? 'active' : ''}`}>
+              <input
+                type="checkbox"
+                checked={eventTypeFilters.duties}
+                onChange={(e) => {
+                  const newFilters = { ...eventTypeFilters, duties: e.target.checked };
+                  setEventTypeFilters(newFilters);
+                  localStorage.setItem('calendar_event_type_filters', JSON.stringify(newFilters));
+                }}
+              />
+              <span className="filter-dot dot-duty"></span>
+              <span className="filter-name">Дежурства</span>
+            </label>
+            <label className={`filter-label filter-vacation ${eventTypeFilters.vacations ? 'active' : ''}`}>
+              <input
+                type="checkbox"
+                checked={eventTypeFilters.vacations}
+                onChange={(e) => {
+                  const newFilters = { ...eventTypeFilters, vacations: e.target.checked };
+                  setEventTypeFilters(newFilters);
+                  localStorage.setItem('calendar_event_type_filters', JSON.stringify(newFilters));
+                }}
+              />
+              <span className="filter-dot dot-vacation"></span>
+              <span className="filter-name">Отпуска</span>
+            </label>
+            <label className={`filter-label filter-news ${eventTypeFilters.news ? 'active' : ''}`}>
+              <input
+                type="checkbox"
+                checked={eventTypeFilters.news}
+                onChange={(e) => {
+                  const newFilters = { ...eventTypeFilters, news: e.target.checked };
+                  setEventTypeFilters(newFilters);
+                  localStorage.setItem('calendar_event_type_filters', JSON.stringify(newFilters));
+                }}
+              />
+              <span className="filter-dot dot-news"></span>
+              <span className="filter-name">Новости</span>
+            </label>
+          </div>
           <label className="calendar-event-list-hide-completed">
             <input
               type="checkbox"
@@ -210,14 +336,32 @@ function CalendarEventList({ events = [], date, onTaskClick }) {
                   ) : null}
                 </div>
               )}
-              {event.type === 'duty' && event.user_name && (
+              {event.type === 'duty' && (
                 <div className="calendar-event-item-user">
-                  👤 {event.user_name}
+                  👤 {event.user_name || 'Неизвестно'}
+                  {event.date_end && event.date !== event.date_end && (
+                    <span className="calendar-event-item-period">
+                      {' '}до {new Date(event.date_end).toLocaleDateString('ru-RU', {
+                        day: '2-digit',
+                        month: '2-digit',
+                        year: 'numeric'
+                      })}
+                    </span>
+                  )}
                 </div>
               )}
-              {event.type === 'vacation' && event.user_name && (
+              {event.type === 'vacation' && (
                 <div className="calendar-event-item-user">
-                  👤 {event.user_name}
+                  👤 {event.user_name || 'Неизвестно'}
+                  {event.date_end && event.date !== event.date_end && (
+                    <span className="calendar-event-item-period">
+                      {' '}до {new Date(event.date_end).toLocaleDateString('ru-RU', {
+                        day: '2-digit',
+                        month: '2-digit',
+                        year: 'numeric'
+                      })}
+                    </span>
+                  )}
                 </div>
               )}
               {event.type === 'news' && event.content && (
