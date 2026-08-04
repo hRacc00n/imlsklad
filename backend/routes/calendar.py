@@ -414,8 +414,12 @@ def register_calendar_routes(app):
             return jsonify({'success': False, 'message': 'Только администратор может создавать дежурства'}), 403
         
         try:
+            # Парсим и нормализуем к началу дня
             date_start_parsed = datetime.fromisoformat(date_start.replace('T', ' '))
+            date_start_parsed = date_start_parsed.replace(hour=0, minute=0, second=0, microsecond=0)
+            
             date_end_parsed = datetime.fromisoformat(date_end.replace('T', ' '))
+            date_end_parsed = date_end_parsed.replace(hour=0, minute=0, second=0, microsecond=0)
         except:
             return jsonify({'success': False, 'message': 'Неверный формат даты'}), 400
         
@@ -487,7 +491,10 @@ def register_calendar_routes(app):
         
         try:
             date_start_parsed = datetime.fromisoformat(date_start.replace('T', ' '))
+            date_start_parsed = date_start_parsed.replace(hour=0, minute=0, second=0, microsecond=0)
+            
             date_end_parsed = datetime.fromisoformat(date_end.replace('T', ' '))
+            date_end_parsed = date_end_parsed.replace(hour=0, minute=0, second=0, microsecond=0)
         except:
             return jsonify({'success': False, 'message': 'Неверный формат даты'}), 400
         

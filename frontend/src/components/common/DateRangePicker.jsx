@@ -12,18 +12,34 @@ function DateRangePicker({
   disabled = false 
 }) {
   const [showPicker, setShowPicker] = useState(false);
+  const normalizeDate = (date) => {
+    if (!date) return new Date();
+    const d = new Date(date);
+    d.setHours(0, 0, 0, 0);
+    return d;
+  };
+
   const [selection, setSelection] = useState({
-    startDate: value?.startDate || new Date(),
-    endDate: value?.endDate || new Date(),
+    startDate: value?.startDate ? normalizeDate(value.startDate) : normalizeDate(new Date()),
+    endDate: value?.endDate ? normalizeDate(value.endDate) : normalizeDate(new Date()),
     key: 'selection',
   });
 
   const handleSelect = (ranges) => {
     const { selection } = ranges;
     setSelection(selection);
+    
+    // Нормализуем даты к началу дня в локальном времени
+    const normalizeDate = (date) => {
+      if (!date) return null;
+      const d = new Date(date);
+      d.setHours(0, 0, 0, 0);
+      return d;
+    };
+    
     onChange({
-      startDate: selection.startDate,
-      endDate: selection.endDate,
+      startDate: normalizeDate(selection.startDate),
+      endDate: normalizeDate(selection.endDate),
     });
   };
 

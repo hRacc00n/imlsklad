@@ -178,10 +178,22 @@ function DutiesPage({ user }) {
                     endDate: formData.date_end ? new Date(formData.date_end) : null,
                   }}
                   onChange={({ startDate, endDate }) => {
+                    const normalizeToUTCDate = (date) => {
+                      if (!date) return '';
+                      // Создаем дату в UTC с 00:00:00
+                      const d = new Date(Date.UTC(
+                        date.getFullYear(),
+                        date.getMonth(),
+                        date.getDate(),
+                        0, 0, 0, 0
+                      ));
+                      return d.toISOString();
+                    };
+                    
                     setFormData({ 
                       ...formData, 
-                      date_start: startDate ? startDate.toISOString() : '',
-                      date_end: endDate ? endDate.toISOString() : '',
+                      date_start: normalizeToUTCDate(startDate),
+                      date_end: normalizeToUTCDate(endDate),
                     });
                   }}
                 />

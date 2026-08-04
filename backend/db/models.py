@@ -363,10 +363,10 @@ class Duty(Base):
         return {
             'id': self.id,
             'user_id': self.user_id,
-            'date_start': (self.date_start + local_tz).strftime('%Y-%m-%d %H:%M') if self.date_start else '',
-            'date_end': (self.date_end + local_tz).strftime('%Y-%m-%d %H:%M') if self.date_end else '',
-            'created_at': (self.created_at + local_tz).strftime('%Y-%m-%d %H:%M') if self.created_at else '',
-            'updated_at': (self.updated_at + local_tz).strftime('%Y-%m-%d %H:%M') if self.updated_at else '',
+            'date_start': self.date_start.strftime('%Y-%m-%d %H:%M') if self.date_start else '',
+            'date_end': self.date_end.strftime('%Y-%m-%d %H:%M') if self.date_end else '',
+            'created_at': self.created_at.strftime('%Y-%m-%d %H:%M') if self.created_at else '',
+            'updated_at': self.updated_at.strftime('%Y-%m-%d %H:%M') if self.updated_at else '',
         }
 
 class Vacation(Base):
@@ -385,10 +385,10 @@ class Vacation(Base):
         return {
             'id': self.id,
             'user_id': self.user_id,
-            'date_start': (self.date_start + local_tz).strftime('%Y-%m-%d %H:%M') if self.date_start else '',
-            'date_end': (self.date_end + local_tz).strftime('%Y-%m-%d %H:%M') if self.date_end else '',
-            'created_at': (self.created_at + local_tz).strftime('%Y-%m-%d %H:%M') if self.created_at else '',
-            'updated_at': (self.updated_at + local_tz).strftime('%Y-%m-%d %H:%M') if self.updated_at else '',
+            'date_start': self.date_start.strftime('%Y-%m-%d %H:%M') if self.date_start else '',
+            'date_end': self.date_end.strftime('%Y-%m-%d %H:%M') if self.date_end else '',
+            'created_at': self.created_at.strftime('%Y-%m-%d %H:%M') if self.created_at else '',
+            'updated_at': self.updated_at.strftime('%Y-%m-%d %H:%M') if self.updated_at else '',
         }
 
 class News(Base):
@@ -413,10 +413,10 @@ class News(Base):
             'title': self.title,
             'content': self.content,
             'author': self.author,
-            'event_date': (self.event_date + local_tz).strftime('%Y-%m-%d %H:%M') if self.event_date else '',
-            'show_from': (self.show_from + local_tz).strftime('%Y-%m-%d %H:%M') if self.show_from else '',
-            'show_to': (self.show_to + local_tz).strftime('%Y-%m-%d %H:%M') if self.show_to else '',
+            'event_date': self.event_date.strftime('%Y-%m-%d %H:%M') if self.event_date else '',
+            'show_from': self.show_from.strftime('%Y-%m-%d %H:%M') if self.show_from else '',
+            'show_to': self.show_to.strftime('%Y-%m-%d %H:%M') if self.show_to else '',
             'is_hidden': self.is_hidden,
-            'created_at': (self.created_at + local_tz).strftime('%Y-%m-%d %H:%M') if self.created_at else '',
-            'updated_at': (self.updated_at + local_tz).strftime('%Y-%m-%d %H:%M') if self.updated_at else '',
+            'created_at': self.created_at.strftime('%Y-%m-%d %H:%M') if self.created_at else '',
+            'updated_at': self.updated_at.strftime('%Y-%m-%d %H:%M') if self.updated_at else '',
         }
