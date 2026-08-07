@@ -1,3 +1,4 @@
+import ReactMarkdown from 'react-markdown';
 import './PersonalTaskCard.css';
 
 function PersonalTaskCard({ task, currentUser, onClick, onComplete, onDelete }) {
@@ -118,7 +119,9 @@ function PersonalTaskCard({ task, currentUser, onClick, onComplete, onDelete }) 
         </div>
 
         {description && (
-          <p className="personal-task-description">{description}</p>
+          <div className="personal-task-description">
+            <ReactMarkdown>{description}</ReactMarkdown>
+          </div>
         )}
 
         <div className="personal-task-footer">

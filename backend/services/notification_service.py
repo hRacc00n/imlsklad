@@ -355,3 +355,64 @@ class NotificationService:
         
         print(f"[Notification] 🔔=== END send_personal_task_notification ===")
         sys.stdout.flush()
+
+    @staticmethod
+    def send_news_notification(news_id, title, content, author, event_date, show_from, show_to):
+        """
+        Отправить уведомления о создании новости всем пользователям (кроме автора)
+        
+        Args:
+            news_id: ID новости
+            title: заголовок новости
+            content: текст новости
+            author: автор новости
+            event_date: дата события
+            show_from: дата начала показа
+            show_to: дата окончания показа
+        """
+        from utils.file_loader import load_json
+        
+        print(f"[Notification] 🔔=== START send_news_notification ===")
+        print(f"[Notification] news_id={news_id}, title={title}, author={author}")
+        sys.stdout.flush()
+        
+        try:
+            users = load_json('users.json')
+            
+            notification_title = f'📰 Новая новость'
+            notification_text = f'{author} создал(а) новость: "{title}"'
+            link = f'/news'
+            
+            sent_count = 0
+            
+            for user in users:
+                user_name = user['name']
+                
+                # Пропускаем автора
+                if user_name == author:
+                    continue
+                
+                # Проверяем настройки пользователя
+                settings = user.get('settings', {})
+                if settings.get('notifications_enabled') == False:
+                    continue
+                
+                print(f"[Notification] 📨 Отправка уведомления пользователю: {user_name}")
+                NotificationService.send(
+                    user_name=user_name,
+                    notification_type='news_created',
+                    title=notification_title,
+                    text=notification_text,
+                    link=link,
+                    task_id=news_id
+                )
+                sent_count += 1
+            
+            print(f"[Notification] ✅ Отправлено уведомлений о новости: {sent_count}")
+            
+        except Exception as e:
+            print(f"[Notification] ❌ Ошибка в send_news_notification: {e}")
+            traceback.print_exc()
+        
+        print(f"[Notification] 🔔=== END send_news_notification ===")
+        sys.stdout.flush()

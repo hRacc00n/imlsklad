@@ -20,7 +20,7 @@ import {
 } from './pages';
 import Layout from './components/Layout';
 import AdminLayout from './components/AdminLayout';
-import { RegionalContractorsPage } from './pages';
+import { RegionalContractorsPage, NewsHub } from './pages';
 import TaskModal from './components/modals/TaskModal';
 import PersonalTaskModal from './components/personal-tasks/PersonalTaskModal';
 import GalleryHub from './pages/GalleryHub';
@@ -96,6 +96,7 @@ function App() {
           <Route path="/" element={<Dashboard user={user} onLogout={logout} />} />
 
           <Route path="/settings" element={<SettingsPage />} />
+          <Route path="/news" element={<NewsHub />} />
           
           {/* Хабы */}
           <Route path="/hub/arrivals" element={<ArrivalsHub />} />

@@ -96,12 +96,18 @@ function NotificationsBell({ userName }) {
         fetch(`/api/personal-tasks/${notification.task_id}`)
           .then(r => r.json())
           .then(task => {
-            // Для личных задач используем тип 'personal_task'
-            // Но нам нужно открыть PersonalTaskModal
-            // Для этого передаём специальный тип
             openModal(task, 'personal_task');
           })
           .catch(err => console.error('Ошибка загрузки личной задачи:', err));
+      } else if (notification.type === 'news_created') {
+        // Новость
+        fetch(`/api/calendar/news/${notification.task_id}`)
+          .then(r => r.json())
+          .then(news => {
+            // Открываем модальное окно с новостью
+            openModal(news, 'news');
+          })
+          .catch(err => console.error('Ошибка загрузки новости:', err));
       } else {
         // Обычная задача из хаба
         fetch(`/api/tasks/${notification.task_id}`)

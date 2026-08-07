@@ -122,8 +122,10 @@ function CalendarEventList({ events = [], date, onTaskClick, eventTypeFilters: e
   };
 
   const handleEventClick = (event) => {
-    if (event.type === 'task' && onTaskClick) {
-      onTaskClick(event.id);
+    // Для задач и новостей - передаём ID
+    if ((event.type === 'task' || event.type === 'news') && onTaskClick) {
+      // Передаём ID и тип события
+      onTaskClick(event.id, event.type);
     }
   };
 
@@ -289,7 +291,7 @@ function CalendarEventList({ events = [], date, onTaskClick, eventTypeFilters: e
         {filteredEvents.map((event, index) => (
           <div
             key={`${event.id}-${index}`}
-            className={`calendar-event-item ${getEventColor(event.type)} ${event.type === 'task' ? 'clickable' : ''}`}
+            className={`calendar-event-item ${getEventColor(event.type)} ${(event.type === 'task' || event.type === 'news') ? 'clickable' : ''}`}
             onClick={() => handleEventClick(event)}
           >
             <div className="calendar-event-item-icon">

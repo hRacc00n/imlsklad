@@ -631,6 +631,21 @@ def register_calendar_routes(app):
             db.add(new_news)
             db.commit()
             db.refresh(new_news)
+
+            # Отправляем уведомления о создании новости
+            try:
+                from services.notification_service import NotificationService
+                NotificationService.send_news_notification(
+                    news_id=new_news.id,
+                    title=title,
+                    content=content,
+                    author=author,
+                    event_date=event_date_parsed,
+                    show_from=show_from_parsed,
+                    show_to=show_to_parsed
+                )
+            except Exception as e:
+                print(f"[News] ❌ Ошибка отправки уведомлений: {e}")
             
             return jsonify({
                 'success': True,

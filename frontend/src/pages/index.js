@@ -14,3 +14,4 @@ export { default as SpbHub } from './SpbHub';
 export { default as InvoicesHub } from './InvoicesHub';
 export { default as AirTrafficHub } from './AirTrafficHub';
 export { default as TasksHub } from './TasksHub';
+export { default as NewsHub } from './NewsHub';

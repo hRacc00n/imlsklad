@@ -71,12 +71,24 @@ function Dashboard({ user, onLogout }) {
     loadActiveTasks(page);
   };
 
-  const handleTaskClick = (taskOrTaskId) => {
+  const handleTaskClick = (taskOrTaskId, eventType) => {
     // Если передан ID (число или строка с числом) — значит это клик из календаря
     if (typeof taskOrTaskId === 'number' || (typeof taskOrTaskId === 'string' && !isNaN(taskOrTaskId))) {
-      const taskId = Number(taskOrTaskId);
-      // Загружаем задачу и открываем модалку
-      fetch(`/api/personal-tasks/${taskId}`)
+      const itemId = Number(taskOrTaskId);
+      
+      // Если это новость
+      if (eventType === 'news') {
+        fetch(`/api/calendar/news/${itemId}`)
+          .then(r => r.json())
+          .then(news => {
+            openModal(news, 'news');
+          })
+          .catch(err => console.error('Ошибка загрузки новости:', err));
+        return;
+      }
+      
+      // Если это личная задача
+      fetch(`/api/personal-tasks/${itemId}`)
         .then(r => r.json())
         .then(task => {
           openModal(task, 'personal_task');

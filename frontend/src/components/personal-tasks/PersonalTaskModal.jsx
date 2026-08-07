@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useModal } from '../../contexts/ModalContext';
 import { useAuth } from '../../contexts/AuthContext';
+import ReactMarkdown from 'react-markdown';
 import TaskItemList from './TaskItemList';
 import FileList from '../common/FileList';
 import './PersonalTaskModal.css';
@@ -271,7 +272,7 @@ function PersonalTaskModal() {
 
           {task.description && (
             <div className="personal-task-modal-description">
-              <p>{task.description}</p>
+              <ReactMarkdown>{task.description}</ReactMarkdown>
             </div>
           )}
 

@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useModal } from '../../contexts/ModalContext';
 import { useAuth } from '../../contexts/AuthContext';
+import ReactMarkdown from 'react-markdown';
 import ActionButton from '../common/ActionButton';
 import ModalCloseButton from '../common/ModalCloseButton';
 import ImageGallery from '../common/ImageGallery';
@@ -64,6 +65,11 @@ function TaskModal({ onPhotoUploadStart, onPhotoUploadComplete }) {
   const availableActions = getAvailableActions(user, task);
 
   const getTitle = () => {
+    // Проверяем, является ли это новостью
+    if (taskType === 'news' || task?.type === 'news') {
+      return `📰 ${task?.title || 'Новость'}`;
+    }
+    
     // Проверяем, является ли задача счетом
     const isInvoice = taskType === 'invoice' || task?.type === 'invoices';
     
@@ -230,6 +236,32 @@ function TaskModal({ onPhotoUploadStart, onPhotoUploadComplete }) {
   if (!isOpen || !task) return null;
 
   const renderTypeSpecificFields = () => {
+    // Проверяем, является ли это новостью
+    if (taskType === 'news' || task?.type === 'news') {
+      return (
+        <>
+          <div className="modal-field">
+            <label>📅 Дата события</label>
+            <span>{task?.event_date || '—'}</span>
+          </div>
+          <div className="modal-field">
+            <label>📅 Период показа</label>
+            <span>{task?.show_from || '—'} — {task?.show_to || '—'}</span>
+          </div>
+          <div className="modal-field">
+            <label>✍️ Автор</label>
+            <span>{task?.author || '—'}</span>
+          </div>
+          <div className="modal-field">
+            <label>📄 Текст новости</label>
+            <div className="modal-comment-box">
+              <ReactMarkdown>{task?.content || '—'}</ReactMarkdown>
+            </div>
+          </div>
+        </>
+      );
+    }
+
     // Проверяем, является ли задача отгрузкой (Регионы или СПб)
     const isOrder = taskType === 'region' || taskType === 'spb' || 
                     task?.type === 'regions' || task?.type === 'spb';

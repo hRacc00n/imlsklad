@@ -15,6 +15,7 @@ function PersonalTaskFormModal({ isOpen, onClose, onSubmit, currentUser, isSubmi
   const [dueDate, setDueDate] = useState('');
   const [showOnlyOnDay, setShowOnlyOnDay] = useState(false);
   const [priority, setPriority] = useState('medium');
+  const [showHelp, setShowHelp] = useState(false);
 
   // Загрузка списка пользователей
   useEffect(() => {
@@ -113,11 +114,32 @@ function PersonalTaskFormModal({ isOpen, onClose, onSubmit, currentUser, isSubmi
           </div>
 
           <div className="personal-task-form-field">
-            <label>Описание</label>
+            <label>
+              Описание
+              <button
+                type="button"
+                className="personal-task-help-btn"
+                onClick={() => setShowHelp(!showHelp)}
+              >
+                ?
+              </button>
+            </label>
+            {showHelp && (
+              <div className="personal-task-help-box">
+                <p><strong>Markdown — простой язык разметки:</strong></p>
+                <ul>
+                  <li><code>**жирный текст**</code> → <strong>жирный текст</strong></li>
+                  <li><code>*курсив*</code> → <em>курсив</em></li>
+                  <li><code># Заголовок</code> → заголовок</li>
+                  <li><code>- пункт списка</code> → список</li>
+                  <li>Пустые строки создают новые абзацы</li>
+                </ul>
+              </div>
+            )}
             <textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              placeholder="Введите описание (необязательно)"
+              placeholder="Введите описание (поддерживается Markdown)"
               rows={3}
               disabled={isSubmitting}
             />
