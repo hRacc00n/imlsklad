@@ -14,6 +14,14 @@
   align-items: center;
   margin-bottom: 10px;
   padding: 0 2px;
+  position: relative;
+}
+
+.calendar-header-right {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  position: relative;
 }
 
 .calendar-month {
@@ -233,4 +241,88 @@
     gap: 1px;
     bottom: 2px;
   }
+
+  .calendar-add-btn {
+    width: 24px;
+    height: 24px;
+    font-size: 15px;
+  }
+
+  .calendar-create-item {
+    font-size: 13px;
+    padding: 8px 12px;
+  }
+}
+
+/* === Кнопка "+" === */
+.calendar-add-btn {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  border: none;
+  background: #667eea;
+  color: white;
+  font-size: 18px;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+  line-height: 1;
+  padding: 0;
+}
+
+.calendar-add-btn:hover {
+  background: #5a6fd6;
+  transform: scale(1.05);
+}
+
+/* === Выпадающее меню === */
+.calendar-create-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  background: #ffffff;
+  border-radius: 10px;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15);
+  border: 1px solid #e2e8f0;
+  min-width: 150px;
+  overflow: hidden;
+  z-index: 100;
+  animation: menuSlideDown 0.2s ease;
+}
+
+@keyframes menuSlideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.calendar-create-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 10px 16px;
+  border: none;
+  background: transparent;
+  font-size: 14px;
+  color: #1a2332;
+  cursor: pointer;
+  transition: background 0.15s;
+  text-align: left;
+}
+
+.calendar-create-item:hover {
+  background: #f1f5f9;
+}
+
+.calendar-create-item:not(:last-child) {
+  border-bottom: 1px solid #f1f5f9;
 }

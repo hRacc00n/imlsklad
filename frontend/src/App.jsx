@@ -23,15 +23,26 @@ import AdminLayout from './components/AdminLayout';
 import { RegionalContractorsPage, NewsHub } from './pages';
 import TaskModal from './components/modals/TaskModal';
 import PersonalTaskModal from './components/personal-tasks/PersonalTaskModal';
+import PersonalTaskFormModal from './components/personal-tasks/PersonalTaskFormModal';
 import GalleryHub from './pages/GalleryHub';
 import DutiesPage from './pages/DutiesPage';
 import VacationsPage from './pages/VacationsPage';
+import NewsFormModal from './components/news/NewsFormModal';
 import './App.css';
 
 function App() {
   const { user, login, logout } = useAuth();
   const location = useLocation();
-  const { openModal, taskType } = useModal();
+  const { 
+    openModal, 
+    taskType, 
+    isTaskFormOpen, 
+    closeTaskForm, 
+    taskFormCallback,
+    isNewsFormOpen,
+    closeNewsForm,
+    newsFormCallback,
+  } = useModal();
 
   // Обработка task_id из URL (при клике на push-уведомление)
   useEffect(() => {
@@ -84,6 +95,62 @@ function App() {
     return () => window.removeEventListener('open-task-from-push', handleOpenTask);
   }, [openModal]);
 
+  // Обработчик создания личной задачи из глобальной формы
+  const handleCreatePersonalTask = async (values, files) => {
+    if (!user?.name) return;
+    
+    try {
+      const response = await fetch('/api/personal-tasks', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: values.title,
+          description: values.description || '',
+          author: user.name,
+          assigned_to: values.assigned_to || [],
+          items: values.items || [],
+          files: files || [],
+          due_date: values.due_date || null,
+          show_only_on_day: values.show_only_on_day || false,
+          priority: values.priority || 'medium',
+        }),
+      });
+      const data = await response.json();
+      if (data.success) {
+        closeTaskForm();
+        // Если есть callback — вызываем
+        if (taskFormCallback) taskFormCallback();
+      } else {
+        alert(data.message || 'Ошибка при создании задачи');
+      }
+    } catch (err) {
+      console.error('Ошибка создания задачи:', err);
+      alert('Ошибка при создании задачи');
+    }
+  };
+
+  const handleCreateNews = async (values) => {
+    if (!user?.name) return;
+    
+    try {
+      const response = await fetch('/api/calendar/news', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(values),
+      });
+      const data = await response.json();
+      if (data.success) {
+        closeNewsForm();
+        if (newsFormCallback) newsFormCallback();
+      } else {
+        alert(data.message || 'Ошибка при создании новости');
+      }
+    } catch (err) {
+      console.error('Ошибка создания новости:', err);
+      alert('Ошибка при создании новости');
+    }
+  };
+
   if (!user) {
     return <Login onLogin={login} />;
   }
@@ -123,6 +190,22 @@ function App() {
         </Route>
       </Routes>
       {taskType === 'personal_task' ? <PersonalTaskModal /> : <TaskModal />}
+      
+      {/* Глобальная форма создания личной задачи */}
+      <PersonalTaskFormModal
+        isOpen={isTaskFormOpen}
+        onClose={closeTaskForm}
+        onSubmit={handleCreatePersonalTask}
+        currentUser={user}
+      />
+
+      {/* Глобальная форма создания новости */}
+      <NewsFormModal
+        isOpen={isNewsFormOpen}
+        onClose={closeNewsForm}
+        onSubmit={handleCreateNews}
+        currentUser={user}
+      />
     </AppProvider>
   );
 }

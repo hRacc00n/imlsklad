@@ -4,6 +4,7 @@ from datetime import datetime, timedelta
 from db.database import get_db
 from db.models import PersonalTask, TaskItem, Duty, Vacation, News
 from utils.file_loader import load_json
+from routes.sse import sse_publisher
 
 def register_calendar_routes(app):
     
@@ -631,6 +632,12 @@ def register_calendar_routes(app):
             db.add(new_news)
             db.commit()
             db.refresh(new_news)
+
+            # Отправляем SSE событие о создании новости
+            sse_publisher.publish('news_created', {
+                'news_id': new_news.id,
+                'news': new_news.to_dict()
+            })
 
             # Отправляем уведомления о создании новости
             try:

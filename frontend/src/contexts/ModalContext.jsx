@@ -8,6 +8,14 @@ export function ModalProvider({ children }) {
   const [taskType, setTaskType] = useState(null);
   const [actions, setActions] = useState({});
 
+  // Состояние для формы создания личной задачи
+  const [isTaskFormOpen, setIsTaskFormOpen] = useState(false);
+  const [taskFormCallback, setTaskFormCallback] = useState(null);
+
+  // Состояние для формы создания новости
+  const [isNewsFormOpen, setIsNewsFormOpen] = useState(false);
+  const [newsFormCallback, setNewsFormCallback] = useState(null);
+
   const openModal = (taskData, type, modalActions = {}) => {
     setTask(taskData);
     setTaskType(type);
@@ -26,6 +34,27 @@ export function ModalProvider({ children }) {
     setTask(updatedTask);
   };
 
+  // Методы для формы создания личной задачи
+  const openTaskForm = (callback = null) => {
+    setTaskFormCallback(() => callback);
+    setIsTaskFormOpen(true);
+  };
+
+  const closeTaskForm = () => {
+    setIsTaskFormOpen(false);
+    setTaskFormCallback(null);
+  };
+
+  const openNewsForm = (callback = null) => {
+    setNewsFormCallback(() => callback);
+    setIsNewsFormOpen(true);
+  };
+
+  const closeNewsForm = () => {
+    setIsNewsFormOpen(false);
+    setNewsFormCallback(null);
+  };
+
   return (
     <ModalContext.Provider value={{ 
       isOpen, 
@@ -35,6 +64,15 @@ export function ModalProvider({ children }) {
       openModal, 
       closeModal,
       updateTask,
+      // Форма создания личной задачи
+      isTaskFormOpen,
+      openTaskForm,
+      closeTaskForm,
+      isNewsFormOpen,
+      openNewsForm,
+      closeNewsForm,
+      newsFormCallback,
+      taskFormCallback,
     }}>
       {children}
     </ModalContext.Provider>

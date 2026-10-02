@@ -1,10 +1,19 @@
 import { useState, useEffect } from 'react';
 import './Calendar.css';
 
-function Calendar({ onDaySelect, selectedDate, events = [], onMonthChange, eventTypeFilters = { tasks: true, duties: true, vacations: true, news: true } }) {
+function Calendar({ 
+  onDaySelect, 
+  selectedDate, 
+  events = [], 
+  onMonthChange, 
+  eventTypeFilters = { tasks: true, duties: true, vacations: true, news: true },
+  onCreateTask,
+  onCreateNews
+}) {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [days, setDays] = useState([]);
   const [monthName, setMonthName] = useState('');
+  const [showCreateMenu, setShowCreateMenu] = useState(false);
 
   // Генерация дней месяца
   useEffect(() => {
@@ -124,12 +133,42 @@ function Calendar({ onDaySelect, selectedDate, events = [], onMonthChange, event
     }
   };
 
+  // Обработчики для кнопки "+"
+  const handleCreateTask = () => {
+    setShowCreateMenu(false);
+    if (onCreateTask) onCreateTask();
+  };
+
+  const handleCreateNews = () => {
+    setShowCreateMenu(false);
+    if (onCreateNews) onCreateNews();
+  };
+
   return (
     <div className="calendar">
       <div className="calendar-header">
         <button className="calendar-nav-btn" onClick={prevMonth}>‹</button>
         <span className="calendar-month">{monthName} {currentDate.getFullYear()}</span>
-        <button className="calendar-nav-btn" onClick={nextMonth}>›</button>
+        <div className="calendar-header-right">
+          <button 
+            className="calendar-add-btn" 
+            onClick={() => setShowCreateMenu(!showCreateMenu)}
+            title="Создать"
+          >
+            +
+          </button>
+          {showCreateMenu && (
+            <div className="calendar-create-menu">
+              <button className="calendar-create-item" onClick={handleCreateTask}>
+                📋 Задача
+              </button>
+              <button className="calendar-create-item" onClick={handleCreateNews}>
+                📰 Новость
+              </button>
+            </div>
+          )}
+          <button className="calendar-nav-btn" onClick={nextMonth}>›</button>
+        </div>
       </div>
 
       <div className="calendar-grid">

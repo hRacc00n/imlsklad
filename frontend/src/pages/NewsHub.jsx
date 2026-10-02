@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useModal } from '../contexts/ModalContext';
 import ReactMarkdown from 'react-markdown';
-import DateRangePicker from '../components/common/DateRangePicker';
+import NewsFormModal from '../components/news/NewsFormModal';
 import './NewsHub.css';
 
 function NewsHub() {
@@ -13,16 +13,7 @@ function NewsHub() {
   const [news, setNews] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
-  const [formData, setFormData] = useState({
-    title: '',
-    content: '',
-    event_date: '',
-    show_from: '',
-    show_to: '',
-  });
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [error, setError] = useState('');
-  const [showHelp, setShowHelp] = useState(false);
 
   const isAdmin = user?.role === 'admin';
 
@@ -44,47 +35,23 @@ function NewsHub() {
 
   const handleBack = () => navigate('/');
 
-  const handleCreate = async (e) => {
-    e.preventDefault();
-    setError('');
-
-    if (!formData.title.trim()) {
-      setError('Укажите заголовок новости');
-      return;
-    }
-    if (!formData.content.trim()) {
-      setError('Укажите текст новости');
-      return;
-    }
-    if (!formData.event_date) {
-      setError('Укажите дату события');
-      return;
-    }
-    if (!formData.show_from || !formData.show_to) {
-      setError('Укажите период показа');
-      return;
-    }
-
+  const handleCreate = async (values) => {
     setIsSubmitting(true);
     try {
       const response = await fetch('/api/calendar/news', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          ...formData,
-          author: user?.name,
-        }),
+        body: JSON.stringify(values),
       });
       const data = await response.json();
       if (data.success) {
         setShowCreateModal(false);
-        setFormData({ title: '', content: '', event_date: '', show_from: '', show_to: '' });
         loadNews();
       } else {
-        setError(data.message || 'Ошибка при создании новости');
+        alert(data.message || 'Ошибка при создании новости');
       }
     } catch (err) {
-      setError('Ошибка при создании новости');
+      alert('Ошибка при создании новости');
     } finally {
       setIsSubmitting(false);
     }
@@ -128,7 +95,6 @@ function NewsHub() {
     }
   };
 
-  // Функция для открытия модального окна с новостью
   const handleNewsClick = (newsItem) => {
     openModal(newsItem, 'news');
   };
@@ -148,17 +114,6 @@ function NewsHub() {
     const showFrom = new Date(newsItem.show_from);
     const showTo = new Date(newsItem.show_to);
     return today >= showFrom && today <= showTo && !newsItem.is_hidden;
-  };
-
-  const normalizeDateForInput = (dateStr) => {
-    if (!dateStr) return '';
-    const date = new Date(dateStr);
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
-    const hours = String(date.getHours()).padStart(2, '0');
-    const minutes = String(date.getMinutes()).padStart(2, '0');
-    return `${year}-${month}-${day}T${hours}:${minutes}`;
   };
 
   return (
@@ -213,9 +168,7 @@ function NewsHub() {
 
               <div className="news-card-content">
                 {item.content.length > 200 ? (
-                  <>
-                    <ReactMarkdown>{item.content.slice(0, 200) + '...'}</ReactMarkdown>
-                  </>
+                  <ReactMarkdown>{item.content.slice(0, 200) + '...'}</ReactMarkdown>
                 ) : (
                   <ReactMarkdown>{item.content}</ReactMarkdown>
                 )}
@@ -245,115 +198,13 @@ function NewsHub() {
       )}
 
       {/* Модалка создания новости */}
-      {showCreateModal && (
-        <div className="news-modal-overlay" onClick={() => setShowCreateModal(false)}>
-          <div className="news-modal-content" onClick={e => e.stopPropagation()}>
-            <button className="news-modal-close" onClick={() => setShowCreateModal(false)}>✕</button>
-            <h2>📰 Создать новость</h2>
-
-            <form onSubmit={handleCreate}>
-              <div className="news-form-group">
-                <label>Заголовок *</label>
-                <input
-                  type="text"
-                  value={formData.title}
-                  onChange={e => setFormData({ ...formData, title: e.target.value })}
-                  placeholder="Введите заголовок новости"
-                  required
-                  disabled={isSubmitting}
-                />
-              </div>
-
-              <div className="news-form-group">
-                <label>
-                  Текст новости *
-                  <button
-                    type="button"
-                    className="news-help-btn"
-                    onClick={() => setShowHelp(!showHelp)}
-                  >
-                    ?
-                  </button>
-                </label>
-                {showHelp && (
-                  <div className="news-help-box">
-                    <p><strong>Markdown — простой язык разметки:</strong></p>
-                    <ul>
-                      <li><code>**жирный текст**</code> → <strong>жирный текст</strong></li>
-                      <li><code>*курсив*</code> → <em>курсив</em></li>
-                      <li><code># Заголовок</code> → заголовок</li>
-                      <li><code>- пункт списка</code> → список</li>
-                      <li>Пустые строки создают новые абзацы</li>
-                    </ul>
-                  </div>
-                )}
-                <textarea
-                  value={formData.content}
-                  onChange={e => setFormData({ ...formData, content: e.target.value })}
-                  placeholder="Введите текст новости (поддерживается Markdown)"
-                  rows={6}
-                  required
-                  disabled={isSubmitting}
-                />
-              </div>
-
-              <div className="news-form-group">
-                <label>Дата события *</label>
-                <input
-                  type="datetime-local"
-                  value={normalizeDateForInput(formData.event_date)}
-                  onChange={e => setFormData({ ...formData, event_date: e.target.value })}
-                  required
-                  disabled={isSubmitting}
-                />
-              </div>
-
-              <div className="news-form-row">
-                <div className="news-form-group">
-                  <label>Показывать с *</label>
-                  <input
-                    type="datetime-local"
-                    value={normalizeDateForInput(formData.show_from)}
-                    onChange={e => setFormData({ ...formData, show_from: e.target.value })}
-                    required
-                    disabled={isSubmitting}
-                  />
-                </div>
-                <div className="news-form-group">
-                  <label>Показывать по *</label>
-                  <input
-                    type="datetime-local"
-                    value={normalizeDateForInput(formData.show_to)}
-                    onChange={e => setFormData({ ...formData, show_to: e.target.value })}
-                    required
-                    disabled={isSubmitting}
-                  />
-                </div>
-              </div>
-
-              {error && <div className="news-form-error">{error}</div>}
-
-              <div className="news-form-actions">
-                <button
-                  type="button"
-                  className="news-form-cancel"
-                  onClick={() => setShowCreateModal(false)}
-                  disabled={isSubmitting}
-                >
-                  Отмена
-                </button>
-                <button
-                  type="submit"
-                  className="news-form-submit"
-                  disabled={isSubmitting}
-                >
-                  {isSubmitting ? 'Создание...' : '📰 Создать новость'}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+      <NewsFormModal
+        isOpen={showCreateModal}
+        onClose={() => setShowCreateModal(false)}
+        onSubmit={handleCreate}
+        currentUser={user}
+        isSubmitting={isSubmitting}
+      />
     </div>
   );
 }

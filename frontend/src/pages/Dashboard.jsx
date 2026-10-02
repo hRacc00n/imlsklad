@@ -20,7 +20,7 @@ function Dashboard({ user, onLogout }) {
   const [hasNext, setHasNext] = useState(false);
   const [hasPrevious, setHasPrevious] = useState(false);
 
-  const { openModal, updateTask } = useModal();
+  const { openModal, updateTask, openTaskForm, openNewsForm } = useModal();
 
   // Состояния для календаря
   const [selectedDate, setSelectedDate] = useState(new Date());
@@ -453,6 +453,15 @@ function Dashboard({ user, onLogout }) {
         // Обновляем календарь
         refreshCalendar();
       }
+
+      // Новости
+      if (data.type === 'news_created' || 
+          data.type === 'news_updated' || 
+          data.type === 'news_deleted' ||
+          data.type === 'news_hidden') {
+        console.log('[Dashboard] Обновление новостей, тип:', data.type);
+        refreshCalendar();
+      }
     };
 
     // Подписка на кастомное событие обновления роли
@@ -505,14 +514,25 @@ function Dashboard({ user, onLogout }) {
                 eventTypeFilters={eventTypeFilters}
                 onMonthChange={(year, month) => {
                   console.log(`[Dashboard] Переключение на ${year}-${month}`);
-                  // Сбрасываем выбранную дату на первый день нового месяца
                   const newDate = new Date(year, month - 1, 1);
                   setSelectedDate(newDate);
-                  selectedDateRef.current = newDate; // синхронизируем сразу
-                  // Очищаем события для выбранного дня
+                  selectedDateRef.current = newDate;
                   setDayEvents([]);
                   setShowTaskDetails(false);
                   loadCalendarEvents(year, month);
+                }}
+                onCreateTask={() => {
+                  console.log('[Dashboard] Открытие формы создания задачи');
+                  openTaskForm(() => {
+                    // После создания задачи обновляем календарь
+                    refreshCalendar();
+                  });
+                }}
+                onCreateNews={() => {
+                  console.log('[Dashboard] Открытие формы создания новости');
+                  openNewsForm(() => {
+                    refreshCalendar();
+                  });
                 }}
               />
             </div>
