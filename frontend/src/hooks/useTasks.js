@@ -171,6 +171,10 @@ export function useTasks(config = {}) {
     try {
       const result = await request(`${apiUrl}/${taskId}/complete`, {
         method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          user_name: user?.name || 'Неизвестно' 
+        }),
       });
       
       if (onSuccess) onSuccess(result);
@@ -179,7 +183,7 @@ export function useTasks(config = {}) {
       if (onError) onError(err);
       throw err;
     }
-  }, [apiUrl, request, onSuccess, onError]);
+  }, [apiUrl, request, user, onSuccess, onError]);
 
   /**
    * Отказаться от задачи

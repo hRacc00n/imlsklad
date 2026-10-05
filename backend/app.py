@@ -12,6 +12,9 @@ from routes.users import register_users_routes
 from routes.roles import register_roles_routes
 from routes.sse import register_sse_routes
 from routes.tasks import register_tasks_routes
+from routes.error_types import register_error_types_routes
+from routes.complaints import register_complaints_routes
+from routes.statistics import register_statistics_routes
 from routes.comments import register_comments_routes
 from flask import send_from_directory
 from routes.notifications import register_notifications_routes
@@ -21,6 +24,7 @@ from routes.gallery import register_gallery_routes
 from routes.push import register_push_routes
 from routes.personal_tasks import register_personal_tasks_routes
 from routes.calendar import register_calendar_routes
+
 
 # Переопределяем stdout ПОСЛЕ всех импортов
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
@@ -38,6 +42,9 @@ register_users_routes(app)
 register_roles_routes(app)
 register_sse_routes(app)
 register_tasks_routes(app)
+register_error_types_routes(app)
+register_complaints_routes(app)
+register_statistics_routes(app)
 register_comments_routes(app)
 register_notifications_routes(app)
 register_regional_contractors_routes(app)

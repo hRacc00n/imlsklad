@@ -28,6 +28,11 @@ import GalleryHub from './pages/GalleryHub';
 import DutiesPage from './pages/DutiesPage';
 import VacationsPage from './pages/VacationsPage';
 import NewsFormModal from './components/news/NewsFormModal';
+import ComplaintPage from './pages/ComplaintPage';
+import ErrorTypesPage from './pages/ErrorTypesPage';
+import ComplaintCategoriesPage from './pages/ComplaintCategoriesPage';
+import ComplaintsPage from './pages/ComplaintsPage';
+import StatisticsPage from './pages/StatisticsPage';
 import './App.css';
 
 function App() {
@@ -151,6 +156,10 @@ function App() {
     }
   };
 
+  if (location.pathname === '/complaint') {
+    return <ComplaintPage />;
+  }
+
   if (!user) {
     return <Login onLogin={login} />;
   }
@@ -183,6 +192,10 @@ function App() {
             <Route path="settings" element={<SettingsPage />} />
             <Route path="/admin/duties" element={<DutiesPage user={user} />} />
             <Route path="/admin/vacations" element={<VacationsPage user={user} />} />
+            <Route path="/admin/error-types" element={<ErrorTypesPage />} />
+            <Route path="/admin/complaint-categories" element={<ComplaintCategoriesPage />} />
+            <Route path="/admin/complaints" element={<ComplaintsPage />} />
+            <Route path="/admin/statistics" element={<StatisticsPage />} />
             <Route index element={<Navigate to="/admin/users" replace />} />
           </Route>
           

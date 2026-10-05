@@ -123,6 +123,8 @@ function Dashboard({ user, onLogout }) {
         try {
           const response = await fetch(`/api/tasks/${taskType}/${taskId}/complete`, {
             method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ user_name: user?.name || 'Неизвестно' }),
           });
           const data = await response.json();
           if (data.success) {

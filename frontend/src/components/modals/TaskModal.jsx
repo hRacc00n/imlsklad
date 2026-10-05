@@ -24,6 +24,13 @@ function TaskModal({ onPhotoUploadStart, onPhotoUploadComplete }) {
   const [editValues, setEditValues] = useState({});
   const [editPhotos, setEditPhotos] = useState([]);
 
+  // Состояния для ошибок
+  const [errors, setErrors] = useState([]);
+  const [errorTypes, setErrorTypes] = useState([]);
+  const [showErrorForm, setShowErrorForm] = useState(false);
+  const [newError, setNewError] = useState({ error_type_id: '', description: '' });
+  const [isSubmittingError, setIsSubmittingError] = useState(false);
+
   useEffect(() => {
     const handleEsc = (e) => {
       if (e.key === 'Escape') closeModal();
@@ -37,6 +44,39 @@ function TaskModal({ onPhotoUploadStart, onPhotoUploadComplete }) {
       document.body.style.overflow = 'unset';
     };
   }, [isOpen, closeModal]);
+
+  // Загрузка ошибок при открытии задачи (только для отгрузок regions/spb)
+  useEffect(() => {
+    if (!isOpen || !task?.id) return;
+    
+    const isOrder = taskType === 'region' || taskType === 'spb' || 
+                    task?.type === 'regions' || task?.type === 'spb';
+    
+    if (!isOrder) return;
+    
+    const loadErrors = async () => {
+      try {
+        const response = await fetch(`/api/orders/${task.id}/errors`);
+        const data = await response.json();
+        setErrors(data);
+      } catch (err) {
+        console.error('Ошибка загрузки ошибок:', err);
+      }
+    };
+    
+    const loadErrorTypes = async () => {
+      try {
+        const response = await fetch('/api/error-types');
+        const data = await response.json();
+        setErrorTypes(data);
+      } catch (err) {
+        console.error('Ошибка загрузки типов ошибок:', err);
+      }
+    };
+    
+    loadErrors();
+    loadErrorTypes();
+  }, [isOpen, task?.id, taskType]);
 
   const handleOverlayClick = (e) => {
     if (e.target === e.currentTarget) closeModal();
@@ -172,6 +212,59 @@ function TaskModal({ onPhotoUploadStart, onPhotoUploadComplete }) {
     }
   };
 
+  // Добавить ошибку
+  const handleAddError = async () => {
+    if (!newError.error_type_id) {
+      alert('Выберите тип ошибки');
+      return;
+    }
+    
+    setIsSubmittingError(true);
+    try {
+      const response = await fetch(`/api/orders/${task.id}/errors`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          error_type_id: parseInt(newError.error_type_id),
+          description: newError.description,
+          author: user?.name,
+        }),
+      });
+      const data = await response.json();
+      if (data.success) {
+        setErrors(prev => [data.error, ...prev]);
+        setNewError({ error_type_id: '', description: '' });
+        setShowErrorForm(false);
+      } else {
+        alert(data.message || 'Ошибка при добавлении');
+      }
+    } catch (err) {
+      console.error('Ошибка добавления:', err);
+      alert('Ошибка при добавлении');
+    } finally {
+      setIsSubmittingError(false);
+    }
+  };
+
+  // Удалить ошибку
+  const handleDeleteError = async (errorId) => {
+    if (!confirm('Удалить эту ошибку?')) return;
+    try {
+      const response = await fetch(`/api/orders/errors/${errorId}`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ author: user?.name }),
+      });
+      const data = await response.json();
+      if (data.success) {
+        setErrors(prev => prev.filter(e => e.id !== errorId));
+      }
+    } catch (err) {
+      console.error('Ошибка удаления:', err);
+      alert('Ошибка при удалении');
+    }
+  };
+
   // Режим редактирования
   const enableEditing = () => {
     setIsEditing(true);
@@ -293,11 +386,102 @@ function TaskModal({ onPhotoUploadStart, onPhotoUploadComplete }) {
           </div>
           <div className="modal-field">
             <label>Товары</label>
-            <ItemsTable items={task?.items || []} />
-          </div>
-        </>
-      );
-    }
+              <ItemsTable items={task?.items || []} />
+            </div>
+
+            {/* ===== БЛОК ОШИБОК ===== */}
+            {user?.role === 'admin' && (
+              <div className="modal-field modal-errors-section">
+                <div className="modal-errors-header">
+                  <label>⚠️ Ошибки ({errors.length})</label>
+                  {!showErrorForm && (
+                    <button
+                      type="button"
+                      className="modal-error-add-btn"
+                      onClick={() => setShowErrorForm(true)}
+                    >
+                      + Отметить ошибку
+                    </button>
+                  )}
+                </div>
+
+                {showErrorForm && (
+                  <div className="modal-error-form">
+                    <select
+                      value={newError.error_type_id}
+                      onChange={(e) => setNewError({ ...newError, error_type_id: e.target.value })}
+                      className="modal-error-select"
+                    >
+                      <option value="">Выберите тип ошибки</option>
+                      {errorTypes.map(type => (
+                        <option key={type.id} value={type.id}>{type.name}</option>
+                      ))}
+                    </select>
+                    <textarea
+                      value={newError.description}
+                      onChange={(e) => setNewError({ ...newError, description: e.target.value })}
+                      placeholder="Описание ошибки (необязательно)"
+                      className="modal-error-textarea"
+                      rows={2}
+                    />
+                    <div className="modal-error-form-actions">
+                      <button
+                        type="button"
+                        className="modal-error-cancel"
+                        onClick={() => {
+                          setShowErrorForm(false);
+                          setNewError({ error_type_id: '', description: '' });
+                        }}
+                        disabled={isSubmittingError}
+                      >
+                        Отмена
+                      </button>
+                      <button
+                        type="button"
+                        className="modal-error-submit"
+                        onClick={handleAddError}
+                        disabled={isSubmittingError}
+                      >
+                        {isSubmittingError ? 'Сохранение...' : 'Сохранить'}
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {errors.length > 0 && (
+                  <div className="modal-errors-list">
+                    {errors.map(error => (
+                      <div key={error.id} className="modal-error-item">
+                        <div className="modal-error-item-header">
+                          <span className="modal-error-type">{error.error_type_name}</span>
+                          <button
+                            type="button"
+                            className="modal-error-delete"
+                            onClick={() => handleDeleteError(error.id)}
+                            title="Удалить"
+                          >
+                            🗑️
+                          </button>
+                        </div>
+                        {error.description && (
+                          <div className="modal-error-description">{error.description}</div>
+                        )}
+                        <div className="modal-error-meta">
+                          👤 {error.author} · 🕐 {error.created_at}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {errors.length === 0 && !showErrorForm && (
+                  <div className="modal-errors-empty">Нет отмеченных ошибок</div>
+                )}
+              </div>
+            )}
+          </>
+        );
+      }
 
     // Проверяем, является ли задача ЭйрТрафик
     const isAirTraffic = taskType === 'air_traffic' || task?.type === 'air_traffic';
@@ -450,8 +634,8 @@ function TaskModal({ onPhotoUploadStart, onPhotoUploadComplete }) {
   };
 
   return (
-    <div className="modal-overlay" onClick={handleOverlayClick}>
-      <div className="modal-content task-modal-content" ref={modalRef}>
+    <div className="task-modal-overlay" onClick={handleOverlayClick}>
+      <div className="task-modal-content" ref={modalRef}>
         <div className={`modal-status-bar ${statusInfo.class}`}>
           {statusInfo.label}
         </div>

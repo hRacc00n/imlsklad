@@ -13,3 +13,4 @@ typing_extensions==4.16.0
 Werkzeug==3.1.8
 PyPDF2==3.0.1
 pywebpush==1.14.1
+openpyxl

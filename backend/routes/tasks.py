@@ -3,7 +3,8 @@ import base64
 import uuid
 from flask import request, jsonify
 from db.database import get_db
-from db.models import Order, OrderHistory, Comment
+from db.models import Order, OrderHistory, Comment, OrderError, ErrorType
+from utils.file_loader import load_json
 import json
 import glob
 from datetime import datetime, timedelta, timezone
@@ -235,6 +236,7 @@ def register_tasks_routes(app):
                     'subdivision': email_data.get('subdivision', ''),
                     'contractor': email_data.get('contractor', ''),
                     'items': email_data.get('items', []),
+                    'has_errors': db.query(OrderError).filter(OrderError.order_id == task.id).count() > 0 if task.type in ['regions', 'spb'] else False,
                     # ===== ПОЛЯ ДЛЯ AIRTRAFFIC =====
                     'awb_number': email_data.get('awb_number', ''),
                     'image': email_data.get('image', ''),
@@ -379,6 +381,9 @@ def register_tasks_routes(app):
     # ===== PUT: Выполнить задачу (УНИВЕРСАЛЬНЫЙ) =====
     @app.route('/api/tasks/<path:task_type>/<int:task_id>/complete', methods=['PUT'])
     def complete_task(task_type, task_id):
+        data = request.get_json() or {}
+        user_name = data.get('user_name', '')
+        
         with get_db() as db:
             task = db.query(Order).filter(Order.id == task_id).first()
             if not task:
@@ -388,6 +393,8 @@ def register_tasks_routes(app):
                 return jsonify({'success': False, 'message': 'Задача не в работе'}), 400
             
             task.status = 'completed'
+            task.completed_at = datetime.utcnow()
+            task.completed_by = user_name
             task.updated_at = datetime.utcnow()
             db.commit()
             db.refresh(task)
@@ -402,13 +409,15 @@ def register_tasks_routes(app):
             time.sleep(0.1)
             
             sse_publisher.publish('hub_stats_updated', {
-                'hub_type': 'arrival',
+                'hub_type': task_type,
                 'action': 'completed'
             })
             
             return jsonify({'success': True, 'task': {
                 'id': task.id,
-                'status': task.status
+                'status': task.status,
+                'completed_at': task.completed_at.strftime('%Y-%m-%d %H:%M') if task.completed_at else None,
+                'completed_by': task.completed_by
             }}), 200
     
     # ===== PUT: Отказаться от задачи (УНИВЕРСАЛЬНЫЙ) =====
@@ -734,6 +743,8 @@ def register_tasks_routes(app):
                 result['contractor'] = email_data.get('contractor', '')
                 result['initiator'] = email_data.get('initiator', '')
                 result['items'] = email_data.get('items', [])
+                # Проверяем наличие ошибок
+                result['has_errors'] = db.query(OrderError).filter(OrderError.order_id == task.id).count() > 0
 
             # Добавляем поля для AirTraffic
             if task.type == 'air_traffic':
@@ -912,6 +923,9 @@ def register_tasks_routes(app):
                 order_number = email_data.get('order_number', '')
                 title = order_number if order_number else 'Без номера'
                 
+                # Проверяем наличие ошибок
+                has_errors = db.query(OrderError).filter(OrderError.order_id == task.id).count() > 0
+                
                 result.append({
                     'id': task.id,
                     'title': title,
@@ -929,6 +943,7 @@ def register_tasks_routes(app):
                         Comment.is_deleted == False
                     ).count(),
                     'type': task.type,
+                    'has_errors': has_errors,
                 })
             
             return jsonify({
@@ -1019,6 +1034,9 @@ def register_tasks_routes(app):
                 order_number = email_data.get('order_number', '')
                 title = order_number if order_number else 'Без номера'
                 
+                # Проверяем наличие ошибок
+                has_errors = db.query(OrderError).filter(OrderError.order_id == task.id).count() > 0
+                
                 result.append({
                     'id': task.id,
                     'title': title,
@@ -1036,6 +1054,7 @@ def register_tasks_routes(app):
                         Comment.is_deleted == False
                     ).count(),
                     'type': task.type,
+                    'has_errors': has_errors,
                 })
             
             return jsonify({
@@ -1174,3 +1193,120 @@ def register_tasks_routes(app):
             })
             response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
             return response, 200
+
+    # ===== GET: Список ошибок задачи =====
+    @app.route('/api/orders/<int:order_id>/errors', methods=['GET'])
+    def get_order_errors(order_id):
+        with get_db() as db:
+            errors = db.query(OrderError).filter(
+                OrderError.order_id == order_id
+            ).order_by(OrderError.created_at.desc()).all()
+            
+            result = []
+            for error in errors:
+                error_dict = error.to_dict()
+                # Добавляем название типа ошибки
+                error_type = db.query(ErrorType).filter(ErrorType.id == error.error_type_id).first()
+                if error_type:
+                    error_dict['error_type_name'] = error_type.name
+                result.append(error_dict)
+            
+            return jsonify(result), 200
+
+    # ===== POST: Добавить ошибку в задачу (только админ) =====
+    @app.route('/api/orders/<int:order_id>/errors', methods=['POST'])
+    def create_order_error(order_id):
+        data = request.get_json()
+        error_type_id = data.get('error_type_id')
+        description = data.get('description', '').strip()
+        author = data.get('author', '')
+        
+        if not error_type_id:
+            return jsonify({'success': False, 'message': 'Укажите тип ошибки'}), 400
+        
+        if not author:
+            return jsonify({'success': False, 'message': 'Автор не указан'}), 400
+        
+        # Проверка прав (только админ)
+        users = load_json('users.json')
+        is_admin = False
+        for u in users:
+            if u.get('name') == author and u.get('role') == 'admin':
+                is_admin = True
+                break
+        
+        if not is_admin:
+            return jsonify({'success': False, 'message': 'Только администратор может отмечать ошибки'}), 403
+        
+        with get_db() as db:
+            # Проверяем, что задача существует
+            order = db.query(Order).filter(Order.id == order_id).first()
+            if not order:
+                return jsonify({'success': False, 'message': 'Задача не найдена'}), 404
+            
+            # Проверяем, что тип ошибки существует
+            error_type = db.query(ErrorType).filter(ErrorType.id == error_type_id).first()
+            if not error_type:
+                return jsonify({'success': False, 'message': 'Тип ошибки не найден'}), 404
+            
+            new_error = OrderError(
+                order_id=order_id,
+                error_type_id=error_type_id,
+                description=description,
+                author=author,
+                created_at=datetime.utcnow()
+            )
+            db.add(new_error)
+            db.commit()
+            db.refresh(new_error)
+            
+            error_dict = new_error.to_dict()
+            error_dict['error_type_name'] = error_type.name
+            
+            # Отправляем SSE событие
+            sse_publisher.publish('order_error_created', {
+                'order_id': order_id,
+                'error': error_dict
+            })
+            
+            return jsonify({
+                'success': True,
+                'error': error_dict
+            }), 201
+
+    # ===== DELETE: Удалить ошибку (только админ) =====
+    @app.route('/api/orders/errors/<int:error_id>', methods=['DELETE'])
+    def delete_order_error(error_id):
+        data = request.get_json() or {}
+        author = data.get('author', '')
+        
+        # Проверка прав (только админ)
+        users = load_json('users.json')
+        is_admin = False
+        for u in users:
+            if u.get('name') == author and u.get('role') == 'admin':
+                is_admin = True
+                break
+        
+        if not is_admin:
+            return jsonify({'success': False, 'message': 'Только администратор может удалять ошибки'}), 403
+        
+        with get_db() as db:
+            error = db.query(OrderError).filter(OrderError.id == error_id).first()
+            if not error:
+                return jsonify({'success': False, 'message': 'Ошибка не найдена'}), 404
+            
+            order_id = error.order_id
+            db.delete(error)
+            db.commit()
+            
+            # Отправляем SSE событие
+            sse_publisher.publish('order_error_deleted', {
+                'order_id': order_id,
+                'error_id': error_id
+            })
+            
+            return jsonify({
+                'success': True,
+                'message': 'Ошибка удалена'
+            }), 200

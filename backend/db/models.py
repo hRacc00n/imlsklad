@@ -8,20 +8,22 @@ class Order(Base):
     __tablename__ = 'orders'
     
     id = Column(Integer, primary_key=True, index=True)
-    tracking = Column(String(50), unique=True, index=True)  # Трек-номер
-    client = Column(String(200))                           # Клиент
-    type = Column(String(50))                              # Тип задачи: отгрузка, приемка, счет
-    status = Column(String(50), default='Новая')           # Статус: Новая, В работе, Завершена
-    description = Column(Text, nullable=True)              # Описание
-    assigned_to = Column(Integer, nullable=True)           # ID пользователя (кто взял в работу)
+    tracking = Column(String(50), unique=True, index=True)
+    client = Column(String(200))
+    type = Column(String(50))
+    status = Column(String(50), default='Новая')
+    description = Column(Text, nullable=True)
+    assigned_to = Column(String(100), nullable=True)
+    completed_at = Column(DateTime, nullable=True)
+    completed_by = Column(String(100), nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
-    # Данные из почты (JSON)
-    email_data = Column(Text, nullable=True)               # Храним как JSON строку
-    attachments = Column(Text, nullable=True)              # Вложения (JSON)
+    email_data = Column(Text, nullable=True)
+    attachments = Column(Text, nullable=True)
     
     def to_dict(self):
+        local_tz = timedelta(hours=3)
         return {
             'id': self.id,
             'tracking': self.tracking,
@@ -30,8 +32,10 @@ class Order(Base):
             'status': self.status,
             'description': self.description,
             'assigned_to': self.assigned_to,
-            'created_at': self.created_at.isoformat() if self.created_at else None,
-            'updated_at': self.updated_at.isoformat() if self.updated_at else None,
+            'completed_at': (self.completed_at + local_tz).strftime('%Y-%m-%d %H:%M') if self.completed_at else None,
+            'completed_by': self.completed_by,
+            'created_at': (self.created_at + local_tz).strftime('%Y-%m-%d %H:%M') if self.created_at else None,
+            'updated_at': (self.updated_at + local_tz).strftime('%Y-%m-%d %H:%M') if self.updated_at else None,
             'email_data': self.email_data,
             'attachments': self.attachments
         }
@@ -242,6 +246,7 @@ class PersonalTask(Base):
     due_date = Column(DateTime, nullable=True)           # <--  (срок выполнения)
     show_only_on_day = Column(Boolean, default=False)    # <-- 
     completed_at = Column(DateTime, nullable=True)       # <--  (когда выполнена)
+    completed_by = Column(String(100), nullable=True)
     priority = Column(String(20), default='medium')      # <-- (low, medium, high)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
@@ -281,6 +286,7 @@ class PersonalTask(Base):
             'due_date': (self.due_date + local_tz).strftime('%Y-%m-%d %H:%M') if self.due_date else None,  # <-- ДОБАВИТЬ
             'show_only_on_day': self.show_only_on_day,  # <-- ДОБАВИТЬ
             'completed_at': (self.completed_at + local_tz).strftime('%Y-%m-%d %H:%M') if self.completed_at else None,  # <-- ДОБАВИТЬ
+            'completed_by': self.completed_by,
             'priority': self.priority,  # <-- ДОБАВИТЬ
             'is_overdue': is_overdue,  # <-- ДОБАВИТЬ
             'created_at': (self.created_at + local_tz).strftime('%Y-%m-%d %H:%M') if self.created_at else '',
@@ -419,4 +425,93 @@ class News(Base):
             'is_hidden': self.is_hidden,
             'created_at': self.created_at.strftime('%Y-%m-%d %H:%M') if self.created_at else '',
             'updated_at': self.updated_at.strftime('%Y-%m-%d %H:%M') if self.updated_at else '',
+        }
+
+class ErrorType(Base):
+    """Справочник типов ошибок (редактируется админом)"""
+    __tablename__ = 'error_types'
+    
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String(200), nullable=False)
+    is_active = Column(Boolean, default=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'name': self.name,
+            'is_active': self.is_active,
+            'created_at': self.created_at.strftime('%Y-%m-%d %H:%M') if self.created_at else '',
+            'updated_at': self.updated_at.strftime('%Y-%m-%d %H:%M') if self.updated_at else '',
+        }
+
+
+class OrderError(Base):
+    """Ошибки в задачах (отмечаются администратором)"""
+    __tablename__ = 'order_errors'
+    
+    id = Column(Integer, primary_key=True, index=True)
+    order_id = Column(Integer, ForeignKey('orders.id'), index=True, nullable=False)
+    error_type_id = Column(Integer, ForeignKey('error_types.id'), nullable=False)
+    description = Column(Text, nullable=True)
+    author = Column(String(100), nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    def to_dict(self):
+        local_tz = timedelta(hours=3)
+        return {
+            'id': self.id,
+            'order_id': self.order_id,
+            'error_type_id': self.error_type_id,
+            'description': self.description,
+            'author': self.author,
+            'created_at': (self.created_at + local_tz).strftime('%Y-%m-%d %H:%M') if self.created_at else '',
+            'updated_at': (self.updated_at + local_tz).strftime('%Y-%m-%d %H:%M') if self.updated_at else '',
+        }
+
+
+class ComplaintCategory(Base):
+    """Справочник категорий жалоб (редактируется админом)"""
+    __tablename__ = 'complaint_categories'
+    
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String(200), nullable=False)
+    is_active = Column(Boolean, default=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'name': self.name,
+            'is_active': self.is_active,
+            'created_at': self.created_at.strftime('%Y-%m-%d %H:%M') if self.created_at else '',
+            'updated_at': self.updated_at.strftime('%Y-%m-%d %H:%M') if self.updated_at else '',
+        }
+
+
+class Complaint(Base):
+    """Жалобы (публичная форма)"""
+    __tablename__ = 'complaints'
+    
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String(100), nullable=False)
+    category_id = Column(Integer, ForeignKey('complaint_categories.id'), nullable=False)
+    text = Column(Text, nullable=False)
+    status = Column(String(50), default='new')  # new, confirmed, rejected, archived
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    def to_dict(self):
+        local_tz = timedelta(hours=3)
+        return {
+            'id': self.id,
+            'name': self.name,
+            'category_id': self.category_id,
+            'text': self.text,
+            'status': self.status,
+            'created_at': (self.created_at + local_tz).strftime('%Y-%m-%d %H:%M') if self.created_at else '',
+            'updated_at': (self.updated_at + local_tz).strftime('%Y-%m-%d %H:%M') if self.updated_at else '',
         }

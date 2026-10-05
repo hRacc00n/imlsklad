@@ -41,6 +41,34 @@ function AdminLayout() {
               Отпуска
             </NavLink>
             <NavLink 
+              to="/admin/error-types" 
+              className={({ isActive }) => isActive ? 'admin-nav-link active' : 'admin-nav-link'}
+            >
+              <span className="nav-icon">⚠️</span>
+              Типы ошибок
+            </NavLink>
+            <NavLink 
+              to="/admin/complaint-categories" 
+              className={({ isActive }) => isActive ? 'admin-nav-link active' : 'admin-nav-link'}
+            >
+              <span className="nav-icon">📂</span>
+              Категории жалоб
+            </NavLink>
+            <NavLink 
+              to="/admin/complaints" 
+              className={({ isActive }) => isActive ? 'admin-nav-link active' : 'admin-nav-link'}
+            >
+              <span className="nav-icon">😞</span>
+              Жалобы
+            </NavLink>
+            <NavLink 
+              to="/admin/statistics" 
+              className={({ isActive }) => isActive ? 'admin-nav-link active' : 'admin-nav-link'}
+            >
+              <span className="nav-icon">📊</span>
+              Статистика
+            </NavLink>
+            <NavLink 
               to="/admin/regional-contractors" 
               className={({ isActive }) => isActive ? 'admin-nav-link active' : 'admin-nav-link'}
             >

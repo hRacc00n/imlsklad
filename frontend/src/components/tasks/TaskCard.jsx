@@ -28,6 +28,7 @@ function TaskCard({
     assigned_to,
     status,
     comments_count = 0,
+    has_errors = false,
   } = task;
 
   const getStatusInfo = () => {
@@ -80,6 +81,11 @@ function TaskCard({
     <div className="task-card" onClick={handleClick}>
       <div className={`task-status-bar ${statusInfo.class}`}>
         <span>{statusInfo.label}</span>
+        {has_errors && (
+          <span className="task-error-badge" title="Есть отмеченные ошибки">
+            ⚠️ Ошибка
+          </span>
+        )}
         {(canEdit || canDelete) && (
           <div className="task-admin-actions" onClick={(e) => e.stopPropagation()}>
             {canEdit && (
