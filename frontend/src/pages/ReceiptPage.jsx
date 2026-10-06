@@ -187,7 +187,7 @@ function ReceiptPage() {
               type="text"
               value={formData.source}
               onChange={(e) => setFormData({ ...formData, source: e.target.value })}
-              placeholder="Например: Склад, Офис, Производство"
+              placeholder="Например: Трейлер 109, Краснодарск, Разбор магнита sn: 1111"
               required
               disabled={isSubmitting}
             />
@@ -198,7 +198,7 @@ function ReceiptPage() {
             <textarea
               value={formData.comment}
               onChange={(e) => setFormData({ ...formData, comment: e.target.value })}
-              placeholder="Дополнительная информация (необязательно)"
+              placeholder="Дополнительная информация, местоположение и прочее"
               rows={4}
               disabled={isSubmitting}
             />

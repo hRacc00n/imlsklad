@@ -34,7 +34,7 @@ function Login({ onLogin }) {
         <div className="logo">
           <span className="logo-icon">📦</span>
           <span className="logo-title">IMLSKLAD</span>
-          <span className="logo-subtitle">Логистический центр</span>
+          <span className="logo-subtitle">Логисты? Склад? Менеджеры? </span>
         </div>
         
         <form onSubmit={handleSubmit}>
