@@ -29,6 +29,8 @@ function TaskCard({
     status,
     comments_count = 0,
     has_errors = false,
+    giver,
+    source,
   } = task;
 
   const getStatusInfo = () => {
@@ -145,6 +147,20 @@ function TaskCard({
             <div className="task-comment-box">
               {truncateComment(task.comment)}
             </div>
+          </>
+        ) : task.type === 'receipt' ? (
+          // Отображение для оприходования
+          <>
+            <div className="task-order-field">
+              <strong>Кто сдает:</strong> {giver || '—'}
+            </div>
+            <div className="task-order-field">
+              <strong>Откуда:</strong> {source || '—'}
+            </div>
+            <div className="task-comment-box">
+              {truncateComment(comment)}
+            </div>
+            <PhotoViewer photos={photos} onPhotoClick={onPhotoClick} />
           </>
         ) : task.type === 'regions' || task.type === 'spb' ? (
           // Отображение для отгрузок (Регионы и СПб)

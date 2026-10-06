@@ -29,6 +29,7 @@ import DutiesPage from './pages/DutiesPage';
 import VacationsPage from './pages/VacationsPage';
 import NewsFormModal from './components/news/NewsFormModal';
 import ComplaintPage from './pages/ComplaintPage';
+import ReceiptPage from './pages/ReceiptPage';
 import ErrorTypesPage from './pages/ErrorTypesPage';
 import ComplaintCategoriesPage from './pages/ComplaintCategoriesPage';
 import ComplaintsPage from './pages/ComplaintsPage';
@@ -158,6 +159,10 @@ function App() {
 
   if (location.pathname === '/complaint') {
     return <ComplaintPage />;
+  }
+
+  if (location.pathname === '/receipt') {
+    return <ReceiptPage />;
   }
 
   if (!user) {

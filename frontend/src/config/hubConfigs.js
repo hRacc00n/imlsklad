@@ -9,6 +9,7 @@ export const HUB_TYPES = {
   AIR_TRAFFIC: 'air_traffic',
   TASKS: 'tasks',
   GALLERY: 'gallery',
+  RECEIPT: 'receipt',
 };
 
 /**

@@ -125,14 +125,18 @@ function HubPage({ config, hideCreateButton = false, customHeaderButton = null }
   };
 
   const handleCardClick = (task) => {
-    openModal(task, config.modalType || config.id, {
+    // Используем task.type (из БД) — приоритет над config.modalType
+    // Это позволяет в одном хабе иметь задачи разных типов (arrival и receipt)
+    const modalType = task.type || config.modalType || config.id;
+    
+    openModal(task, modalType, {
       onTake: takeTask,
       onComplete: completeTask,
       onDecline: declineTask,
       onReassign: reassignTask,
       onDelete: deleteTask,
       onEdit: updateTask,
-      onUploadPhotos: uploadPhotos, // ← добавляем
+      onUploadPhotos: uploadPhotos,
       onRefresh: refresh,
       onPhotoUploadStart: handlePhotoUploadStart,
       onPhotoUploadComplete: handlePhotoUploadComplete,

@@ -24,7 +24,7 @@ def register_tasks_routes(app):
         offset = (page - 1) * per_page
         
         with get_db() as db:
-            query = db.query(Order).filter(Order.type == 'arrival')
+            query = db.query(Order).filter(Order.type.in_(['arrival', 'receipt']))
             
             # Поиск по полям (регистронезависимый через Python)
             if search:
@@ -77,6 +77,10 @@ def register_tasks_routes(app):
                         Comment.is_deleted == False
                     ).count(),
                     'photos': email_data.get('photos', []),
+                    'type': task.type,  # <-- ДОБАВИТЬ для определения модалки
+                    # Поля для оприходования
+                    'giver': email_data.get('giver', ''),
+                    'source': email_data.get('source', ''),
                 })
             
             return jsonify({
@@ -96,11 +100,11 @@ def register_tasks_routes(app):
     def get_arrivals_stats():
         with get_db() as db:
             active_count = db.query(Order).filter(
-                Order.type == 'arrival',
+                Order.type.in_(['arrival', 'receipt']),
                 Order.status != 'completed'
             ).count()
             
-            total_count = db.query(Order).filter(Order.type == 'arrival').count()
+            total_count = db.query(Order).filter(Order.type.in_(['arrival', 'receipt'])).count()
             
             response = jsonify({
                 'active_count': active_count,
@@ -241,6 +245,9 @@ def register_tasks_routes(app):
                     'awb_number': email_data.get('awb_number', ''),
                     'image': email_data.get('image', ''),
                     'file': email_data.get('file', {}),
+                    # ===== ПОЛЯ ДЛЯ ОПРИХОДОВАНИЯ =====
+                    'giver': email_data.get('giver', ''),
+                    'source': email_data.get('source', ''),
                 })
             
             return jsonify({
@@ -752,6 +759,11 @@ def register_tasks_routes(app):
                 result['city'] = email_data.get('city', '')
                 result['image'] = email_data.get('image', '')
                 result['file'] = email_data.get('file', {})
+
+            # Добавляем поля для оприходования
+            if task.type == 'receipt':
+                result['giver'] = email_data.get('giver', '')
+                result['source'] = email_data.get('source', '')
             
             return jsonify(result), 200
 
@@ -1193,6 +1205,147 @@ def register_tasks_routes(app):
             })
             response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
             return response, 200
+
+    # ===== POST: Создать задачу "Оприходование" (ПУБЛИЧНЫЙ) =====
+    @app.route('/api/tasks/receipt', methods=['POST'])
+    def create_receipt():
+        data = request.get_json()
+        giver = data.get('giver', '').strip()      # Кто сдает
+        source = data.get('source', '').strip()    # Откуда
+        comment = data.get('comment', '').strip()
+        photos = data.get('photos', [])
+        author = data.get('author', 'Инженер')     # По умолчанию "Инженер"
+        
+        if not giver:
+            return jsonify({'success': False, 'message': 'Заполните поле "Кто сдает"'}), 400
+        
+        if not source:
+            return jsonify({'success': False, 'message': 'Заполните поле "Откуда"'}), 400
+        
+        if not photos or len(photos) == 0:
+            return jsonify({'success': False, 'message': 'Прикрепите хотя бы одну фотографию'}), 400
+        
+        with get_db() as db:
+            # Создаём задачу
+            new_task = Order(
+                tracking=f"RCP-{datetime.now().strftime('%Y%m%d%H%M%S')}",
+                client=giver,
+                type='receipt',
+                status='new',
+                description=comment,
+                assigned_to=None,
+                created_at=datetime.utcnow(),
+                email_data=json.dumps({
+                    'author': author,
+                    'giver': giver,
+                    'source': source,
+                    'comment': comment,
+                    'photos': []
+                }, ensure_ascii=False)
+            )
+            db.add(new_task)
+            db.commit()
+            db.refresh(new_task)
+            
+            # Сохраняем фотографии
+            saved_photos = []
+            upload_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'data', 'uploads', 'photos')
+            os.makedirs(upload_dir, exist_ok=True)
+            
+            for idx, photo_base64 in enumerate(photos):
+                try:
+                    if not photo_base64:
+                        continue
+                    
+                    if ',' in photo_base64:
+                        _, data_str = photo_base64.split(',', 1)
+                    else:
+                        data_str = photo_base64
+                    
+                    image_data = base64.b64decode(data_str)
+                    
+                    if len(image_data) < 100:
+                        continue
+                    
+                    filename = f"task_{new_task.id}_{uuid.uuid4().hex[:8]}.jpg"
+                    filepath = os.path.join(upload_dir, filename)
+                    
+                    with open(filepath, 'wb') as f:
+                        f.write(image_data)
+                    
+                    saved_photos.append(f"/uploads/photos/{filename}")
+                except Exception as e:
+                    print(f"Ошибка обработки фото {idx}: {e}")
+                    continue
+            
+            # Обновляем email_data с фотографиями
+            email_data = json.loads(new_task.email_data)
+            email_data['photos'] = saved_photos
+            new_task.email_data = json.dumps(email_data, ensure_ascii=False)
+            db.commit()
+            
+            # История
+            history = OrderHistory(
+                order_id=new_task.id,
+                user_id=0,
+                action='created',
+                new_status='new',
+                comment='Задача оприходования создана через публичную форму'
+            )
+            db.add(history)
+            db.commit()
+            db.refresh(new_task)
+            
+            # ===== УВЕДОМЛЕНИЯ =====
+            try:
+                NotificationService.send_to_hub(
+                    hub_type='receipt',
+                    supplier=giver,
+                    task_id=new_task.id,
+                    author=None  # Уведомляем всех, включая автора (он не пользователь системы)
+                )
+            except Exception as e:
+                print(f"[Notification] Ошибка отправки уведомлений: {e}")
+            
+            # SSE
+            sse_publisher.publish('task_created', {
+                'task_id': new_task.id,
+                'type': 'receipt',
+                'task': {
+                    'id': new_task.id,
+                    'author': author,
+                    'created_at': (new_task.created_at + timedelta(hours=3)).strftime('%Y-%m-%d %H:%M'),
+                    'giver': giver,
+                    'source': source,
+                    'comment': comment,
+                    'photos': saved_photos,
+                    'assigned_to': None,
+                    'status': 'new',
+                    'comments_count': 0,
+                    'type': 'receipt'
+                }
+            })
+            
+            import time
+            time.sleep(0.1)
+            
+            sse_publisher.publish('hub_stats_updated', {
+                'hub_type': 'receipt',
+                'action': 'created'
+            })
+            
+            return jsonify({
+                'success': True,
+                'task': {
+                    'id': new_task.id,
+                    'giver': giver,
+                    'source': source,
+                    'comment': comment,
+                    'photos': saved_photos,
+                    'status': 'new',
+                    'type': 'receipt'
+                }
+            }), 201
 
     # ===== GET: Список ошибок задачи =====
     @app.route('/api/orders/<int:order_id>/errors', methods=['GET'])

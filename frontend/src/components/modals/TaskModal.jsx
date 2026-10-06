@@ -110,6 +110,11 @@ function TaskModal({ onPhotoUploadStart, onPhotoUploadComplete }) {
       return `📰 ${task?.title || 'Новость'}`;
     }
     
+    // Проверяем, является ли это оприходованием
+    if (taskType === 'receipt' || task?.type === 'receipt') {
+      return `📦 Оприходование от ${task?.giver || 'Неизвестно'}`;
+    }
+    
     // Проверяем, является ли задача счетом
     const isInvoice = taskType === 'invoice' || task?.type === 'invoices';
     
@@ -350,6 +355,42 @@ function TaskModal({ onPhotoUploadStart, onPhotoUploadComplete }) {
             <div className="modal-comment-box">
               <ReactMarkdown>{task?.content || '—'}</ReactMarkdown>
             </div>
+          </div>
+        </>
+      );
+    }
+
+    // Проверяем, является ли это оприходованием
+    if (taskType === 'receipt' || task?.type === 'receipt') {
+      return (
+        <>
+          <div className="modal-field">
+            <label>Кто сдает</label>
+            <span>{task?.giver || '—'}</span>
+          </div>
+          <div className="modal-field">
+            <label>Откуда</label>
+            <span>{task?.source || '—'}</span>
+          </div>
+          <div className="modal-field">
+            <label>Комментарий</label>
+            <div className="modal-comment-box">{task?.comment || '—'}</div>
+          </div>
+          <div className="modal-field">
+            <label>Фотографии</label>
+            {task.photos && task.photos.length > 0 && (
+              <div className="modal-photos">
+                {task.photos.map((photo, idx) => (
+                  <img
+                    key={idx}
+                    src={photo}
+                    alt={`Фото ${idx + 1}`}
+                    className="modal-photo"
+                    onClick={() => handlePhotoClick(idx)}
+                  />
+                ))}
+              </div>
+            )}
           </div>
         </>
       );

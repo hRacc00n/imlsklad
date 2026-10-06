@@ -105,6 +105,9 @@ class NotificationService:
             if hub_type == 'arrival':
                 title = 'Новое поступление'
                 text = f'Новое поступление от {supplier}'
+            elif hub_type == 'receipt':
+                title = 'Новое оприходование'
+                text = f'Новое оприходование от {supplier}'
             else:
                 title = f'Новая задача в {hub["name"]}'
                 text = f'Новая задача в {hub["name"]} от {supplier}'
@@ -128,12 +131,15 @@ class NotificationService:
                     continue
                 
                 print(f"[Notification] 📨 Отправка уведомления пользователю: {user_name}")
+                # Для receipt ссылка ведёт в хаб "Поступления"
+                link = '/hub/arrivals' if hub_type == 'receipt' else f'/hub/{hub_type}'
+                
                 NotificationService.send(
                     user_name=user_name,
                     notification_type='task_created',
                     title=title,
                     text=text,
-                    link=f'/hub/{hub_type}',
+                    link=link,
                     task_id=task_id
                 )
                 sent_count += 1
